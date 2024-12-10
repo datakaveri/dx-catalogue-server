@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * The Geocoding Service.
  * <h1>Geocoding Service</h1>
+ *
  * <p>
  * The Geocoding Service in the IUDX Catalogue Server defines the operations to be performed
  * with the IUDX Geocoding  server.

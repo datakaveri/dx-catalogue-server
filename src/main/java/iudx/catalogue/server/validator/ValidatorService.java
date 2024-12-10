@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * The Validator Service.
  * <h1>Validator Service</h1>
+ *
  * <p>
  * The Validator Service in the IUDX Catalogue Server defines the operations to be performed with
  * the IUDX File server.

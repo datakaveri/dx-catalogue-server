@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Geocoding Verticle.
  * <h1>A Geocoding Verticle</h1>
+ *
  * <p>The Geocoding Verticle implementation in the the IUDX Catalogue Server exposes the
  * {@link iudx.catalogue.server.geocoding.GeocodingService} over the Vert.x Event Bus.
  * </p>

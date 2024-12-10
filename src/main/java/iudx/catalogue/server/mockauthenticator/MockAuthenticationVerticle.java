@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Authentication Verticle.
  * <h1>Authentication Verticle</h1>
+ *
  * <p>
  * The Authentication Verticle implementation in the the IUDX Catalogue Server exposes the
  * {@link iudx.catalogue.server.authenticator.AuthenticationService} over the Vert.x Event Bus.

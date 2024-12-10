@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Auditing Verticle.
  * <h1>Auditing Verticle</h1>
+ *
  * <p>
  * The Auditing Verticle implementation in the IUDX Catalouge Server exposes the
  * {@link iudx.catalogue.server.auditing.AuditingService} over the Vert.x Event Bus.

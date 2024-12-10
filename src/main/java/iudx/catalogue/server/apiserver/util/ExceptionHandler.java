@@ -21,10 +21,8 @@ public class ExceptionHandler implements Handler<RoutingContext> {
     Throwable failure = routingContext.failure();
     if (failure instanceof DecodeException) {
       handleDecodeException(routingContext);
-      return;
     } else if (failure instanceof ClassCastException) {
       handleClassCastException(routingContext);
-      return;
     } else {
       routingContext.response()
                     .setStatusCode(400)

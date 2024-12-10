@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * The NLPSearch Verticle.
  * <h1>A NLPSearch Verticle</h1>
+ *
  * <p>
  * The NLPSearch Verticle implementation in the the IUDX Catalogue Server exposes the
  * {@link iudx.catalogue.server.nlpsearch.NLPSearchService} over the Vert.x Event Bus.

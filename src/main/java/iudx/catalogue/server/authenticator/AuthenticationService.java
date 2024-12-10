@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * The Authentication Service.
  * <h1>Authentication Service</h1>
+ *
  * <p>
  * The Authentication Service in the IUDX Catalogue Server defines the operations to be performed
  * with the IUDX Authentication and Authorization server.

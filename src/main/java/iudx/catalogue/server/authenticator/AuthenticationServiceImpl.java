@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * The Authentication Service Implementation.
  * <h1>Authentication Service Implementation</h1>
+ *
  * <p>
  * The Authentication Service implementation in the IUDX Catalogue Server implements the definitions
  * of the {@link iudx.catalogue.server.authenticator.AuthenticationService}.

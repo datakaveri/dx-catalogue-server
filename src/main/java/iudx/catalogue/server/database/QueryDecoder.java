@@ -55,7 +55,6 @@ public final class QueryDecoder {
     String searchType = request.getString(SEARCH_TYPE);
     JsonObject elasticQuery = new JsonObject();
     String queryGeoShape = null;
-    JsonArray mustQuery = new JsonArray();
     Boolean match = false;
 
     if (searchType.equalsIgnoreCase("getParentObjectInfo")) {
@@ -133,6 +132,8 @@ public final class QueryDecoder {
                 .getJsonResponse());
       }
     }
+
+    JsonArray mustQuery = new JsonArray();
 
     /* Construct the query for text based search */
     if (searchType.matches(TEXTSEARCH_REGEX)) {

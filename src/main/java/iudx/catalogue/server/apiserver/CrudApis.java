@@ -583,7 +583,6 @@ public final class CrudApis {
                           .withTitle(TITLE_TOKEN_INVALID)
                           .withDetail(authhandler.cause().getMessage())
                           .getResponse());
-        return;
       } else {
         /* INSTANCE = "" to make sure createItem can be used for onboarding instance and items */
         JsonObject body = new JsonObject().put(ID, instance)
@@ -645,7 +644,6 @@ public final class CrudApis {
                         .withTitle(TITLE_TOKEN_INVALID)
                         .withDetail(authhandler.cause().getMessage())
                         .getResponse());
-        return;
       } else {
         /* INSTANCE = "" to make sure createItem can be used for onboarding instance and items */
         JsonObject body = new JsonObject().put(ID, instance)

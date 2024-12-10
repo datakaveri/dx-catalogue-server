@@ -73,7 +73,7 @@ public final class SearchApis {
    */
   public void searchHandler(RoutingContext routingContext) {
 
-    String path =  routingContext.normalisedPath();
+    final String path =  routingContext.normalisedPath();
 
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();

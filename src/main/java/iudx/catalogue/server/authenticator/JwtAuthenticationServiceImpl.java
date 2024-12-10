@@ -72,7 +72,6 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
   }
 
   Future<Boolean> isValidAudienceValue(JwtData jwtData, String itemType, String serverUrl) {
-    Promise<Boolean> promise = Promise.promise();
 
     LOGGER.debug("Audience in jwt is: " + jwtData.getAud());
     LOGGER.debug(serverUrl);
@@ -93,6 +92,8 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
         break;
     }
 
+    Promise<Boolean> promise = Promise.promise();
+
     if (isValidAudience) {
       promise.complete(true);
     } else {
@@ -103,7 +104,6 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
   }
 
   Future<Boolean> isValidProvider(JwtData jwtData, String provider) {
-    Promise<Boolean> promise = Promise.promise();
 
     String jwtId = "";
     if (jwtData.getRole().equalsIgnoreCase(PROVIDER)) {
@@ -116,6 +116,7 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
 
     LOGGER.debug(provider);
     LOGGER.debug(jwtId);
+    Promise<Boolean> promise = Promise.promise();
     if (provider.equalsIgnoreCase(jwtId)) {
       promise.complete(true);
     } else {

@@ -1414,7 +1414,6 @@ public class DatabaseServiceImpl implements DatabaseService {
           } else {
             promise.complete(true);
           }
-          return;
         });
 
     return promise.future();

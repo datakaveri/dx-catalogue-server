@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * The NLP Search Service.
  * <h1>NLP Search Service</h1>
+ *
  * <p>
  * The NLP Search service in the IUDX Catalogue Server defines the operations to be performed
  * with the IUDX NLP Search  server.

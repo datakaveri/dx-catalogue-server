@@ -13,7 +13,7 @@ import io.vertx.junit5.VertxTestContext;
 import iudx.catalogue.server.Configuration;
 import java.util.stream.Stream;
 import jdk.jfr.Description;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
