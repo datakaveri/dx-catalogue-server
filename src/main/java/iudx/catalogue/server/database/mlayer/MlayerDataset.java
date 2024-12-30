@@ -145,7 +145,8 @@ public class MlayerDataset {
 
     gettingAllDatasets(query, datasetResult);
     allMlayerInstance(instanceResult);
-    gettingResourceAccessPolicyCount(resourceCount);
+    String getResourceAP = RESOURCE_ACCESSPOLICY_COUNT;
+    gettingResourceAccessPolicyCount(getResourceAP, resourceCount);
 
     CompositeFuture.all(instanceResult.future(), datasetResult.future(), resourceCount.future())
         .onComplete(
@@ -156,11 +157,13 @@ public class MlayerDataset {
                 JsonObject resourceAndPolicyCount = ar.result().resultAt(2);
                 JsonArray resourceGroupArray = new JsonArray();
                 LOGGER.debug("getMlayerDatasets resourceGroupList iteration started");
-                for (int i = 0; i < resourceGroupList.getInteger("resourceGroupCount"); i++) {
+                for (int i = 0;
+                     i < resourceGroupList.getInteger("resourceGroupCount");
+                     i++) {
                   JsonObject record =
-                      resourceGroupList.getJsonArray("resourceGroup").getJsonObject(i);
+                          resourceGroupList.getJsonArray("resourceGroup").getJsonObject(i);
                   record.put(
-                      "icon",
+                          "icon",
                       record.containsKey(INSTANCE)
                           ? instanceList.getString(record.getString(INSTANCE))
                           : "");
@@ -214,14 +217,15 @@ public class MlayerDataset {
                     new RespBuilder()
                         .withType(TYPE_SUCCESS)
                         .withTitle(SUCCESS)
-                        .withTotalHits(resourceGroupList.getInteger("resourceGroupCount"))
+                        .withTotalHits(
+                                resourceGroupList.getInteger("resourceGroupCount"))
                         .withResult(pagedResourceGroups);
                 LOGGER.debug("getMlayerDatasets succeeded");
                 handler.handle(Future.succeededFuture(respBuilder.getJsonResponse()));
 
               } else {
                 LOGGER.error("Fail: failed DB request");
-                handler.handle(Future.failedFuture(internalErrorResp));
+                handler.handle(Future.failedFuture(ar.cause().getMessage()));
               }
             });
   }
@@ -241,13 +245,7 @@ public class MlayerDataset {
               int size = resultHandler.result().getJsonArray(RESULTS).size();
               if (size == 0) {
                 LOGGER.debug("getRGs is zero");
-                datasetResult.handle(
-                    Future.failedFuture(
-                        new RespBuilder()
-                            .withType(TYPE_ITEM_NOT_FOUND)
-                            .withTitle(TITLE_ITEM_NOT_FOUND)
-                            .withDetail("no datasets are present")
-                            .getResponse()));
+                datasetResult.handle(Future.failedFuture(NO_CONTENT_AVAILABLE));
                 return;
               }
               JsonObject rsUrl = new JsonObject();
@@ -263,7 +261,7 @@ public class MlayerDataset {
                 if (itemType.equals(ITEM_TYPE_PROVIDER)) {
                   JsonObject newJson = new JsonObject().put(PROVIDER_DES,
                                   record.getString(DESCRIPTION_ATTR))
-                          .put(ICON_BASE64, record.getString(ICON_BASE64));
+                                  .put(ICON_BASE64, record.getString(ICON_BASE64));
                   providerDescription.put(record.getString(ID), newJson);
                   rsUrl.put(
                       record.getString(ID),
@@ -352,15 +350,20 @@ public class MlayerDataset {
         });
   }
 
-  public void gettingResourceAccessPolicyCount(Promise<JsonObject> resourceCountResult) {
+  public void gettingResourceAccessPolicyCount(
+          String query, Promise<JsonObject> resourceCountResult) {
     LOGGER.debug("Getting resource item count");
-    String query = RESOURCE_ACCESSPOLICY_COUNT;
     client.resourceAggregationAsync(
         query,
         docIndex,
         resourceCountRes -> {
           if (resourceCountRes.succeeded()) {
             try {
+              if (resourceCountRes.result().getInteger(TOTAL_HITS) == 0) {
+                LOGGER.debug("No Resources With AccessPolicy Found");
+                resourceCountResult.handle(Future.failedFuture(NO_CONTENT_AVAILABLE));
+                return;
+              }
               LOGGER.debug("resourceAP started");
               JsonObject resourceItemCount = new JsonObject();
               JsonObject resourceAccessPolicy = new JsonObject();

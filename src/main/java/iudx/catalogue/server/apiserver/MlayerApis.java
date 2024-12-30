@@ -536,13 +536,33 @@ public class MlayerApis {
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
     JsonObject requestParams = parseRequestParams(routingContext);
+    if (routingContext.request().getParam(INSTANCE) != null) {
+      routingContext.request().getParam(INSTANCE);
+      requestParams.put(INSTANCE, routingContext.request().getParam(INSTANCE));
+      LOGGER.debug("Instance {}", requestParams.getString(INSTANCE));
+    }
     mlayerService.getMlayerProviders(
         requestParams,
         handler -> {
           if (handler.succeeded()) {
             response.setStatusCode(200).end(handler.result().toString());
           } else {
-            response.setStatusCode(400).end(handler.cause().getMessage());
+            if (handler.cause().getMessage().equals("No Content Available")) {
+              response.setStatusCode(204).end();
+              return;
+            } else if (handler.cause().getMessage().contains(VALIDATION_FAILURE_MSG)) {
+              response
+                  .setStatusCode(400)
+                  .end(
+                      new RespBuilder()
+                          .withType(TYPE_INVALID_SCHEMA)
+                          .withTitle(TITLE_INVALID_SCHEMA)
+                          .withDetail("The Schema of dataset is invalid")
+                          .getResponse());
+              return;
+            } else {
+              response.setStatusCode(400).end(handler.cause().getMessage());
+            }
           }
         });
   }
@@ -608,8 +628,11 @@ public class MlayerApis {
                           .withTitle(TITLE_INVALID_SCHEMA)
                           .withDetail("The Schema of dataset is invalid")
                           .getResponse());
+            } else if (handler.cause().getMessage().contains(NO_CONTENT_AVAILABLE)) {
+              response.setStatusCode(204).end();
+            } else {
+              response.setStatusCode(400).end(handler.cause().getMessage());
             }
-            response.setStatusCode(400).end(handler.cause().getMessage());
           }
         });
   }
@@ -650,8 +673,10 @@ public class MlayerApis {
                   if (handler.succeeded()) {
                     response.setStatusCode(200).end(handler.result().toString());
                   } else {
-                    if (handler.cause().getMessage().contains("urn:dx:cat:ItemNotFound")) {
-                      response.setStatusCode(404).end(handler.cause().getMessage());
+                    if (handler.cause().getMessage().contains(NO_CONTENT_AVAILABLE)) {
+                      response.setStatusCode(204).end();
+                    } else if (handler.cause().getMessage().contains("urn:dx:cat:ItemNotFound")) {
+                        response.setStatusCode(404).end(handler.cause().getMessage());
                     } else if (handler.cause().getMessage().contains(VALIDATION_FAILURE_MSG)) {
                       response
                           .setStatusCode(400)
@@ -699,8 +724,11 @@ public class MlayerApis {
                           .withTitle(TITLE_INVALID_SCHEMA)
                           .withDetail("The Schema of dataset is invalid")
                           .getResponse());
+            } else if (handler.cause().getMessage().contains(NO_CONTENT_AVAILABLE)) {
+              response.setStatusCode(204).end();
+            } else {
+              response.setStatusCode(400).end(handler.cause().getMessage());
             }
-            response.setStatusCode(400).end(handler.cause().getMessage());
           }
         });
   }

@@ -45,6 +45,7 @@ public class Constants {
   public static final String SOURCE_AND_ID_GEOQUERY = "SOURCE_ID_GEOQUERY";
   public static final String RESOURCE_AGGREGATION_ONLY = "RESOURCE_AGGREGATION";
   public static final String PROVIDER_AGGREGATION_ONLY = "PROVIDER_AGGREGATION";
+  public static final String LATEST_RG_AGG = "LATEST_RG_AGG";
 
   /** Some queries. */
   public static final String LIST_INSTANCES_QUERY =
@@ -133,8 +134,8 @@ public class Constants {
           + ":{\"includes\": "
           + "[\"type\",\"id\",\"label\",\"accessPolicy\",\"tags\",\"instance\","
           + "\"provider\", \"resourceServerRegURL\",\"description\" ,\"cosURL\", "
-              + "\"cos\", \"resourceGroup\", \"resourceType\", \"itemCreatedAt\","
-              + "\"icon_base64\"]},\"size\": 10000}";
+          + "\"cos\", \"resourceGroup\", \"resourceType\", \"itemCreatedAt\","
+          + "\"icon_base64\"]},\"size\": 10000}";
   public static final String GET_ALL_DATASETS_BY_RS_GRP =
           "{\"size\":10000,\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"match\":"
                   + "{\"type.keyword\":\"iudx:ResourceGroup\"}}]}}]}}}";
@@ -148,8 +149,7 @@ public class Constants {
           + "{\"includes\":[\"type\",\"id\",\"label\",\"accessPolicy\","
           + "\"tags\",\"instance\",\"provider\",\"resourceServerRegURL\","
           + "\"description\",\"cosURL\",\"cos\",\"resourceGroup\", "
-          + "\"itemCreatedAt\", \"icon_base64\"]},"
-          + "\"size\":10000}";
+          + "\"itemCreatedAt\", \"icon_base64\"]},\"size\":10000}";
   public static final String GET_MLAYER_DATASET =
       "{\"query\":{\"bool\":{\"should\":[{\"bool\":{\"must\":[{\"match\":{\"id.keyword\":\"$1\"}}"
           + ",{\"match\": {\"type.keyword\": \"iudx:ResourceGroup\"}}]}},{\"bool\":{\"must\":"
@@ -188,6 +188,28 @@ public class Constants {
           + "\"description\",\"type\",\"resourceGroup\","
           + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"]},"
           + "\"size\":10000}";
+  public static final String GET_LATEST_TOTAL_RG =
+          "{\"size\":6,\"from\": 0,\"sort\":[{\"itemCreatedAt\":{\"order\": \"desc\"}}],"
+          + "\"query\":{\"bool\":{\"must\":[{\"match\":{\"type\":\"iudx:ResourceGroup\"}}"
+          + "]}},\"aggs\":{\"resourceGroupCount\":{\"filter\":{\"term\": {\"type.keyword\":"
+          + " \"iudx:ResourceGroup\"}}},\"resourceCount\":{\"global\":{},\"aggs\":"
+          + "{\"Resources\":{\"filter\":{\"term\":{\"type.keyword\": \"iudx:Resource\""
+          + "}}}}},\"providerCount\":{\"global\":{},\"aggs\":{\"Providers\":{\"filter\":{\"term\""
+          + ":{\"type.keyword\": \"iudx:Provider\"}}}}}},\"_source\":{\"includes\":"
+          + "[\"id\",\"description\",\"type\",\"resourceGroup\",\"accessPolicy\",\"provider\","
+          + "\"itemCreatedAt\",\"instance\",\"label\"]}}";
+  public static final String GET_PROVIDERS_AND_POPULAR_RG =
+          "{\"size\": 10000,\"_source\":[\"id\",\"description\",\"type\",\"resourceGroup\","
+          + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"],\"query\":"
+          + " {\"bool\": {\"should\":[{\"terms\":{\"id.keyword\": $1}},{\"term\": "
+          + "{\"type.keyword\": \"iudx:Provider\"}}]}}}";
+  public static final String GET_CATEGORIZED_RESOURCES_AP =
+          "{\"size\": 0, \"query\": {\"terms\": {\"resourceGroup.keyword\": $1}}, "
+          + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"resourceGroup.keyword\","
+          + "\"size\": 10000},\"aggs\": {\"access_policies\": {\"terms\": {\"field\": "
+          + "\"accessPolicy.keyword\",\"size\": 10000},\"aggs\": {\"accessPolicy_count\":"
+          + " {\"value_count\": {\"field\": \"accessPolicy.keyword\"}}}},"
+          + "\"resource_count\": {\"value_count\": {\"field\": \"id.keyword\"}}}}}}";
   public static final String GET_SORTED_MLAYER_INSTANCES =
       "{\"query\": {\"match_all\":{}},\"sort\":[{\"name\":\"asc\"}],\"_source\": "
           + "{\"includes\": [\"name\",\"cover\",\"icon\"]},\"size\":10000}";

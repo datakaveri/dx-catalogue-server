@@ -931,7 +931,8 @@ public class MlayerServiceTest {
     JsonArray jsonArray = new JsonArray();
     JsonObject json = new JsonObject();
     json.put("results", jsonArray);
-    jsonArray.add("dataset");
+    json.put("resource_grpup", "abc");
+    jsonArray.add(json);
     String instanceName = "dummy";
     when(asyncResult.result()).thenReturn(json);
 

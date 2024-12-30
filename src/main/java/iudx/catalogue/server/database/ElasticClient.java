@@ -86,6 +86,7 @@ public final class ElasticClient {
                   .setTotalHits(totalHits);
           if (totalHits > 0) {
             JsonArray results = new JsonArray();
+            JsonObject aggregationResult = new JsonObject();
 
             if ((options == SOURCE_ONLY
                     || options == DOC_IDS_ONLY
@@ -101,6 +102,33 @@ public final class ElasticClient {
                   results = responseJson.getJsonObject(AGGREGATIONS)
                           .getJsonObject(RESULTS)
                           .getJsonArray(BUCKETS);
+                  responseMsg.response.put(TOTAL_HITS, results.size());
+
+            }
+                if (options == LATEST_RG_AGG) {
+                  results = responseJson.getJsonObject(HITS).getJsonArray(HITS);
+                  aggregationResult =
+                      new JsonObject()
+                          .put(
+                              RESOURCE_GROUP_COUNT,
+                              responseJson
+                                  .getJsonObject(AGGREGATIONS)
+                                  .getJsonObject(RESOURCE_GROUP_COUNT)
+                                  .getInteger(DOC_COUNT))
+                          .put(
+                              RESOURCE_COUNT,
+                              responseJson
+                                  .getJsonObject(AGGREGATIONS)
+                                  .getJsonObject(RESOURCE_COUNT)
+                                  .getJsonObject("Resources")
+                                  .getInteger(DOC_COUNT))
+                          .put(
+                              PROVIDER_COUNT,
+                              responseJson
+                                  .getJsonObject(AGGREGATIONS)
+                                  .getJsonObject(PROVIDER_COUNT)
+                                  .getJsonObject("Providers")
+                                  .getInteger(DOC_COUNT));
                 }
 
             for (int i = 0; i < results.size(); i++) {
@@ -117,6 +145,13 @@ public final class ElasticClient {
               if (options == AGGREGATION_ONLY) {
                 responseMsg.addResult(results.getJsonObject(i).getString(KEY));
               }
+              if (options == LATEST_RG_AGG) {
+                    JsonObject source = results.getJsonObject(i).getJsonObject(SOURCE);
+                    source.remove(SUMMARY_KEY);
+                    source.remove(WORD_VECTOR_KEY);
+                    responseMsg.addResult(source);
+                    responseMsg.response.put("count", aggregationResult);
+                  }
               if (options == RATING_AGGREGATION_ONLY) {
                 JsonObject result = new JsonObject()
                         .put(ID, results.getJsonObject(i).getString(KEY))
@@ -221,6 +256,9 @@ public final class ElasticClient {
                       }
                       if (record.containsKey("location")) {
                         dataset.put("location", record.getJsonObject("location"));
+                      }
+                      if (record.containsKey("itemCreatedAt")) {
+                        dataset.put("itemCreatedAt", record.getString("itemCreatedAt"));
                       }
                     }
 
@@ -327,6 +365,18 @@ public final class ElasticClient {
     LOGGER.debug(query);
     LOGGER.debug(queryRequest);
     Future<JsonObject> future = searchAsync(queryRequest, RESOURCE_AGGREGATION_ONLY);
+    future.onComplete(resultHandler);
+    return this;
+  }
+
+  public ElasticClient searchLatestResource(
+      String query, String index, Handler<AsyncResult<JsonObject>> resultHandler) {
+    Request queryRequest =
+        new Request(
+            REQUEST_GET,
+            index + "/_search" + "?filter_path=aggregations,hits.total.value,hits.hits._source");
+    queryRequest.setJsonEntity(query);
+    Future<JsonObject> future = searchAsync(queryRequest, "LATEST_RG_AGG");
     future.onComplete(resultHandler);
     return this;
   }

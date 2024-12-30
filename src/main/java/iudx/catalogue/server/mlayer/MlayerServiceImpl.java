@@ -361,10 +361,19 @@ public class MlayerServiceImpl implements MlayerService {
         dbHandler -> {
           if (dbHandler.succeeded()) {
             JsonArray popularDataset = dbHandler.result().getJsonArray("results");
-            LOGGER.debug("popular datasets are {}", popularDataset);
+            JsonArray popularRgs = new JsonArray();
+            for (int popularRgCount = 0; popularRgCount < popularDataset.size(); popularRgCount++) {
+              String rgId =
+                  popularDataset.getJsonObject(popularRgCount).getString("resource_group");
+
+              if (rgId != null) {
+                popularRgs.add(rgId);
+              }
+            }
+            LOGGER.debug("popular resource group's id retrieved {}", popularRgs);
             databaseService.getMlayerPopularDatasets(
                 instance,
-                popularDataset,
+                popularRgs,
                 getPopularDatasetsHandler -> {
                   if (getPopularDatasetsHandler.succeeded()) {
                     LOGGER.info("Success: Getting data for the landing page.");

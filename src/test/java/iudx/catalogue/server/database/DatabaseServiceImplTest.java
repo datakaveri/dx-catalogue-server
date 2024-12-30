@@ -2572,41 +2572,45 @@ public void testGetMlayerInstance(VertxTestContext testContext) {
             mlayerDomainIndex,
             nlpService,
             geoService);
-    String instanceName ="pune";
+    String instanceName = "pune";
     JsonArray accessPolicy = new JsonArray();
     JsonObject accessPolicyJson =
-        new JsonObject().put("resourcegroup", "abcd/abcd/abcd/abcd").put("instance", "instance")
-                .put(BUCKETS, accessPolicy)
-                .put("resourceGroup", "abc");
+        new JsonObject()
+            .put("resourcegroup", "abcd/abcd/abcd/abcd")
+            .put("instance", "instance")
+            .put(BUCKETS, accessPolicy)
+            .put("resourceGroup", "abc");
     JsonObject json2 =
-        new JsonObject().put("resourcegroup", "abcd/abcd/abcd/abcd").put("instance", "instance")
-                .put(BUCKETS, accessPolicy)
-                .put("resourceGroup", "abc");
+        new JsonObject()
+            .put("resourcegroup", "abcd/abcd/abcd/abcd")
+            .put("instance", "instance")
+            .put(BUCKETS, accessPolicy)
+            .put("resourceGroup", "abc");
 
     JsonArray highestCountResource = new JsonArray().add(accessPolicyJson).add(json2);
 
-        JsonArray resourceArray = new JsonArray();
-        JsonArray typeArray = new JsonArray().add(0, "iudx:ResourceGroup");
+    JsonArray resourceArray = new JsonArray();
+    JsonArray typeArray = new JsonArray().add(0, "iudx:ResourceGroup");
 
-        JsonObject instance =
-                new JsonObject()
-                        .put("name", "agra")
-                        .put("icon", "path_of_agra-icon.jpg")
-                        .put(TYPE, typeArray)
-                        .put("itemCreatedAt", "2022-12-15T04:23:28+0530")
-                        .put("id", "abcd/abcd/abcd/abcd")
-                        .put("rgid", "abcd/abcd/abcd/abcd")
-                        .put("instance", "instance")
-                        .put("itemCreatedAt", "2023-08-30T05:09:54+0530")
-                        .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
-                        .put("doc_count", 2)
-                        .put(KEY, accessPolicyJson)
-                        .put("access_policies", accessPolicyJson)
-                        .put("resourceGroupAndProvider", resourceArray)
-                        .put("providerCount", 7);
-        resourceArray.add(instance).add(instance).add(instance).add(instance).add(instance);
-        JsonArray latestDataset = new JsonArray().add(accessPolicyJson);
-        JsonArray resultArray = new JsonArray().add(instance).add(instance).add(instance).add(instance).add(instance);
+    JsonObject instance =
+        new JsonObject()
+            .put("name", "agra")
+            .put("icon", "path_of_agra-icon.jpg")
+            .put(TYPE, typeArray)
+            .put("itemCreatedAt", "2022-12-15T04:23:28+0530")
+            .put("id", "abcd/abcd/abcd/abcd")
+            .put("rgid", "abcd/abcd/abcd/abcd")
+            .put("instance", "instance")
+            .put("itemCreatedAt", "2023-08-30T05:09:54+0530")
+            .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
+            .put("doc_count", 2)
+            .put(KEY, accessPolicyJson)
+            .put("access_policies", accessPolicyJson)
+            .put("resourceGroupAndProvider", resourceArray)
+            .put("providerCount", 7);
+    JsonArray latestDataset = new JsonArray().add(accessPolicyJson);
+    JsonArray resultArray =
+        new JsonArray().add(instance).add(instance).add(instance).add(instance).add(instance);
 
     JsonObject result =
         new JsonObject()
@@ -2619,12 +2623,12 @@ public void testGetMlayerInstance(VertxTestContext testContext) {
     mockAsyncMethod(client -> client.resourceAggregationAsync(any(), any(), any()));
     mockAsyncMethod(client -> client.searchAsyncResourceGroupAndProvider(any(), any(), any()));
     databaseService.getMlayerPopularDatasets(
-            instanceName,
+        instanceName,
         highestCountResource,
         handler -> {
           if (handler.succeeded()) {
             verify(client, times(52)).searchAsync(any(), any(), any());
-            verify(client, times(3)).searchAsyncResourceGroupAndProvider(any(), any(), any());
+            verify(client, times(2)).searchAsyncResourceGroupAndProvider(any(), any(), any());
             verify(client, times(4)).resourceAggregationAsync(any(), any(), any());
             testContext.completeNow();
           } else {
@@ -2672,7 +2676,7 @@ public void testGetMlayerInstance(VertxTestContext testContext) {
   @Description(
       "test getMlayerPopularDatasets method when DB Request is successful and type equals iudx:Provider")
   public void testGetMlayerPopularDatasetsProviderSuccess(VertxTestContext testContext) {
-      String instanceName ="";
+    String instanceName = "pune";
     DatabaseServiceImpl databaseService =
         new DatabaseServiceImpl(
             client,
@@ -2683,63 +2687,68 @@ public void testGetMlayerInstance(VertxTestContext testContext) {
             nlpService,
             geoService);
     JsonArray accessPolicy = new JsonArray();
-    JsonObject record = new JsonObject().put("rgid", "duumy-id")
+    JsonObject record =
+        new JsonObject()
+            .put("rgid", "duumy-id")
             .put("resourceGroup", "abc")
             .put(BUCKETS, accessPolicy);
     JsonObject json2 = new JsonObject().put("rgid", "duumy-id");
 
-    JsonArray highestCountResource = new JsonArray().add(record).add(json2);
+    JsonArray highestCountResource = new JsonArray().add("abc").add("def");
 
-        JsonArray resourceArray = new JsonArray();
-        JsonArray typeArray = new JsonArray().add(0, "iudx:Provider");
+    JsonArray resourceArray = new JsonArray();
+    JsonArray typeArray = new JsonArray().add(0, "iudx:Provider");
 
-        JsonObject instanceRg =
-                new JsonObject()
-                        .put("name", "agra")
-                        .put("icon", "path_of_agra-icon.jpg")
-                        .put(TYPE, typeArray)
-                        .put("resourceGroup", "abc")
-                        .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
-                        .put("doc_count", 2)
-                        .put("id", "719390c5-30c0-4339-b0f2-1be292312104")
-                        .put(KEY, record)
-                        .put("access_policies", record)
-                        .put("resourceGroupAndProvider", resourceArray)
-                        .put("providerCount", 7);
-        JsonObject instance =
-                new JsonObject()
-                        .put("name", "agra")
-                        .put("icon", "path_of_agra-icon.jpg")
-                        .put(TYPE, typeArray)
-                        .put("resourceGroup", "abc")
-                        .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
-                        .put("doc_count", 2)
-                        .put("id", "719390c5-30c0-4339-b0f2-1be292312104")
-                        .put(KEY, record)
-                        .put("access_policies", record)
-                        .put("resourceGroupAndProvider", resourceArray)
-                        .put("providerCount", 7);
-        resourceArray.add(instance).add(instanceRg).add(instanceRg).add(instanceRg)
-                .add(instanceRg).add(instanceRg).add(instanceRg);
-      JsonArray resultArray = new JsonArray().add(instanceRg).add(instanceRg).add(instanceRg)
-              .add(instanceRg).add(instanceRg).add(instanceRg);
+    JsonObject instanceRg =
+        new JsonObject()
+            .put("name", "agra")
+            .put("icon", "path_of_agra-icon.jpg")
+            .put(TYPE, typeArray)
+            .put("resourceGroup", "abc")
+            .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
+            .put("doc_count", 2)
+            .put("id", "719390c5-30c0-4339-b0f2-1be292312104")
+            .put(KEY, record)
+            .put("access_policies", record)
+            .put("resourceGroupAndProvider", resourceArray)
+            .put("providerCount", 7);
+    JsonObject instance =
+        new JsonObject()
+            .put("name", "agra")
+            .put("icon", "path_of_agra-icon.jpg")
+            .put(TYPE, typeArray)
+            .put("resourceGroup", "abc")
+            .put(KEY, "719390c5-30c0-4339-b0f2-1be292312104")
+            .put("doc_count", 2)
+            .put("id", "719390c5-30c0-4339-b0f2-1be292312104")
+            .put(KEY, record)
+            .put("access_policies", record)
+            .put("resourceGroupAndProvider", resourceArray)
+            .put("providerCount", 7);
 
+    JsonArray resultArray =
+        new JsonArray()
+            .add(instanceRg)
+            .add(instanceRg)
+            .add(instanceRg)
+            .add(instanceRg)
+            .add(instanceRg)
+            .add(instanceRg);
 
-      JsonObject result = new JsonObject().put(TOTAL_HITS, 1).put(RESULTS, resultArray);
+    JsonObject result = new JsonObject().put(TOTAL_HITS, 1).put(RESULTS, resultArray);
     when(asyncResult.result()).thenReturn(result);
     when(asyncResult.succeeded()).thenReturn(true);
-      mockAsyncMethod(client -> client.searchAsync(any(), any(), any()));
-      mockAsyncMethod(client -> client.resourceAggregationAsync(any(), any(), any()));
-      mockAsyncMethod(client -> client.searchAsyncResourceGroupAndProvider(any(), any(), any()));
+    mockAsyncMethod(client -> client.searchAsync(any(), any(), any()));
+    mockAsyncMethod(client -> client.resourceAggregationAsync(any(), any(), any()));
+    mockAsyncMethod(client -> client.searchAsyncResourceGroupAndProvider(any(), any(), any()));
 
-
-      databaseService.getMlayerPopularDatasets(
-            instanceName,
+    databaseService.getMlayerPopularDatasets(
+        instanceName,
         highestCountResource,
         handler -> {
           if (handler.succeeded()) {
             verify(DatabaseServiceImpl.client, times(37)).searchAsync(any(), any(), any());
-            verify(DatabaseServiceImpl.client, times(2)).searchAsyncResourceGroupAndProvider(any(), any(), any());
+            verify(DatabaseServiceImpl.client, times(1)).searchAsyncResourceGroupAndProvider(any(), any(), any());
             verify(DatabaseServiceImpl.client, times(3)).resourceAggregationAsync(any(), any(), any());
             testContext.completeNow();
           } else {
