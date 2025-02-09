@@ -5,11 +5,7 @@
   "host": "",
   "modules": [
     {
-      "id": "iudx.catalogue.server.database.DatabaseVerticle",
-      "optionalModules": [
-        "iudx.catalogue.server.geocoding.GeocodingVerticle",
-        "iudx.catalogue.server.nlp.NLPSearchVerticle"
-      ],
+      "id": "iudx.catalogue.server.database.elastic.ElasticsearchVerticle",
       "verticleInstances": 2,
       "databaseIP": "",
       "docIndex": "",
@@ -118,7 +114,7 @@
       "minReadNumber": 100
     },
     {
-      "id": "iudx.catalogue.server.databroker.DataBrokerVerticle",
+      "id": "iudx.catalogue.server.databroker.RabbitMQVerticle",
       "verticleInstances": 1,
       "dataBrokerIP": "",
       "dataBrokerPort": 1234,

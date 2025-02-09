@@ -6,7 +6,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.apiserver.ApiServerVerticle;
 import iudx.catalogue.server.authenticator.AuthenticationVerticle;
-import iudx.catalogue.server.database.DatabaseVerticle;
+import iudx.catalogue.server.database.elastic.ElasticsearchVerticle;
 import iudx.catalogue.server.geocoding.GeocodingVerticle;
 import iudx.catalogue.server.nlpsearch.NLPSearchVerticle;
 import iudx.catalogue.server.validator.ValidatorVerticle;
@@ -36,7 +36,7 @@ public class ReDeployerDev extends AbstractVerticle {
             .mergeIn(commonConfigs, true);
     JsonObject nlpConfig = config().getJsonArray("modules").getJsonObject(5)
             .mergeIn(commonConfigs, true);
-    vertx.deployVerticle(new DatabaseVerticle(), new DeploymentOptions().setConfig(dbConfig),
+    vertx.deployVerticle(new ElasticsearchVerticle(), new DeploymentOptions().setConfig(dbConfig),
         databaseVerticle -> {
         if (databaseVerticle.succeeded()) {
           LOGGER.info("The Database Service is ready");

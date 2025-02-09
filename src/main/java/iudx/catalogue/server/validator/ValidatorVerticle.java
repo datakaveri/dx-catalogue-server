@@ -2,15 +2,15 @@ package iudx.catalogue.server.validator;
 
 import static iudx.catalogue.server.apiserver.util.Constants.UAC_DEPLOYMENT;
 import static iudx.catalogue.server.util.Constants.*;
-import static iudx.catalogue.server.validator.Constants.CONTEXT;
+import static iudx.catalogue.server.validator.util.Constants.CONTEXT;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
-import iudx.catalogue.server.database.ElasticClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.validator.service.ValidatorService;
+import iudx.catalogue.server.validator.service.ValidatorServiceImpl;
 
 
 /**
@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
  * <h1>Validator Verticle</h1>
  *
  * <p>The Validator Verticle implementation in the the IUDX Catalogue Server exposes the {@link
- * iudx.catalogue.server.validator.ValidatorService} over the Vert.x Event Bus.
+ * ValidatorService} over the Vert.x Event Bus.
  *
  * @version 1.0
  * @since 2020-05-31
@@ -27,12 +27,8 @@ import org.apache.logging.log4j.Logger;
 public class ValidatorVerticle extends AbstractVerticle {
 
   private ValidatorService validator;
-  private String databaseIp;
   private String docIndex;
-  private int databasePort;
-  private String databaseUser;
-  private String databasePassword;
-  private ElasticClient client;
+  private ElasticsearchService elasticsearchService;
   private ServiceBinder binder;
   private MessageConsumer<JsonObject> consumer;
   private boolean isUacInstance;
@@ -46,25 +42,21 @@ public class ValidatorVerticle extends AbstractVerticle {
   @Override
   public void start() throws Exception {
     binder = new ServiceBinder(vertx);
-    databaseIp = config().getString(DATABASE_IP);
-    databasePort = config().getInteger(DATABASE_PORT);
-    databaseUser = config().getString(DATABASE_UNAME);
-    databasePassword = config().getString(DATABASE_PASSWD);
     docIndex = config().getString(DOC_INDEX);
     isUacInstance = config().getBoolean(UAC_DEPLOYMENT);
     vocContext = config().getString(CONTEXT);
     /* Create a reference to HazelcastClusterManager. */
 
-    client = new ElasticClient(databaseIp, databasePort, docIndex, databaseUser, databasePassword);
+    elasticsearchService = ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
 
     /* Create or Join a Vert.x Cluster. */
 
     /* Publish the Validator service with the Event Bus against an address. */
 
-    validator = new ValidatorServiceImpl(client, docIndex, isUacInstance, vocContext);
+    validator = new ValidatorServiceImpl(elasticsearchService, docIndex, isUacInstance, vocContext);
     consumer =
         binder.setAddress(VALIDATION_SERVICE_ADDRESS)
-      .register(ValidatorService.class, validator);
+            .register(ValidatorService.class, validator);
   }
 
   @Override

@@ -60,7 +60,7 @@ services:
       - WORKSPACE
       - LOG_LEVEL=INFO
     volumes:
-      - /home/ubuntu/configs/cat-config-test.json:/usr/share/app/configs/config-test.json
+      - /home/ubuntu/configs/cat-refactor-test.json:/usr/share/app/configs/config-test.json
       - ./src/:/usr/share/app/src
       - ./docker/runTests.sh:/usr/share/app/docker/runTests.sh
       - ${WORKSPACE}:/tmp/test
@@ -84,7 +84,7 @@ services:
       - WORKSPACE
       - LOG_LEVEL=INFO
     volumes:
-      - /home/ubuntu/configs/cat-config-dev.json:/usr/share/app/configs/config.json
+      - /home/ubuntu/configs/cat-refactor-dev.json:/usr/share/app/configs/config.json
     ports:
       - "8080:8080"
     command: bash -c "exec java $$CAT_JAVA_OPTS  -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -jar ./fatjar.jar  --host $$(hostname) -c configs/config.json"

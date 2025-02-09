@@ -1,8 +1,9 @@
 package iudx.catalogue.server.auditing.util;
 
-import static iudx.catalogue.server.auditing.util.Constants.*;
+import static iudx.catalogue.server.auditing.util.Constants.ORIGIN_SERVER;
 
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.databroker.model.QueryObject;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,13 +19,11 @@ public class QueryBuilder {
    *
    * @param request The request object to build the message from.
    * @return The built message object in JSON format.
-   *
    */
-  public JsonObject buildMessageForRmq(JsonObject request) {
+  public static QueryObject buildMessageForRmq(JsonObject request) {
     String primaryKey = UUID.randomUUID().toString().replace("-", "");
-    request.put(PRIMARY_KEY, primaryKey).put(ORIGIN, ORIGIN_SERVER);
 
     LOGGER.debug("request " + request);
-    return request;
+    return new QueryObject(primaryKey, ORIGIN_SERVER, request);
   }
 }

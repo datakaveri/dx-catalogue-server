@@ -60,15 +60,14 @@ import org.apache.logging.log4j.core.LoggerContext;
 public class Deployer {
   private static final Logger LOGGER = LogManager.getLogger(Deployer.class);
   private static ClusterManager mgr;
-  private static Vertx vertx;
+  public static Vertx vertx;
 
   /**
    * Recursively deploy all modules.
    *
-   *
-   * @param vertx the vert.x instance
+   * @param vertx   the vert.x instance
    * @param configs the JSON configuration
-   * @param i for recursive base case
+   * @param i       for recursive base case
    */
 
   public static void recursiveDeploy(Vertx vertx, JsonObject configs, int i) {
@@ -91,10 +90,11 @@ public class Deployer {
           }
         });
   }
+
   /**
    * Recursively deploy modules/verticles (if they exist) present in the `modules` list.
    *
-   * @param vertx the vert.x instance
+   * @param vertx   the vert.x instance
    * @param configs the JSON configuration
    * @param modules the list of modules to deploy
    */
@@ -109,8 +109,8 @@ public class Deployer {
 
     String moduleName = modules.get(0);
     JsonObject config = configuredModules.stream().map(obj -> (JsonObject) obj)
-            .filter(obj -> obj.getString("id").equals(moduleName))
-            .findFirst().orElse(new JsonObject());
+        .filter(obj -> obj.getString("id").equals(moduleName))
+        .findFirst().orElse(new JsonObject());
 
     if (config.isEmpty()) {
       LOGGER.fatal("Failed to deploy " + moduleName + " cause: Not Found");
@@ -123,15 +123,15 @@ public class Deployer {
 
     int numInstances = config.getInteger("verticleInstances");
     vertx.deployVerticle(moduleName,
-            new DeploymentOptions().setInstances(numInstances).setConfig(config), ar -> {
-              if (ar.succeeded()) {
-                LOGGER.info("Deployed " + moduleName);
-                modules.remove(0);
-                recursiveDeploy(vertx, configs, modules);
-              } else {
-                LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
-              }
-            });
+        new DeploymentOptions().setInstances(numInstances).setConfig(config), ar -> {
+          if (ar.succeeded()) {
+            LOGGER.info("Deployed " + moduleName);
+            modules.remove(0);
+            recursiveDeploy(vertx, configs, modules);
+          } else {
+            LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
+          }
+        });
   }
 
   private static JsonObject getConfigForModule(int moduleIndex, JsonObject configurations) {
@@ -144,9 +144,9 @@ public class Deployer {
    * Returns a ClusterManager instance that uses Hazelcast as the underlying clustering technology,
    * with Zookeeper-based discovery strategy.
    *
-   * @param host The public IP address of the current node in the cluster.
+   * @param host       The public IP address of the current node in the cluster.
    * @param zookeepers A list of IP addresses/hosts where the Zookeeper instances are running.
-   * @param clusterID A unique identifier for the cluster to which the node belongs.
+   * @param clusterID  A unique identifier for the cluster to which the node belongs.
    * @return A ClusterManager instance that uses Hazelcast and Zookeeper-based discovery.
    */
   public static ClusterManager getClusterManager(
@@ -171,6 +171,7 @@ public class Deployer {
    * Returns an instance of {@link MetricsOptions} configured with Micrometer
    * metrics options for Prometheus
    * along with additional labels and enabled status.
+   *
    * @return an instance of {@link MetricsOptions}
    */
   public static MetricsOptions getMetricsOptions() {
@@ -203,10 +204,9 @@ public class Deployer {
   /**
    * Deploy clustered vert.x instance.
    *
-   *
    * @param configPath the path for JSON config file
-   * @param host is String consisting of host name
-   * @param modules list of modules to deploy. If list is empty, all modules are deployed
+   * @param host       is String consisting of host name
+   * @param modules    list of modules to deploy. If list is empty, all modules are deployed
    */
   public static void deploy(String configPath, String host, List<String> modules) {
     String config;
@@ -313,6 +313,7 @@ public class Deployer {
 
   /**
    * Main method for IUDX Cat CLI.
+   *
    * @param args an array of command line arguments
    */
   public static void main(String[] args) {

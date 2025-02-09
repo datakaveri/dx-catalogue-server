@@ -6,7 +6,8 @@ import iudx.catalogue.server.authenticator.model.JwtData;
 
 public class Util {
 
-  static Future<Boolean> isValidAdmin(String resourceServerUrl, JwtData jwtData, boolean isUac) {
+  public static Future<Boolean> isValidAdmin(String resourceServerUrl, JwtData jwtData,
+                                             boolean isUac) {
     Promise<Boolean> promise = Promise.promise();
 
     if (isUac && resourceServerUrl.equalsIgnoreCase(jwtData.getClientId())) {

@@ -4,31 +4,37 @@ import static iudx.catalogue.server.util.Constants.*;
 import static iudx.catalogue.server.util.Constants.DATABASE_ERROR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import iudx.catalogue.server.database.ElasticClient;
-import iudx.catalogue.server.database.RespBuilder;
+import iudx.catalogue.server.apiserver.stack.service.StacService;
+import iudx.catalogue.server.apiserver.stack.service.StacServiceImpl;
+import iudx.catalogue.server.apiserver.stack.util.StackConstants;
+import iudx.catalogue.server.common.RespBuilder;
+import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import jdk.jfr.Description;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 @ExtendWith(VertxExtension.class)
 @ExtendWith(MockitoExtension.class)
 class StackServiceImplTest {
-  static StacSevice stackSevice;
-  @Mock private static ElasticClient mockElasticClient;
+  static StacService stackSevice;
+  private static ElasticsearchService mockElasticsearchService;
   @Mock private static RespBuilder mockRespBuilder;
   @Mock JsonObject mockJson;
   String notFoundERRor =
@@ -47,8 +53,8 @@ class StackServiceImplTest {
   @BeforeAll
   @DisplayName("Deploying Verticle")
   static void startVertx(Vertx vertx, VertxTestContext testContext) {
-    mockElasticClient = Mockito.mock(ElasticClient.class);
-    mockRespBuilder = Mockito.mock(RespBuilder.class);
+    mockElasticsearchService = mock(ElasticsearchService.class);
+    mockRespBuilder = mock(RespBuilder.class);
     // stackSevice = new StackServiceImpl(mockElasticClient, "index");
     testContext.completeNow();
   }
@@ -56,47 +62,39 @@ class StackServiceImplTest {
   @Test
   @Description("Success: get() stack")
   public void testGetStack4Success(VertxTestContext vertxTestContext) {
-    JsonObject sampleResult = new JsonObject().put("totalHits", 1).put("value", "value");
-
+    // JsonObject sampleResult = new JsonObject().put("totalHits", 1).put("value", "value");
+    List<ElasticsearchResponse> sampleResultList = new ArrayList<>();
+    ElasticsearchResponse sampleResult = new ElasticsearchResponse();
+    sampleResult.setDocId("dummy-docId");
+    sampleResult.setSource(new JsonObject().put("id", "dummy-uuid"));
+    sampleResultList.add(sampleResult);
     // Stubbing the searchAsync method with thenAnswer
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(sampleResult));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(sampleResultList));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "Index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "Index");
     stackService.respBuilder = mockRespBuilder;
 
     Future<JsonObject> resultFuture = stackService.get("uuid");
 
     assertTrue(resultFuture.succeeded());
-    assertEquals(sampleResult, resultFuture.result());
+    assertEquals("dummy-uuid",
+        resultFuture.result().getJsonArray(RESULTS).getJsonObject(0).getString(ID));
     vertxTestContext.completeNow();
   }
 
   @Test
   @Description("Failed: get() stack not found")
   public void testGetStack4NotFound(VertxTestContext vertxTestContext) {
-    JsonObject sampleResult = new JsonObject().put("totalHits", 0).put("value", "value");
+    List<ElasticsearchResponse> emptyResult = new ArrayList<>();
 
-    // Stubbing the searchAsync method with thenAnswer
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(sampleResult));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(emptyResult));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "index");
     stackService.respBuilder = mockRespBuilder;
 
     Future<JsonObject> resultFuture = stackService.get("stackId");
-
-    System.out.println(resultFuture.cause().getMessage());
 
     assertTrue(resultFuture.failed());
     assertEquals(notFoundERRor, resultFuture.cause().getMessage());
@@ -106,16 +104,11 @@ class StackServiceImplTest {
   @Test
   @Description("Failed: get() Db error")
   public void testGetStack4DbError(VertxTestContext vertxTestContext) {
-    // Stubbing the searchAsync method with thenAnswer
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.failedFuture("sampleResult"));
-              return null;
-            });
+    // Stubbing the searchAsync method with thenReturn
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.failedFuture("sampleResult"));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "index");
     stackService.respBuilder = mockRespBuilder;
 
     Future<JsonObject> resultFuture = stackService.get("stackId");
@@ -128,182 +121,138 @@ class StackServiceImplTest {
   @Test
   @Description("Success: create() stack creation")
   void testCreateSuccess(VertxTestContext testContext) {
-    // Prepare sample data
-    JsonObject emptySearchResult = new JsonObject().put("totalHits", 0);
+    List<ElasticsearchResponse> emptyResult = new ArrayList<>();
 
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(emptySearchResult));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(emptyResult));
 
-    // Stubbing the docPostAsync method to return a success result
-    when(mockElasticClient.docPostAsync(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(new JsonObject().put("id", "generatedId")));
-              return null;
-            });
+    when(mockElasticsearchService.createDocument(anyString(), any()))
+        .thenReturn(Future.succeededFuture(new JsonObject().put("id", "generatedId")));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "Index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "Index");
 
-    // Stubbing other methods as needed
     JsonObject self = new JsonObject().put("href", "dummy_href").put("rel", "self");
     JsonObject root = new JsonObject().put("href", "dummy_href").put("rel", "root");
     JsonArray links = new JsonArray().add(self).add(root);
     when(mockJson.getJsonArray(anyString())).thenReturn(links);
 
-    // Execute the method under test
-    Future<JsonObject> resultFuture =
-        stackService
-            .create(mockJson)
-            .onComplete(
-                handler -> {
-                  if (handler.succeeded()) {
-                    JsonObject result = handler.result();
-                    assertEquals(SUCCESS, result.getString(TYPE));
-                    assertEquals(STAC_CREATION_SUCCESS, result.getString(DETAIL));
-                    testContext.completeNow();
-                  } else {
-                    testContext.failNow("failed: " + handler.cause().getMessage());
-                  }
-                });
+    Future<JsonObject> resultFuture = stackService.create(mockJson);
+
+    resultFuture.onComplete(
+        handler -> {
+          if (handler.succeeded()) {
+            JsonObject result = handler.result();
+            assertEquals(SUCCESS, result.getString(TYPE));
+            assertEquals(STAC_CREATION_SUCCESS, result.getString(DETAIL));
+            testContext.completeNow();
+          } else {
+            testContext.failNow("failed: " + handler.cause().getMessage());
+          }
+        });
   }
 
   @Test
   @Description("Failed: docPostAsync() failure during stack creation")
   void testCreate4SFailureDbError(VertxTestContext testContext) {
-    // Prepare sample data
-    JsonObject emptySearchResult = new JsonObject().put("totalHits", 0);
+    List<ElasticsearchResponse> emptyResult = new ArrayList<>();
 
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(emptySearchResult));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(emptyResult));
 
-    // Stubbing the docPostAsync method to return a success result
-    when(mockElasticClient.docPostAsync(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.failedFuture("Db Error"));
-              return null;
-            });
+    when(mockElasticsearchService.createDocument(anyString(), any()))
+        .thenReturn(Future.failedFuture("Db Error"));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "Index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "Index");
 
-    // Stubbing other methods as needed
     JsonObject self = new JsonObject().put("href", "dummy_href").put("rel", "self");
     JsonObject root = new JsonObject().put("href", "dummy_href").put("rel", "root");
     JsonArray links = new JsonArray().add(self).add(root);
     when(mockJson.getJsonArray(anyString())).thenReturn(links);
 
-    // Execute the method under test
-    Future<JsonObject> resultFuture =
-        stackService
-            .create(mockJson)
-            .onComplete(
-                handler -> {
-                  if (handler.failed()) {
-                    JsonObject result = new JsonObject(handler.cause().getMessage());
-                    assertEquals(FAILED, result.getString(TYPE));
-                    assertEquals(DATABASE_ERROR, result.getString(DETAIL));
-                    testContext.completeNow();
-                  } else {
-                    testContext.failNow("failed: ");
-                  }
-                });
+    Future<JsonObject> resultFuture = stackService.create(mockJson);
+
+    resultFuture.onComplete(
+        handler -> {
+          if (handler.failed()) {
+            JsonObject result = new JsonObject(handler.cause().getMessage());
+            assertEquals("DB Error. Check logs for more information", result.getString(DETAIL));
+            testContext.completeNow();
+          } else {
+            testContext.failNow("failed: ");
+          }
+        });
   }
 
   @Test
   @Description("Failed: conflicts during stack creation")
   void testCreate4ConflictSFailure(VertxTestContext testContext) {
-    // Prepare sample data
-    JsonObject emptySearchResult = new JsonObject().put("totalHits", 1);
+    List<ElasticsearchResponse> nonEmptyResult = new ArrayList<>();
+    ElasticsearchResponse existingDoc = new ElasticsearchResponse();
+    existingDoc.setDocId("existing-docId");
+    nonEmptyResult.add(existingDoc);
 
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(emptySearchResult));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(nonEmptyResult));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "Index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "Index");
 
-    // Stubbing other methods as needed
     JsonObject self = new JsonObject().put("href", "dummy_href").put("rel", "self");
     JsonObject root = new JsonObject().put("href", "dummy_href").put("rel", "root");
     JsonArray links = new JsonArray().add(self).add(root);
     when(mockJson.getJsonArray(anyString())).thenReturn(links);
 
-    // Execute the method under test
-    Future<JsonObject> resultFuture =
-        stackService
-            .create(mockJson)
-            .onComplete(
-                handler -> {
-                  if (handler.failed()) {
-                    JsonObject result = new JsonObject(handler.cause().getMessage());
-                    assertEquals(TYPE_CONFLICT, result.getString(TYPE));
-                    assertEquals(DETAIL_CONFLICT, result.getString(TITLE));
-                    testContext.completeNow();
-                  } else {
-                    testContext.failNow("failed: ");
-                  }
-                });
+    Future<JsonObject> resultFuture = stackService.create(mockJson);
+
+    resultFuture.onComplete(
+        handler -> {
+          if (handler.failed()) {
+            JsonObject result = new JsonObject(handler.cause().getMessage());
+            assertEquals("urn:dx:cat:Conflicts", result.getString(TYPE));
+            testContext.completeNow();
+          } else {
+            testContext.failNow("failed: ");
+          }
+        });
   }
 
   @Test
   @Description("Failed: Db Error during searchAsync while stack creation")
   void testCreate4DbErrorFailure(VertxTestContext testContext) {
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsync(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.failedFuture("Db Error during  searchAsync"));
-              return null;
-            });
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.failedFuture("Db Error during search"));
 
-    StacServiceImpl stackService = new StacServiceImpl(mockElasticClient, "Index");
+    StacServiceImpl stackService = new StacServiceImpl(mockElasticsearchService, "Index");
 
-    // Stubbing other methods as needed
     JsonObject self = new JsonObject().put("href", "dummy_href").put("rel", "self");
     JsonObject root = new JsonObject().put("href", "dummy_href").put("rel", "root");
     JsonArray links = new JsonArray().add(self).add(root);
     when(mockJson.getJsonArray(anyString())).thenReturn(links);
 
-    // Execute the method under test
-    Future<JsonObject> resultFuture =
-        stackService
-            .create(mockJson)
-            .onComplete(
-                handler -> {
-                  if (handler.failed()) {
-                    JsonObject result = new JsonObject(handler.cause().getMessage());
-                    assertEquals(FAILED, result.getString(TYPE));
-                    assertEquals(DATABASE_ERROR, result.getString(DETAIL));
-                    testContext.completeNow();
-                  } else {
-                    testContext.failNow("failed: ");
-                  }
-                });
+    Future<JsonObject> resultFuture = stackService.create(mockJson);
+
+    resultFuture.onComplete(
+        handler -> {
+          if (handler.failed()) {
+            String errorMessage = handler.cause().getMessage();
+            assertEquals(
+                errorMessage,
+                new RespBuilder()
+                    .withType(FAILED)
+                    .withResult("stac", INSERT, FAILED)
+                    .withDetail(DATABASE_ERROR)
+                    .getResponse());
+            testContext.completeNow();
+          } else {
+            testContext.failNow("failed: ");
+          }
+        });
   }
 
   @Test
-  @Description("Success: stack [patch] ")
-  void testUpdate(VertxTestContext vertxTestContext) {
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+  @Description("Success: stack [patch]")
+  void testUpdate(VertxTestContext testContext) {
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
+
     // Mocking data
     JsonObject stack = new JsonObject().put("id", "someId").put("rel", "child").put("href", "href");
 
@@ -312,35 +261,18 @@ class StackServiceImplTest {
 
     JsonObject json = new JsonObject().put("links", links);
 
-    JsonObject existResult =
-        new JsonObject()
-            .put("totalHits", 1)
-            .put(
-                "results",
-                new JsonArray()
-                    .add(
-                        new JsonObject()
-                            .put("id", "someId")
-                            .put(StackConstants.DOC_ID, "someDocId")
-                            .put("_source", json)));
+    ElasticsearchResponse existResult = new ElasticsearchResponse();
+    existResult.setDocId("dummyDocId");
+    existResult.setSource(
+        new JsonObject().put("links", links));
 
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsyncGetId(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return the existing document
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(List.of(existResult)));
 
-    // Stubbing the docPatchAsync method to return an empty result
-    when(mockElasticClient.docPatchAsync(any(), any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(3);
-              handler.handle(Future.succeededFuture(new JsonObject().put("someKey", "someValue")));
-              return null;
-            });
+    // Stubbing the updateDocument method to return a successful update response
+    when(mockElasticsearchService.patchDocument(anyString(), anyString(), any()))
+        .thenReturn(Future.succeededFuture(new JsonObject().put("key", "value")));
 
     // Testing the update method
     Future<JsonObject> updateFuture = stackSevice.update(stack);
@@ -351,45 +283,30 @@ class StackServiceImplTest {
             JsonObject result = handler.result();
             assertEquals(TYPE_SUCCESS, result.getString(TYPE));
             assertEquals(TITLE_SUCCESS, result.getString(TITLE));
-            vertxTestContext.completeNow();
+            testContext.completeNow();
           } else {
-            Throwable error = handler.cause();
-            vertxTestContext.failNow(error);
+            testContext.failNow(handler.cause());
           }
         });
   }
 
   @Test
-  @Description("Conflict : stack [patch] ")
-  void testUpdate4ExistingNotAllowed(VertxTestContext vertxTestContext) {
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+  @Description("Conflict: stack [patch]")
+  void testUpdate4ExistingNotAllowed(VertxTestContext testContext) {
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
+
     // Mocking data
     JsonObject stack = new JsonObject().put("id", "someId").put("rel", "child").put("href", "href");
 
     JsonArray links = new JsonArray().add(new JsonObject().put("rel", "child").put("href", "href"));
 
-    JsonObject json = new JsonObject().put("links", links);
+    ElasticsearchResponse existResult = new ElasticsearchResponse();
+    existResult.setDocId("dummyDocId");
+    existResult.setSource(new JsonObject().put("id", "someId").put("links", links));
 
-    JsonObject existResult =
-        new JsonObject()
-            .put("totalHits", 1)
-            .put(
-                "results",
-                new JsonArray()
-                    .add(
-                        new JsonObject()
-                            .put("id", "someId")
-                            .put(StackConstants.DOC_ID, "someDocId")
-                            .put("_source", json)));
-
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsyncGetId(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return an existing document
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(List.of(existResult)));
 
     // Testing the update method
     Future<JsonObject> updateFuture = stackSevice.update(stack);
@@ -397,50 +314,28 @@ class StackServiceImplTest {
     updateFuture.onComplete(
         handler -> {
           if (handler.succeeded()) {
-            JsonObject result = handler.result();
-            vertxTestContext.failNow("Failed: " + result);
-
+            testContext.failNow("Failed: " + handler.result());
           } else {
-            String error = handler.cause().getMessage();
-            JsonObject result = new JsonObject(error);
-            assertEquals(TYPE_CONFLICT, result.getString(TYPE));
-            assertEquals(TITLE_ALREADY_EXISTS, result.getString(TITLE));
-            vertxTestContext.completeNow();
+            System.out.println(handler.cause().getMessage());
+            JsonObject errorResponse = new JsonObject(handler.cause().getMessage());
+            assertEquals(TYPE_CONFLICT, errorResponse.getString(TYPE));
+            assertEquals(TITLE_ALREADY_EXISTS, errorResponse.getString(TITLE));
+            testContext.completeNow();
           }
         });
   }
 
   @Test
-  @Description("NotFound : stack [patch] ")
-  void testUpdate4ItemNotFound(VertxTestContext vertxTestContext) {
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+  @Description("NotFound: stack [patch]")
+  void testUpdate4ItemNotFound(VertxTestContext testContext) {
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
+
     // Mocking data
     JsonObject stack = new JsonObject().put("id", "someId").put("rel", "child").put("href", "href");
 
-    JsonArray links = new JsonArray().add(new JsonObject().put("rel", "child").put("href", "href"));
-
-    JsonObject json = new JsonObject().put("links", links);
-
-    JsonObject existResult =
-        new JsonObject()
-            .put("totalHits", 0)
-            .put(
-                "results",
-                new JsonArray()
-                    .add(
-                        new JsonObject()
-                            .put("id", "someId")
-                            .put(StackConstants.DOC_ID, "someDocId")
-                            .put("_source", json)));
-
-    // Stubbing the searchAsync method to return an empty result
-    when(mockElasticClient.searchAsyncGetId(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return an empty result (Item Not Found)
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(Collections.emptyList()));
 
     // Testing the update method
     Future<JsonObject> updateFuture = stackSevice.update(stack);
@@ -448,52 +343,33 @@ class StackServiceImplTest {
     updateFuture.onComplete(
         handler -> {
           if (handler.succeeded()) {
-            JsonObject result = handler.result();
-            vertxTestContext.failNow("Failed: {}" + result);
+            testContext.failNow("Failed: " + handler.result());
           } else {
-            String error = handler.cause().getMessage();
-            JsonObject result = new JsonObject(error);
-            assertEquals(TYPE_ITEM_NOT_FOUND, result.getString(TYPE));
-            assertEquals(TITLE_ITEM_NOT_FOUND, result.getString(TITLE));
-            vertxTestContext.completeNow();
+            JsonObject errorResponse = new JsonObject(handler.cause().getMessage());
+            assertEquals(TYPE_ITEM_NOT_FOUND, errorResponse.getString(TYPE));
+            assertEquals(TITLE_ITEM_NOT_FOUND, errorResponse.getString(TITLE));
+            testContext.completeNow();
           }
         });
   }
 
   @Test
   @Description("Success: stack deletion")
-  void testDelete4SuccessfulDeletion(VertxTestContext vertxTestContext) {
+  void testDelete4SuccessfulDeletion(VertxTestContext testContext) {
     String stackId = "someId";
-    JsonObject existResult =
-        new JsonObject()
-            .put("totalHits", 1)
-            .put(
-                "results",
-                new JsonArray()
-                    .add(
-                        new JsonObject()
-                            .put("id", "someId")
-                            .put(StackConstants.DOC_ID, "someDocId")));
+    ElasticsearchResponse existingDocument = new ElasticsearchResponse();
+    existingDocument.setDocId("docId");
+    existingDocument.setSource(new JsonObject().put("id", stackId));
 
-    // Stubbing the searchAsyncGetId method to return the existResult
-    when(mockElasticClient.searchAsyncGetId(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return an existing document
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(List.of(existingDocument)));
 
-    // Stubbing the docDelAsync method to return success
-    when(mockElasticClient.docDelAsync(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<Void>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture());
-              return null;
-            });
+    // Stubbing the deleteDocumentAsync method to return success
+    when(mockElasticsearchService.deleteDocument(anyString(), anyString()))
+        .thenReturn(Future.succeededFuture());
 
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
 
     // Testing the delete method
     Future<JsonObject> deleteFuture = stackSevice.delete(stackId);
@@ -504,29 +380,23 @@ class StackServiceImplTest {
             JsonObject result = handler.result();
             assertEquals(STAC_DELETION_SUCCESS, result.getString(DETAIL));
             assertEquals(SUCCESS, result.getString("type"));
-            vertxTestContext.completeNow();
+            testContext.completeNow();
           } else {
-            vertxTestContext.failNow("Failed: {}" + handler.cause().getMessage());
+            testContext.failNow("Failed: " + handler.cause().getMessage());
           }
         });
   }
 
   @Test
   @Description("Failed: stack deletion")
-  void testDelete4DeletionFailure(VertxTestContext vertxTestContext) {
+  void testDelete4DeletionFailure(VertxTestContext testContext) {
     String stackId = "someId";
-    JsonObject existResult = new JsonObject().put("totalHits", 0);
 
-    // Stubbing the searchAsyncGetId method to return the existResult
-    when(mockElasticClient.searchAsyncGetId(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return an empty result (no matching document found)
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(Collections.emptyList()));
 
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
 
     // Testing the delete method
     Future<JsonObject> deleteFuture = stackSevice.delete(stackId);
@@ -534,52 +404,36 @@ class StackServiceImplTest {
     deleteFuture.onComplete(
         handler -> {
           if (handler.succeeded()) {
-            vertxTestContext.failNow("Failed: {}" + handler.cause().getMessage());
-
+            testContext.failNow("Deletion should have failed, but it succeeded.");
           } else {
             String errorMessage = handler.cause().getMessage();
             JsonObject result = new JsonObject(errorMessage);
             assertEquals(TYPE_ITEM_NOT_FOUND, result.getString(TYPE));
             assertEquals("Item not found, can't delete", result.getString(DETAIL));
-            vertxTestContext.completeNow();
+            testContext.completeNow();
           }
         });
   }
 
   @Test
   @Description("Failed: stack deletion due to db error")
-  void testDelete4FailedDeletionDbError(VertxTestContext vertxTestContext) {
+  void testDelete4FailedDeletionDbError(VertxTestContext testContext) {
     String stackId = "someId";
-    JsonObject existResult =
-        new JsonObject()
-            .put("totalHits", 1)
-            .put(
-                "results",
-                new JsonArray()
-                    .add(
-                        new JsonObject()
-                            .put("id", "someId")
-                            .put(StackConstants.DOC_ID, "someDocId")));
 
-    // Stubbing the searchAsyncGetId method to return the existResult
-    when(mockElasticClient.searchAsyncGetId(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    ElasticsearchResponse existResult = new ElasticsearchResponse();
+    existResult.setDocId("docId");
+    existResult.setSource(
+        new JsonObject().put("results", new JsonArray().add(new JsonObject().put("id", "someId"))));
 
-    // Stubbing the docDelAsync method to return success
-    when(mockElasticClient.docDelAsync(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<Void>> handler = invocation.getArgument(2);
-              handler.handle(Future.failedFuture("Failed: db error"));
-              return null;
-            });
+    // Stubbing the search method to return a valid existing result
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(List.of(existResult)));
 
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+    // Stubbing the docDelAsync method to simulate a database error
+    when(mockElasticsearchService.deleteDocument(anyString(), any()))
+        .thenReturn(Future.failedFuture("Failed: db error"));
+
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
 
     // Testing the delete method
     Future<JsonObject> deleteFuture = stackSevice.delete(stackId);
@@ -587,34 +441,31 @@ class StackServiceImplTest {
     deleteFuture.onComplete(
         handler -> {
           if (handler.succeeded()) {
-            vertxTestContext.failNow("Failed: {}" + handler.result());
+            testContext.failNow("Deletion should have failed, but it succeeded.");
           } else {
-
             String errorMessage = handler.cause().getMessage();
-            JsonObject result = new JsonObject(errorMessage);
-            assertEquals(DATABASE_ERROR, result.getString(DETAIL));
-            assertEquals(FAILED, result.getString("type"));
-            vertxTestContext.completeNow();
+            assertEquals(
+                errorMessage,
+                new RespBuilder()
+                    .withType(FAILED)
+                    .withResult(stackId, "DELETE", FAILED)
+                    .withDetail(DATABASE_ERROR)
+                    .getResponse());
+            testContext.completeNow();
           }
         });
   }
 
   @Test
-  @Description("Failed: stack deletion searchAsyncGetId() failure")
-  void testDelete4DeletionAsyncFailure(VertxTestContext vertxTestContext) {
+  @Description("Failed: stack deletion search() failure")
+  void testDelete4DeletionAsyncFailure(VertxTestContext testContext) {
     String stackId = "someId";
-    JsonObject existResult = new JsonObject().put("totalHits", 0);
 
-    // Stubbing the searchAsyncGetId method to return the existResult
-    when(mockElasticClient.searchAsyncGetId(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.failedFuture("failed: async failure"));
-              return null;
-            });
+    // Stubbing the search method to simulate an async failure
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.failedFuture("failed: async failure"));
 
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
 
     // Testing the delete method
     Future<JsonObject> deleteFuture = stackSevice.delete(stackId);
@@ -622,14 +473,11 @@ class StackServiceImplTest {
     deleteFuture.onComplete(
         handler -> {
           if (handler.succeeded()) {
-            vertxTestContext.failNow("Failed: {}" + handler.cause().getMessage());
-
+            testContext.failNow("Deletion should have failed, but it succeeded.");
           } else {
             String errorMessage = handler.cause().getMessage();
-            JsonObject result = new JsonObject(errorMessage);
-            assertEquals(TYPE_ITEM_NOT_FOUND, result.getString(TYPE));
-            assertEquals("Item not found, can't delete", result.getString(DETAIL));
-            vertxTestContext.completeNow();
+            assertTrue(errorMessage.contains("urn:dx:cat:ItemNotFound"));
+            testContext.completeNow();
           }
         });
   }
@@ -638,18 +486,18 @@ class StackServiceImplTest {
   @Description("Failed: stack deletion Json decode() failure")
   void testDelete4DeletionJsonDecodeFailure(VertxTestContext vertxTestContext) {
     String stackId = "someId";
-    JsonObject existResult = new JsonObject().put("totalHits", 1);
+    ElasticsearchResponse existResult = new ElasticsearchResponse();
+    existResult.setDocId("docId");
+    existResult.setSource(
+        new JsonObject().put("results", new JsonArray().add(new JsonObject().put("id", "someId"))));
 
-    // Stubbing the searchAsyncGetId method to return the existResult
-    when(mockElasticClient.searchAsyncGetId(anyString(), anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<AsyncResult<JsonObject>> handler = invocation.getArgument(2);
-              handler.handle(Future.succeededFuture(existResult));
-              return null;
-            });
+    // Stubbing the search method to return a valid existing result
+    when(mockElasticsearchService.search(anyString(), any()))
+        .thenReturn(Future.succeededFuture(List.of(existResult)));
+    when(mockElasticsearchService.deleteDocument(anyString(), anyString()))
+        .thenReturn(Future.failedFuture("Failed to delete"));
 
-    stackSevice = new StacServiceImpl(mockElasticClient, "index");
+    stackSevice = new StacServiceImpl(mockElasticsearchService, "index");
 
     // Testing the delete method
     Future<JsonObject> deleteFuture = stackSevice.delete(stackId);
@@ -662,8 +510,8 @@ class StackServiceImplTest {
           } else {
             String errorMessage = handler.cause().getMessage();
             JsonObject result = new JsonObject(errorMessage);
-            assertEquals(TYPE_ITEM_NOT_FOUND, result.getString(TYPE));
-            assertEquals("Item not found, can't delete", result.getString(DETAIL));
+            assertEquals(FAILED, result.getString(TYPE));
+            assertEquals("DB Error. Check logs for more information", result.getString(DETAIL));
             vertxTestContext.completeNow();
           }
         });

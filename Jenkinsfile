@@ -29,7 +29,7 @@ pipeline {
       steps{
         script{
           sh 'sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-          sh 'cp /home/ubuntu/configs/cat-config-test.json ./configs/config-test.json'
+          sh 'cp /home/ubuntu/configs/cat-refactor-test.json ./configs/config-test.json'
           sh 'mvn clean test checkstyle:checkstyle pmd:pmd'
         }
         xunit (
@@ -111,7 +111,7 @@ pipeline {
         }
         script{
             sh 'sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-            sh 'scp /home/ubuntu/configs/cat-config-test.json ./configs/config-test.json'
+            sh 'scp /home/ubuntu/configs/cat-refactor-test.json ./configs/config-test.json'
             sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestProxyHost=jenkins-master-priv -DintTestProxyPort=8090 -DintTestHost=jenkins-slave1 -DintTestPort=8080'
         }
         node('built-in') {

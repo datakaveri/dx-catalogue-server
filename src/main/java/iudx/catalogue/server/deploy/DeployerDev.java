@@ -30,9 +30,10 @@ public class DeployerDev {
 
   /**
    * Recursively deploys all modules specified in the given JsonObject {@code configs}.
-   * @param vertx the Vert.x instance to use for deployment
+   *
+   * @param vertx   the Vert.x instance to use for deployment
    * @param configs a JsonObject containing the configuration for all modules to deploy
-   * @param i the index of the module to deploy
+   * @param i       the index of the module to deploy
    */
   public static void recursiveDeploy(Vertx vertx, JsonObject configs, int i) {
     if (i >= configs.getJsonArray("modules").size()) {
@@ -45,22 +46,23 @@ public class DeployerDev {
     String moduleName = moduleConfigurations.getString("id");
     int numInstances = moduleConfigurations.getInteger("verticleInstances");
     vertx.deployVerticle(moduleName,
-                          new DeploymentOptions()
-                            .setInstances(numInstances)
-                            .setConfig(moduleConfigurations),
-                          ar -> {
-        if (ar.succeeded()) {
-          LOGGER.info("Deployed " + moduleName);
-          recursiveDeploy(vertx, configs, i + 1);
-        } else {
-          LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
-        }
-      });
+        new DeploymentOptions()
+            .setInstances(numInstances)
+            .setConfig(moduleConfigurations),
+        ar -> {
+          if (ar.succeeded()) {
+            LOGGER.info("Deployed " + moduleName);
+            recursiveDeploy(vertx, configs, i + 1);
+          } else {
+            LOGGER.fatal("Failed to deploy " + moduleName + " cause:", ar.cause());
+          }
+        });
   }
 
   /**
    * Deploys the configuration file to Vert.x and recursively deploys
    * all the modules in the configuration.
+   *
    * @param configPath the path to the configuration file.
    */
   public static void deploy(String configPath) {
@@ -87,6 +89,7 @@ public class DeployerDev {
    * Main method that deploys the catalogue using a CLI tool. Parses the command
    * line arguments using the CLI class and deploys the modules specified in the
    * configuration file.
+   *
    * @param args the command line arguments
    */
   public static void main(String[] args) {

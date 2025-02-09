@@ -35,7 +35,5 @@ public class Constants {
   public static final String MLAYER_INSTANCE_ENDPOINT = MLAYER_BASE_PATH + "/instance";
   public static final String MLAYER_DOMAIN_ENDPOINT = MLAYER_BASE_PATH + "/domain";
   public static final String MLAYER_PROVIDERS_ENDPOINT = MLAYER_BASE_PATH + "/providers";
-  public static final int JWT_LEEWAY_TIME = 30;
-
 
 }
