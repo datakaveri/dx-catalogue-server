@@ -445,7 +445,7 @@ public class MlayerServiceImpl implements MlayerService {
             });
 
       } else {
-        LOGGER.debug("postgres query failed");
+        LOGGER.error("postgres query failed");
         promise.fail(dbHandler.cause());
       }
     });
@@ -482,7 +482,7 @@ public class MlayerServiceImpl implements MlayerService {
         JsonObject results = dbHandler.result();
         promise.complete(results);
       } else {
-        LOGGER.debug("postgres query failed");
+        LOGGER.error("postgres query failed");
         promise.fail(dbHandler.cause());
       }
     });

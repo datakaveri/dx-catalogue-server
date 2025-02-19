@@ -602,10 +602,16 @@ public class MlayerPopularDatasets {
                                 popularDatasets.add(resultItem);
                               }
                             }
-                            int datasetIndex = 0;
                             JsonArray latestDatasets =
                                 responseMsg.getResponse().getJsonArray(RESULTS);
-                            while (popularDatasets.size() < POPULAR_DATASET_COUNT) {
+                            int popularDatasetCount = 0;
+                            int datasetIndex = 0;
+                            if (popularDatasets.size() < 6) {
+                              popularDatasetCount = latestDatasets.size();
+                            } else {
+                              popularDatasetCount = POPULAR_DATASET_COUNT;
+                            }
+                            while (popularDatasets.size() < popularDatasetCount) {
 
                               if (!frequentlyUsedResourceGroup.contains(
                                   latestDatasets.getJsonObject(datasetIndex).getString("id"))) {
