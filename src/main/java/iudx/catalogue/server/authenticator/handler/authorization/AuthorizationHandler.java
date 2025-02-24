@@ -1,4 +1,4 @@
-package iudx.catalogue.server.authenticator.handler;
+package iudx.catalogue.server.authenticator.handler.authorization;
 
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_COS;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_OWNER;
@@ -48,7 +48,7 @@ public class AuthorizationHandler implements Handler<RoutingContext> {
    */
   public Handler<RoutingContext> forRoleBasedAccess(DxRole... allowedRoles) {
     return context -> {
-      JwtData jwtData = RoutingContextHelper.getJwtDecodedInfo(context);
+      JwtData jwtData = RoutingContextHelper.getJwtData(context);
       DxRole userRole = DxRole.fromRole(jwtData);
 
       // If the user's role is not in allowedRoles, fail with unauthorized error
@@ -69,7 +69,7 @@ public class AuthorizationHandler implements Handler<RoutingContext> {
    */
   public Handler<RoutingContext> forRoleAndEntityAccess(DxRole... allowedRoles) {
     return context -> {
-      JwtData jwtData = RoutingContextHelper.getJwtDecodedInfo(context);
+      JwtData jwtData = RoutingContextHelper.getJwtData(context);
       DxRole userRole = DxRole.fromRole(jwtData);
 
       // Role-based check

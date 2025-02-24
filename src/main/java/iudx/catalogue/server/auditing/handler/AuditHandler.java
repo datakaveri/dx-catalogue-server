@@ -38,7 +38,7 @@ public class AuditHandler implements Handler<RoutingContext> {
   }
 
   public void handle(RoutingContext routingContext, String api) {
-    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtDecodedInfo(routingContext);
+    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     String id;
     String httpMethod = routingContext.request().method().toString();
 

@@ -12,6 +12,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import iudx.catalogue.server.geocoding.service.GeocodingService;
+import iudx.catalogue.server.util.Api;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +40,8 @@ public class GeocodingControllerTest {
 
     geocodingService = mock(GeocodingService.class);
     routingContext = mock(RoutingContext.class);
-    geocodingController = new GeocodingController(geocodingService, router);
+    geocodingController = new GeocodingController(geocodingService);
+    geocodingController.init(router);
     verify(router, times(1)).get(ROUTE_GEO_COORDINATES);
     verify(router, times(1)).get(ROUTE_GEO_REVERSE);
   }

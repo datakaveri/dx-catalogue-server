@@ -187,9 +187,10 @@ public class ItemLinkValidationHandler implements Handler<RoutingContext> {
     HttpServerRequest request = routingContext.request();
 
     /* authentication related information */
+    String token = RoutingContextHelper.getToken(routingContext);
     JwtAuthenticationInfo.Builder jwtInfoBuilder =
         new JwtAuthenticationInfo.Builder()
-            .setToken(request.getHeader(HEADER_TOKEN))
+            .setToken(token)
             .setMethod(REQUEST_DELETE)
             .setApiEndpoint(routingContext.normalizedPath());
 

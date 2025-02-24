@@ -42,16 +42,15 @@ public final class GeocodingController {
   private static final Logger LOGGER = LogManager.getLogger(GeocodingController.class);
 
   private final GeocodingService geoService;
-  private final Router router;
+  private Router router;
 
-  public GeocodingController(GeocodingService geoService, Router router) {
+
+  public GeocodingController(GeocodingService geoService) {
     this.geoService = geoService;
-    this.router = router;
-    setupRoutes();
   }
 
   // Setup routes for Geocoding
-  public void setupRoutes() {
+  public Router init(Router router) {
     router
         .get(ROUTE_GEO_COORDINATES)
         .handler(this::getCoordinates);
@@ -59,6 +58,7 @@ public final class GeocodingController {
     router
         .get(ROUTE_GEO_REVERSE)
         .handler(this::getLocation);
+    return router;
   }
 
   // Method to return the router for mounting

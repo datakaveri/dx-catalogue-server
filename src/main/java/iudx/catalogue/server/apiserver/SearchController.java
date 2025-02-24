@@ -46,7 +46,6 @@ import org.apache.logging.log4j.Logger;
 public final class SearchController {
   private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
   private final QueryDecoder queryDecoder = new QueryDecoder();
-  private final Router router;
   private final ElasticsearchService esService;
   private final GeocodingService geoService;
   private final NLPSearchService nlpService;
@@ -55,26 +54,22 @@ public final class SearchController {
   private final String docIndex;
 
   public SearchController(
-      Router router,
       ElasticsearchService esService,
       GeocodingService geoService,
       NLPSearchService nlpService,
       FailureHandler failureHandler,
       String dxApiBasePath,
       String docIndex) {
-    this.router = router;
     this.esService = esService;
     this.geoService = geoService;
     this.nlpService = nlpService;
     this.failureHandler = failureHandler;
     this.dxApiBasePath = dxApiBasePath;
     this.docIndex = docIndex;
-
-    setupRoutes();
   }
 
   // Routes for search and count
-  private void setupRoutes() {
+  public Router init(Router router) {
 
     /* Search for an item */
     router
@@ -96,11 +91,7 @@ public final class SearchController {
         .produces(MIME_APPLICATION_JSON)
         .failureHandler(failureHandler)
         .handler(this::searchHandler);
-  }
-
-  // Method to return the router for mounting
-  public Router getRouter() {
-    return this.router;
+    return router;
   }
 
   /**

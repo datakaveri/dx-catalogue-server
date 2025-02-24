@@ -1,5 +1,6 @@
 package iudx.catalogue.server.apiserver.item.handler;
 
+import static iudx.catalogue.server.apiserver.util.Constants.HEADER_BEARER_AUTHORIZATION;
 import static iudx.catalogue.server.apiserver.util.Constants.HEADER_CONTENT_TYPE;
 import static iudx.catalogue.server.apiserver.util.Constants.HEADER_TOKEN;
 import static iudx.catalogue.server.apiserver.util.Constants.MIME_APPLICATION_JSON;
@@ -59,7 +60,8 @@ public class ItemSchemaHandler implements Handler<RoutingContext> {
    */
   public void verifyAuthHeader(RoutingContext routingContext) {
     /* checking authentication info in requests */
-    if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+    if (routingContext.request().headers().contains(HEADER_TOKEN) ||
+        routingContext.request().headers().contains(HEADER_BEARER_AUTHORIZATION)) {
       routingContext.next();
     } else {
       LOGGER.warn("Fail: Unauthorized CRUD operation");
@@ -89,9 +91,10 @@ public class ItemSchemaHandler implements Handler<RoutingContext> {
     LOGGER.debug("Success: Schema validation for item: " + item.toJson());
 
     // populating jwt authentication info ->
+    String token = RoutingContextHelper.getToken(routingContext);
     JwtAuthenticationInfo.Builder jwtAuthenticationInfo =
         new JwtAuthenticationInfo.Builder()
-            .setToken(routingContext.request().getHeader(HEADER_TOKEN))
+            .setToken(token)
             .setApiEndpoint(routingContext.normalizedPath())
             .setItemType(itemType);
     if (routingContext.request().method().toString().equals(REQUEST_POST)) {

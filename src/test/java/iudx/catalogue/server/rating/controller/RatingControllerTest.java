@@ -1,6 +1,5 @@
 package iudx.catalogue.server.rating.controller;
 
-import static iudx.catalogue.server.apiserver.util.Constants.HEADER_TOKEN;
 import static iudx.catalogue.server.apiserver.util.Constants.ROUTE_RATING;
 import static iudx.catalogue.server.authenticator.Constants.RATINGS_ENDPOINT;
 import static iudx.catalogue.server.common.RoutingContextHelper.JWT_AUTH_INFO_KEY;
@@ -29,8 +28,9 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.junit5.VertxExtension;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
-import iudx.catalogue.server.authenticator.handler.AuthorizationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.common.RoutingContextHelper;
@@ -71,7 +71,8 @@ public class RatingControllerTest {
 
     validatorService = mock(ValidatorService.class);
     ratingService = mock(RatingService.class);
-    AuthenticationHandler authenticationHandler = mock(AuthenticationHandler.class);
+    AuthHandler authHandler = mock(AuthHandler.class);
+    AuthValidationHandler validateToken = mock(AuthValidationHandler.class);
     AuthorizationHandler authorizationHandler = mock(AuthorizationHandler.class);
     AuditHandler auditHandler = mock(AuditHandler.class);
     FailureHandler failureHandler = mock(FailureHandler.class);
@@ -81,15 +82,15 @@ public class RatingControllerTest {
 
     ratingController =
         new RatingController(
-            router,
             validatorService,
             ratingService,
             "dummy-host",
-            authenticationHandler,
+            authHandler,
+            validateToken,
             authorizationHandler,
             auditHandler,
             failureHandler);
-
+    ratingController.init(router);
     verify(router, times(1)).post(ROUTE_RATING);
     verify(router, times(1)).get(ROUTE_RATING);
     verify(router, times(1)).put(ROUTE_RATING);
@@ -106,7 +107,7 @@ public class RatingControllerTest {
     when(httpServerResponse.setStatusCode(anyInt())).thenReturn(httpServerResponse);
     when(httpServerResponse.end()).thenReturn(null);
 
-    ratingController.validateAuth(routingContext);
+    ratingController.checkIfHeaderTokenExists(routingContext);
 
     verify(httpServerResponse, times(1)).setStatusCode(eq(401));
     verify(httpServerResponse, times(1)).end();
@@ -119,7 +120,7 @@ public class RatingControllerTest {
     when(routingContext.request().headers()).thenReturn(mock(MultiMap.class));
     when(routingContext.request().headers().contains("token")).thenReturn(true);
 
-    ratingController.validateAuth(routingContext);
+    ratingController.checkIfHeaderTokenExists(routingContext);
 
     verify(routingContext, times(1)).next();
   }
@@ -205,7 +206,7 @@ public class RatingControllerTest {
     when(routingContext.request().params()).thenReturn(mock(MultiMap.class));
     when(routingContext.request().params().contains("type")).thenReturn(false);
     JwtData mockJwtData = mock(JwtData.class);
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(mockJwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(mockJwtData);
 
     when(routingContext.response()).thenReturn(httpServerResponse);
     when(httpServerResponse.setStatusCode(anyInt())).thenReturn(httpServerResponse);
@@ -267,8 +268,8 @@ public class RatingControllerTest {
     when(ratingService.deleteRating(any())).thenReturn(Future.succeededFuture(new JsonObject().put(STATUS, TITLE_SUCCESS)));
     when(routingContext.response()).thenReturn(httpServerResponse);
     when(httpServerResponse.setStatusCode(anyInt())).thenReturn(httpServerResponse);
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(mock(JwtData.class));
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext).getSub()).thenReturn("sub");
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(mock(JwtData.class));
+    when(RoutingContextHelper.getJwtData(routingContext).getSub()).thenReturn("sub");
 
     ratingController.deleteRatingHandler(routingContext);
 
@@ -280,8 +281,8 @@ public class RatingControllerTest {
   void testDeleteRatingHandlerFailure() {
     when(routingContext.request()).thenReturn(httpServerRequest);
     when(routingContext.request().getParam(anyString())).thenReturn("dummy-Id");
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(mock(JwtData.class));
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext).getSub()).thenReturn("sub");
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(mock(JwtData.class));
+    when(RoutingContextHelper.getJwtData(routingContext).getSub()).thenReturn("sub");
     when(ratingService.deleteRating(any())).thenReturn(Future.failedFuture("Error"));
     when(routingContext.response()).thenReturn(httpServerResponse);
     when(httpServerResponse.setStatusCode(anyInt())).thenReturn(httpServerResponse);
@@ -296,9 +297,8 @@ public class RatingControllerTest {
     HttpServerResponse response = mock(HttpServerResponse.class);
     when(routingContext.request()).thenReturn(request);
     when(routingContext.response()).thenReturn(response);
+    when(routingContext.request().headers()).thenReturn(mock(MultiMap.class));
     when(response.putHeader(anyString(), anyString())).thenReturn(response);
-    // Mock request headers
-    when(request.getHeader(HEADER_TOKEN)).thenReturn("dummyToken");
 
     // Call the method
     ratingController.setAuthInfo(routingContext, "GET");
@@ -309,7 +309,6 @@ public class RatingControllerTest {
 
     // Assert values
     JwtAuthenticationInfo capturedAuthInfo = captor.getValue();
-    Assertions.assertEquals("dummyToken", capturedAuthInfo.getToken());
     Assertions.assertEquals("GET", capturedAuthInfo.getMethod());
     Assertions.assertEquals(RATINGS_ENDPOINT, capturedAuthInfo.getApiEndpoint());
 
@@ -325,7 +324,7 @@ public class RatingControllerTest {
     when(routingContext.body().asJsonObject()).thenReturn(requestBody);
     when(routingContext.request()).thenReturn(mock(HttpServerRequest.class));
     when(routingContext.request().getParam(ID)).thenReturn("123");
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getSub()).thenReturn("user123");
     // Mock validation future
     when(validatorService.validateRating(any()))
@@ -352,7 +351,7 @@ public class RatingControllerTest {
     when(routingContext.response()).thenReturn(response);
     when(response.setStatusCode(anyInt())).thenReturn(mock(HttpServerResponse.class));
     when(routingContext.request().getParam(ID)).thenReturn("123");
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getSub()).thenReturn("user123");
     // Mock validation failure
     when(validatorService.validateRating(any()))

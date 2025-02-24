@@ -1,5 +1,9 @@
 package iudx.catalogue.server.common;
 
+import static iudx.catalogue.server.apiserver.util.Constants.HEADER_BEARER_AUTHORIZATION;
+import static iudx.catalogue.server.apiserver.util.Constants.HEADER_TOKEN;
+import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
+import static iudx.catalogue.server.util.Constants.ID;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE;
 
 import io.vertx.core.json.JsonObject;
@@ -15,9 +19,25 @@ import iudx.catalogue.server.authenticator.model.JwtData;
  */
 public class RoutingContextHelper {
 
-  public static final String JWT_DECODED_INFO = "jwtDecodedInfo";
+  public static final String JWT_DATA = "jwtData";
   public static final String JWT_AUTH_INFO_KEY = "jwtAuthenticationInfo";
   public static final String VALIDATED_REQ_KEY = "validatedRequest";
+
+  public static String getRequestPath(RoutingContext routingContext) {
+    return routingContext.request().path();
+  }
+
+  public static String getMethod(RoutingContext routingContext) {
+    return routingContext.request().method().toString();
+  }
+
+  public static void setId(RoutingContext event, String id) {
+    event.put(ID, id);
+  }
+
+  public static String getId(RoutingContext event) {
+    return event.get(ID);
+  }
 
   /**
    * Stores the JWT authentication information in the context.
@@ -46,8 +66,8 @@ public class RoutingContextHelper {
    * @param context the routing context in which to store the data
    * @param jwtDecodedInfo the decoded JWT information to store
    */
-  public static void setJwtDecodedInfo(RoutingContext context, JwtData jwtDecodedInfo) {
-    context.put(JWT_DECODED_INFO, jwtDecodedInfo);
+  public static void setJwtData(RoutingContext context, JwtData jwtDecodedInfo) {
+    context.put(JWT_DATA, jwtDecodedInfo);
   }
 
   /**
@@ -56,8 +76,8 @@ public class RoutingContextHelper {
    * @param context the routing context from which to retrieve the data
    * @return the decoded JWT information, or {@code null} if not present
    */
-  public static JwtData getJwtDecodedInfo(RoutingContext context) {
-    return context.get(JWT_DECODED_INFO);
+  public static JwtData getJwtData(RoutingContext context) {
+    return context.get(JWT_DATA);
   }
 
   /**
@@ -86,5 +106,29 @@ public class RoutingContextHelper {
 
   public static void setItemType(RoutingContext context, String itemType) {
     context.put(ITEM_TYPE, itemType);
+  }
+
+  public static String getToken(RoutingContext routingContext) {
+    /* token would can be of the type : Bearer <JWT-Token>, <JWT-Token> */
+    /* Send Bearer <JWT-Token> if Authorization header is present */
+    /* allowing both the tokens to be authenticated for now */
+    /* TODO: later, 401 error is thrown if the token does not contain Bearer keyword */
+    String token = routingContext.request().headers().get(HEADER_BEARER_AUTHORIZATION);
+    boolean isBearerAuthHeaderPresent =
+        routingContext.request().headers().contains(HEADER_BEARER_AUTHORIZATION);
+    if (isBearerAuthHeaderPresent && token.trim().split(" ").length == 2) {
+      String[] tokenWithoutBearer = token.split(HEADER_BEARER_AUTHORIZATION);
+      token = tokenWithoutBearer[1].replaceAll("\\s", "");
+      return token;
+    }
+    return routingContext.request().headers().get(HEADER_TOKEN);
+  }
+
+  public static void setEndPoint(RoutingContext event, String normalisedPath) {
+    event.put(API_ENDPOINT, normalisedPath);
+  }
+
+  public static String getEndPoint(RoutingContext event) {
+    return event.get(API_ENDPOINT);
   }
 }

@@ -20,32 +20,26 @@ import org.apache.logging.log4j.Logger;
  *
  * <h1>RelationshipController.java</h1>
  *
- * <p>Callback handlers for Relationship APIs</p>
+ * <p>Callback handlers for Relationship APIs
  */
 public final class RelationshipController {
 
   private static final Logger LOGGER = LogManager.getLogger(RelationshipController.class);
-  private final Router router;
   private final RelationshipService relationshipService;
 
-  public RelationshipController(Router router, RelationshipService relationshipService) {
-    this.router = router;
+  public RelationshipController(RelationshipService relationshipService) {
     this.relationshipService = relationshipService;
-    setupRoutes();
   }
 
   //  Routes for relationships
-  private void setupRoutes() {
+  public Router init(Router router) {
 
     /* Relationship related search */
     router.get(ROUTE_REL_SEARCH).handler(this::relSearchHandler);
 
     /* Get all resources belonging to a resource group */
     router.get(ROUTE_RELATIONSHIP).handler(this::listRelationshipHandler);
-  }
-
-  public Router getRouter() {
-    return this.router;
+    return router;
   }
 
   /**

@@ -45,7 +45,7 @@ class AuditHandlerTest {
     when(jwtData.getSub()).thenReturn("user123");
     when(jwtData.getIid()).thenReturn("iid123");
 
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(routingContext.request()).thenReturn(mock(HttpServerRequest.class));
     when(routingContext.request().method()).thenReturn(HttpMethod.POST);
 
@@ -73,7 +73,7 @@ class AuditHandlerTest {
     when(jwtData.getSub()).thenReturn("user123");
     when(jwtData.getIid()).thenReturn("iid123");
 
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(routingContext.request()).thenReturn(mock(HttpServerRequest.class));
     when(routingContext.request().method()).thenReturn(HttpMethod.POST);
 

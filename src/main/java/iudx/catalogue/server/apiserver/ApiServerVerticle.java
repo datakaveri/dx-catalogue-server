@@ -21,8 +21,9 @@ import iudx.catalogue.server.apiserver.item.service.ItemServiceImpl;
 import iudx.catalogue.server.apiserver.stack.controller.StacController;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
 import iudx.catalogue.server.auditing.service.AuditingService;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
-import iudx.catalogue.server.authenticator.handler.AuthorizationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
 import iudx.catalogue.server.authenticator.service.AuthenticationService;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
 import iudx.catalogue.server.exceptions.FailureHandler;
@@ -62,7 +63,7 @@ import org.apache.logging.log4j.Logger;
 public class ApiServerVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(ApiServerVerticle.class);
-  private AuthenticationHandler authenticationHandler;
+  private AuthHandler authHandler;
   private AuthorizationHandler authorizationHandler;
   private CrudController crudController;
   private ListController listController;
@@ -78,6 +79,7 @@ public class ApiServerVerticle extends AbstractVerticle {
   private boolean isSsL;
   private int port;
   private String dxApiBasePath;
+  private String host;
   private String docIndex;
   private Api api;
   private JsonArray optionalModules;
@@ -93,28 +95,24 @@ public class ApiServerVerticle extends AbstractVerticle {
     // API Routes and Callbacks
     // Routes - Defines the routes and callbacks
     router.route().handler(BodyHandler.create());
-    router
-        .route()
-        .handler(
-            CorsHandler.create("*")
-                .allowedHeaders(ALLOWED_HEADERS)
-                .allowedMethods(ALLOWED_METHODS));
+    router.route().handler(CorsHandler.create("*")
+        .allowedHeaders(ALLOWED_HEADERS)
+        .allowedMethods(ALLOWED_METHODS));
 
-    router
-        .route()
-        .handler(
-            routingContext -> {
-              routingContext
-                  .response()
-                  .putHeader("Cache-Control",
-                      "no-cache, no-store, max-age=0, must-revalidate")
-                  .putHeader("Pragma", "no-cache")
-                  .putHeader("Expires", "0")
-                  .putHeader("X-Content-Type-Options", "nosniff");
-              routingContext.next();
-            });
+    router.route().handler(
+        routingContext -> {
+          routingContext
+              .response()
+              .putHeader("Cache-Control",
+                  "no-cache, no-store, max-age=0, must-revalidate")
+              .putHeader("Pragma", "no-cache")
+              .putHeader("Expires", "0")
+              .putHeader("X-Content-Type-Options", "nosniff");
+          routingContext.next();
+        });
 
     dxApiBasePath = config().getString("dxApiBasePath");
+    host = config().getString(HOST);
     docIndex = config().getString("docIndex");
     api = Api.getInstance(dxApiBasePath);
 
@@ -143,7 +141,7 @@ public class ApiServerVerticle extends AbstractVerticle {
 
     // Todo - Set service proxies based on availability?
     GeocodingService geoService = GeocodingService.createProxy(vertx, GEOCODING_SERVICE_ADDRESS);
-    geocodingController = new GeocodingController(geoService, router);
+    geocodingController = new GeocodingController(geoService);
 
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
     ElasticsearchService elasticsearchService =
@@ -157,67 +155,33 @@ public class ApiServerVerticle extends AbstractVerticle {
     } else {
       itemService = new ItemServiceImpl(elasticsearchService, config());
     }
-
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
     AuditHandler auditHandler = new AuditHandler(auditingService);
-
     FailureHandler failureHandler = new FailureHandler();
-
     CrudService crudService = new CrudService(itemService);
     AuthenticationService authService =
         AuthenticationService.createProxy(vertx, AUTH_SERVICE_ADDRESS);
-
-    authenticationHandler = new AuthenticationHandler(authService);
+    authHandler = new AuthHandler(authService);
+    AuthValidationHandler validateToken = new AuthValidationHandler(authService);
     authorizationHandler = new AuthorizationHandler();
-
     ValidatorService validationService =
         ValidatorService.createProxy(vertx, VALIDATION_SERVICE_ADDRESS);
     boolean isUac = config().getBoolean(UAC_DEPLOYMENT);
-    crudController =
-        new CrudController(
-            router,
-            isUac,
-            config().getString(HOST),
-            crudService,
-            validationService,
-            authenticationHandler,
-            authorizationHandler,
-            auditHandler,
-            failureHandler);
-
+    crudController = new CrudController(isUac, host, crudService,
+        validationService, authHandler, validateToken, authorizationHandler, auditHandler,
+        failureHandler);
     RatingService ratingService = RatingService.createProxy(vertx, RATING_SERVICE_ADDRESS);
-    ratingController =
-        new RatingController(
-            router,
-            validationService,
-            ratingService,
-            config().getString(HOST),
-            authenticationHandler,
-            authorizationHandler,
-            auditHandler,
-            failureHandler);
-    listController = new ListController(router, elasticsearchService, docIndex);
-    searchController =
-        new SearchController(
-            router,
-            elasticsearchService,
-            geoService,
-            nlpsearchService,
-            failureHandler,
-            dxApiBasePath,
-            docIndex);
+    ratingController = new RatingController(validationService, ratingService,
+        host, authHandler, validateToken, authorizationHandler, auditHandler,
+        failureHandler);
+    listController = new ListController(elasticsearchService, docIndex);
+    searchController = new SearchController(elasticsearchService, geoService, nlpsearchService,
+        failureHandler, dxApiBasePath, docIndex);
     MlayerService mlayerService = MlayerService.createProxy(vertx, MLAYER_SERVICE_ADDRESS);
-    mlayerController =
-        new MlayerController(
-            config().getString(HOST),
-            router,
-            validationService,
-            mlayerService,
-            failureHandler,
-            authenticationHandler);
-
+    mlayerController = new MlayerController(host, validationService,
+        mlayerService, failureHandler, authHandler, validateToken);
     RelationshipService relService = new RelationshipServiceImpl(elasticsearchService, docIndex);
-    relationshipController = new RelationshipController(router, relService);
+    relationshipController = new RelationshipController(relService);
 
     //  Documentation routes
 
@@ -263,28 +227,18 @@ public class ApiServerVerticle extends AbstractVerticle {
               response.sendFile("ui/dist/dk-customer-ui/index.html");
             });
 
-    // Mount the sub-router under the common base path
-    router.mountSubRouter(dxApiBasePath, geocodingController.getRouter());
-    router.mountSubRouter(dxApiBasePath, crudController.getRouter());
-    router.mountSubRouter(dxApiBasePath, ratingController.getRouter());
-    router.mountSubRouter(dxApiBasePath, listController.getRouter());
-    router.mountSubRouter(dxApiBasePath, searchController.getRouter());
-    router.mountSubRouter(dxApiBasePath, relationshipController.getRouter());
-    router.mountSubRouter(dxApiBasePath, mlayerController.getRouter());
+    StacController stacController = new StacController(api, config(), validationService,
+        auditHandler, elasticsearchService, authHandler, validateToken, failureHandler);
 
-    router
-        .route(api.getStackRestApis() + "/*")
-        .subRouter(
-            new StacController(
-                    router,
-                    api,
-                    config(),
-                    validationService,
-                    auditHandler,
-                    elasticsearchService,
-                    authenticationHandler,
-                    failureHandler)
-                .init());
+    // Initialize controllers and register their routes
+    router.route(api.getStackRestApis() + "/*").subRouter(stacController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(geocodingController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(crudController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(ratingController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(listController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(searchController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(relationshipController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(mlayerController.init(router));
 
     // Start server
     server.requestHandler(router).listen(port);

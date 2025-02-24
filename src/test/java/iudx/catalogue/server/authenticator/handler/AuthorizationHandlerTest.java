@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
 import iudx.catalogue.server.authenticator.model.DxRole;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.common.RoutingContextHelper;
@@ -40,7 +41,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testAuthorizedRoleBasedAccess() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("ADMIN");
 
     Handler<RoutingContext> handler = authorizationHandler.forRoleBasedAccess(DxRole.ADMIN);
@@ -51,7 +52,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testUnauthorizedRoleBasedAccess() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("USER");
 
     Handler<RoutingContext> handler = authorizationHandler.forRoleBasedAccess(DxRole.ADMIN);
@@ -62,7 +63,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testAuthorizedRoleAndEntityAccess() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn(String.valueOf(DxRole.PROVIDER));
     when(RoutingContextHelper.getItemType(routingContext)).thenReturn(ITEM_TYPE_RESOURCE_GROUP);
 
@@ -74,7 +75,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testUnauthorizedRoleRoleAndEntityAccess() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("USER");
 
     Handler<RoutingContext> handler = authorizationHandler.forRoleAndEntityAccess(DxRole.ADMIN);
@@ -85,7 +86,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testRoleAndEntityAccessForUnauthorizedEntity() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("ADMIN");
     when(RoutingContextHelper.getItemType(routingContext)).thenReturn("resource-group");
 
@@ -96,7 +97,7 @@ public class AuthorizationHandlerTest {
   }
   @Test
   void testRoleBasedAccessUnauthorizedRole() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("GUEST"); // A role not in allowed roles
 
     Handler<RoutingContext> handler = authorizationHandler.forRoleBasedAccess(DxRole.ADMIN, DxRole.PROVIDER);
@@ -110,7 +111,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testRoleAndEntityAccessUnauthorizedRole() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("GUEST"); // Unauthorized role
 
     Handler<RoutingContext> handler = authorizationHandler.forRoleAndEntityAccess(DxRole.ADMIN, DxRole.PROVIDER);
@@ -124,7 +125,7 @@ public class AuthorizationHandlerTest {
 
   @Test
   void testRoleAndEntityAccessUnauthorizedEntity() {
-    when(RoutingContextHelper.getJwtDecodedInfo(routingContext)).thenReturn(jwtData);
+    when(RoutingContextHelper.getJwtData(routingContext)).thenReturn(jwtData);
     when(jwtData.getRole()).thenReturn("PROVIDER");
     when(RoutingContextHelper.getItemType(routingContext)).thenReturn("INVALID_ENTITY");
 

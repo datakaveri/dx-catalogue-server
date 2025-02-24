@@ -21,7 +21,8 @@ import iudx.catalogue.server.apiserver.stack.service.StacService;
 import iudx.catalogue.server.apiserver.stack.service.StacServiceImpl;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.common.RoutingContextHelper;
@@ -37,44 +38,45 @@ public class StacController {
   private static final Logger LOGGER = LogManager.getLogger(StacController.class);
   private final ValidatorService validatorService;
   private final AuditHandler auditHandler;
-  private final AuthenticationHandler authenticationHandler;
+  private final AuthHandler authHandler;
+  private final AuthValidationHandler validateToken;
   private final FailureHandler failureHandler;
   private final Api api;
-  private final Router router;
   private final StacService stacService;
   private RespBuilder respBuilder;
 
   public StacController(
-      Router router,
       Api api,
       JsonObject config,
       ValidatorService validatorService,
       AuditHandler auditHandler,
       ElasticsearchService esService,
-      AuthenticationHandler authenticationHandler,
+      AuthHandler authHandler, AuthValidationHandler validateToken,
       FailureHandler failureHandler) {
     this.api = api;
-    this.router = router;
     this.validatorService = validatorService;
     this.auditHandler = auditHandler;
-    this.authenticationHandler = authenticationHandler;
+    this.authHandler = authHandler;
+    this.validateToken = validateToken;
     this.failureHandler = failureHandler;
     stacService = new StacServiceImpl(esService, config.getString(DOC_INDEX));
   }
 
-  public Router init() {
+  public Router init(Router router) {
     router
         .post(api.getStackRestApis())
         .handler(this::validateAuth)
         .handler(routingContext -> validateSchema(routingContext, REQUEST_POST))
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(this::handlePostStackRequest)
         .failureHandler(failureHandler);
     router
         .patch(api.getStackRestApis())
         .handler(this::validateAuth)
         .handler(routingContext -> validateSchema(routingContext, REQUEST_PATCH))
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(this::handlePatchStackRequest)
         .failureHandler(failureHandler);
 
@@ -83,16 +85,18 @@ public class StacController {
         .delete(api.getStackRestApis())
         .handler(this::validateAuth)
         .handler(routingContext -> validateSchema(routingContext, REQUEST_DELETE))
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(this::deleteStackHandler)
         .failureHandler(failureHandler);
 
-    return this.router;
+    return router;
   }
 
   private void validateAuth(RoutingContext routingContext) {
     /* checking authentication info in requests */
-    if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+    if (routingContext.request().headers().contains(HEADER_TOKEN) ||
+        routingContext.request().headers().contains(HEADER_BEARER_AUTHORIZATION)) {
       routingContext.next();
     } else {
       LOGGER.warn("Fail: Unauthorized CRUD operation");
@@ -157,8 +161,9 @@ public class StacController {
     if (!method.equals(REQUEST_DELETE)) {
 
       Future<JsonObject> validateSchemaFuture = validatorService.validateSchema(validationJson);
+      String token = RoutingContextHelper.getToken(routingContext);
       JwtAuthenticationInfo jwtAuthenticationInfo = new JwtAuthenticationInfo.Builder()
-          .setToken(request.getHeader(HEADER_TOKEN))
+          .setToken(token)
           .setMethod(method)
           .setApiEndpoint(routingContext.normalizedPath())
           .build();
@@ -178,8 +183,9 @@ public class StacController {
       String stacId = routingContext.queryParams().get(ID);
       LOGGER.debug("stackId:: {}", stacId);
       if (validateId(stacId)) {
+        String token = RoutingContextHelper.getToken(routingContext);
         JwtAuthenticationInfo jwtAuthenticationInfo = new JwtAuthenticationInfo.Builder()
-            .setToken(request.getHeader(HEADER_TOKEN))
+            .setToken(token)
             .setMethod(REQUEST_PATCH)
             .setApiEndpoint(routingContext.normalizedPath())
             .build();
@@ -202,7 +208,7 @@ public class StacController {
     String path = routingContext.normalizedPath();
     Future<JsonObject> createStackFuture = stacService.create(validatedRequestBody);
 
-    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtDecodedInfo(routingContext);
+    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
     // adding user id, user role and iid to response for auditing purpose
     authInfo
@@ -236,7 +242,7 @@ public class StacController {
 
     Future<JsonObject> updateStackFuture = stacService.update(validatedRequestBody);
 
-    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtDecodedInfo(routingContext);
+    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
     // adding user id, user role and iid to response for auditing purpose
     authInfo
@@ -265,13 +271,16 @@ public class StacController {
     String stacId = routingContext.queryParams().get(ID);
     Future<JsonObject> deleteStackFuture = stacService.delete(stacId);
 
-    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtDecodedInfo(routingContext);
+    JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
     // adding user id, user role and iid to response for auditing purpose
     authInfo
         .put(USER_ROLE, jwtDecodedInfo.getRole())
         .put(USER_ID, jwtDecodedInfo.getSub())
-        .put(IID, jwtDecodedInfo.getIid());
+        .put(IID, jwtDecodedInfo.getIid())
+        .put(IUDX_ID, stacId)
+        .put(API, routingContext.normalizedPath())
+        .put(HTTP_METHOD, REQUEST_DELETE);;
     deleteStackFuture
         .onSuccess(stacServiceResult -> {
           LOGGER.debug("stacServiceResult : " + stacServiceResult);

@@ -4,7 +4,6 @@ import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.*;
 import static iudx.catalogue.server.util.Constants.*;
 
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -13,8 +12,9 @@ import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.item.handler.ItemLinkValidationHandler;
 import iudx.catalogue.server.apiserver.item.handler.ItemSchemaHandler;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
-import iudx.catalogue.server.authenticator.handler.AuthorizationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
 import iudx.catalogue.server.authenticator.model.DxRole;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.common.RoutingContextHelper;
@@ -33,10 +33,10 @@ import org.apache.logging.log4j.Logger;
  */
 public class CrudController {
   private final Logger LOGGER = LogManager.getLogger(CrudController.class);
-  private final Router router;
   private final CrudService crudService;
   private final boolean isUac;
-  private final AuthenticationHandler authenticationHandler;
+  private final AuthHandler authHandler;
+  private final AuthValidationHandler validateToken;
   private final AuthorizationHandler authorizationHandler;
   private final ItemSchemaHandler itemSchemaHandler;
   private final ItemLinkValidationHandler itemLinkValidationHandler;
@@ -51,35 +51,35 @@ public class CrudController {
    * @param crudService service for CRUD operations
    */
   public CrudController(
-      Router router,
       boolean isUac,
       String host,
       CrudService crudService,
       ValidatorService validatorService,
-      AuthenticationHandler authenticationHandler,
+      AuthHandler authHandler,
+      AuthValidationHandler validateToken,
       AuthorizationHandler authorizationHandler,
       AuditHandler auditHandler,
       FailureHandler failureHandler) {
-    this.router = router;
     this.isUac = isUac;
     this.host = host;
     this.crudService = crudService;
-    this.authenticationHandler = authenticationHandler;
+    this.authHandler = authHandler;
+    this.validateToken = validateToken;
     this.authorizationHandler = authorizationHandler;
     this.itemSchemaHandler = new ItemSchemaHandler();
     this.itemLinkValidationHandler = new ItemLinkValidationHandler(crudService, validatorService);
     this.auditHandler = auditHandler;
     this.failureHandler = failureHandler;
-
-    setupRoutes();
   }
 
   /**
    * Configures the routes for CRUD operations, including creation, update, retrieval, and deletion
    *
    * <p>of items, along with validation, authorization, and auditing functionalities.
+   *
+   * @return
    */
-  public void setupRoutes() {
+  public Router init(Router router) {
 
     /* Create Item - Body contains data */
     router
@@ -96,7 +96,8 @@ public class CrudController {
                 routingContext.next();
               }
             })
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(itemLinkValidationHandler::itemLinkValidation)
         .handler(
             authorizationHandler.forRoleAndEntityAccess(
@@ -127,7 +128,8 @@ public class CrudController {
                 routingContext.next();
               }
             })
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(itemLinkValidationHandler::itemLinkValidation)
         .handler(
             authorizationHandler.forRoleAndEntityAccess(
@@ -160,7 +162,8 @@ public class CrudController {
         .handler(
             routingContext ->
                 itemLinkValidationHandler.validateDeleteItemHandler(routingContext, isUac))
-        .handler(authenticationHandler)
+        .handler(authHandler)
+        .handler(validateToken)
         .handler(
             authorizationHandler.forRoleAndEntityAccess(
                 DxRole.COS_ADMIN, DxRole.ADMIN, DxRole.PROVIDER, DxRole.DELEGATE))
@@ -182,7 +185,8 @@ public class CrudController {
         .handler(itemSchemaHandler::verifyAuthHeader)
         .handler(routingContext -> populateAuthInfo(routingContext, REQUEST_POST))
         // Populate authentication info
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(this::createInstanceHandler)
         .failureHandler(failureHandler);
 
@@ -193,23 +197,19 @@ public class CrudController {
         .handler(itemSchemaHandler::verifyAuthHeader)
         .handler(routingContext -> populateAuthInfo(routingContext, REQUEST_DELETE))
         // Populate authentication info
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(this::deleteInstanceHandler)
         .failureHandler(failureHandler);
-  }
-
-  // Method to return the router for mounting
-  public Router getRouter() {
-    return this.router;
+    return router;
   }
 
   private void populateAuthInfo(RoutingContext routingContext, String method) {
-
-    HttpServerRequest request = routingContext.request();
+    String token = RoutingContextHelper.getToken(routingContext);
 
     JwtAuthenticationInfo jwtAuthenticationInfo =
         new JwtAuthenticationInfo.Builder()
-            .setToken(request.getHeader(HEADER_TOKEN))
+            .setToken(token)
             .setMethod(method)
             .setApiEndpoint(routingContext.normalizedPath())
             .setItemType(ITEM_TYPE_INSTANCE)

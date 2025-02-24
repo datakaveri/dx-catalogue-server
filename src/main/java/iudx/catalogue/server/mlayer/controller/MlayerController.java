@@ -12,7 +12,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo.Builder;
 import iudx.catalogue.server.common.RoutingContextHelper;
@@ -24,29 +25,27 @@ import org.apache.logging.log4j.Logger;
 
 public class MlayerController {
   private static final Logger LOGGER = LogManager.getLogger(MlayerController.class);
-  private final Router router;
   private final MlayerService mlayerService;
   private final ValidatorService validatorService;
   private final FailureHandler failureHandler;
-  private final AuthenticationHandler authenticationHandler;
+  private final AuthHandler authHandler;
+  private final AuthValidationHandler validateToken;
   private final String host;
 
-  public MlayerController(String host, Router router,
-                          ValidatorService validationService,
+  public MlayerController(String host, ValidatorService validationService,
                           MlayerService mlayerService,
                           FailureHandler failureHandler,
-                          AuthenticationHandler authenticationHandler) {
+                          AuthHandler authHandler, AuthValidationHandler validateToken) {
     this.host = host;
-    this.router = router;
     this.validatorService = validationService;
     this.mlayerService = mlayerService;
     this.failureHandler = failureHandler;
-    this.authenticationHandler = authenticationHandler;
+    this.authHandler = authHandler;
+    this.validateToken = validateToken;
 
-    setupRoutes();
   }
 
-  private void setupRoutes() {
+  public Router init(Router router) {
     // Routes for Mlayer Instance APIs
 
     /* Create Mlayer Instance */
@@ -57,10 +56,12 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_POST))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_TOKEN) ||
+                  routingContext.request().headers().contains(HEADER_BEARER_AUTHORIZATION)) {
                 createMlayerInstanceHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -81,7 +82,8 @@ public class MlayerController {
         .produces(MIME_APPLICATION_JSON)
         .failureHandler(failureHandler)
         .handler(routingContext -> populateAuthInfo(routingContext, REQUEST_DELETE))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
               if (routingContext.request().headers().contains(HEADER_TOKEN)) {
@@ -100,7 +102,8 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_PUT))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
               if (routingContext.request().headers().contains(HEADER_TOKEN)) {
@@ -121,7 +124,8 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_POST))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
               if (routingContext.request().headers().contains(HEADER_TOKEN)) {
@@ -147,7 +151,8 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_PUT))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
               if (routingContext.request().headers().contains(HEADER_TOKEN)) {
@@ -165,7 +170,8 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_DELETE))
-        .handler(authenticationHandler) // Authentication
+        .handler(authHandler) // Authentication
+        .handler(validateToken)
         .handler(
             routingContext -> {
               if (routingContext.request().headers().contains(HEADER_TOKEN)) {
@@ -223,11 +229,7 @@ public class MlayerController {
         .failureHandler(failureHandler)
         .handler(this::getCountSizeApi);
 
-  }
-
-  // Method to return the router for mounting
-  public Router getRouter() {
-    return this.router;
+    return router;
   }
 
   /**
@@ -361,9 +363,9 @@ public class MlayerController {
 
   /* Populate authentication info */
   public void populateAuthInfo(RoutingContext routingContext, String method) {
-    HttpServerRequest request = routingContext.request();
+    String token = RoutingContextHelper.getToken(routingContext);
     JwtAuthenticationInfo jwtAuthenticationInfo = new Builder()
-        .setToken(request.getHeader(HEADER_TOKEN))
+        .setToken(token)
         .setMethod(method)
         .setApiEndpoint(routingContext.normalizedPath())
         .setId(host)

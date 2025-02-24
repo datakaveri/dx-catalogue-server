@@ -40,30 +40,22 @@ import org.apache.logging.log4j.Logger;
 public final class ListController {
 
   private static final Logger LOGGER = LogManager.getLogger(ListController.class);
-  private final Router router;
   private final ElasticsearchService esService;
   private final String docIndex;
   private final QueryDecoder queryDecoder = new QueryDecoder();
 
-  public ListController(Router router, ElasticsearchService esService, String docIndex) {
-    this.router = router;
+  public ListController(ElasticsearchService esService, String docIndex) {
     this.esService = esService;
     this.docIndex = docIndex;
-
-    setupRoutes();
   }
 
   //  Routes for list
 
   /* list the item from database using itemId */
-  private void setupRoutes() {
+  public Router init(Router router) {
     /* list the item from database using itemId */
     router.get(ROUTE_LIST_ITEMS).produces(MIME_APPLICATION_JSON).handler(this::listItemsHandler);
-  }
-
-  // Method to return the router for mounting
-  public Router getRouter() {
-    return this.router;
+    return router;
   }
 
   /**

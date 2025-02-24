@@ -1,6 +1,5 @@
 package iudx.catalogue.server.apiserver.crud;
 
-import static iudx.catalogue.server.apiserver.util.Constants.MIME_APPLICATION_JSON;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.itemNotFoundResponse;
 import static iudx.catalogue.server.util.Constants.ID;
 import static iudx.catalogue.server.util.Constants.INSTANCE;
@@ -17,13 +16,12 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.Route;
-import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.item.handler.ItemLinkValidationHandler;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
-import iudx.catalogue.server.authenticator.handler.AuthenticationHandler;
-import iudx.catalogue.server.authenticator.handler.AuthorizationHandler;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
 import iudx.catalogue.server.common.RespBuilder;
 import iudx.catalogue.server.common.RoutingContextHelper;
 import iudx.catalogue.server.exceptions.FailureHandler;
@@ -37,7 +35,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class CrudControllerTest {
   private ItemLinkValidationHandler itemLinkValidationHandler;
-  private AuditHandler auditHandler;
   private boolean isUac;
   private CrudController crudController;
   private CrudService crudService;
@@ -47,31 +44,28 @@ public class CrudControllerTest {
 
   @BeforeEach
   void setUp() {
-    Router router = mock(Router.class);
     routingContext = mock(RoutingContext.class);
     itemLinkValidationHandler = mock(ItemLinkValidationHandler.class);
-    auditHandler = mock(AuditHandler.class);
+    AuditHandler auditHandler = mock(AuditHandler.class);
     request = mock(HttpServerRequest.class);
     response = mock(HttpServerResponse.class);
-
-    Route route = mock(Route.class);
-    when(router.get(anyString())).thenReturn(route);
-    when(router.post(anyString())).thenReturn(route);
-    when(router.put(anyString())).thenReturn(route);
-    when(router.delete(anyString())).thenReturn(route);
-    when(route.consumes(MIME_APPLICATION_JSON)).thenReturn(route);
-    when(route.produces(MIME_APPLICATION_JSON)).thenReturn(route);
-    when(route.failureHandler(any())).thenReturn(route);
-    when(route.handler(any())).thenReturn(route);
-
     crudService = mock(CrudService.class);
     ValidatorService validatorService = mock(ValidatorService.class);
-    AuthenticationHandler authenticationHandler = mock(AuthenticationHandler.class);
+    AuthHandler authHandler = mock(AuthHandler.class);
+    AuthValidationHandler validateToken = mock(AuthValidationHandler.class);
     AuthorizationHandler authorizationHandler = mock(AuthorizationHandler.class);
-    AuditHandler auditHandler = mock(AuditHandler.class);
     FailureHandler failureHandler = mock(FailureHandler.class);
-    crudController = new CrudController(router, false, "host", crudService, validatorService,
-        authenticationHandler, authorizationHandler, auditHandler, failureHandler);
+    crudController =
+        new CrudController(
+            false,
+            "host",
+            crudService,
+            validatorService,
+            authHandler,
+            validateToken,
+            authorizationHandler,
+            auditHandler,
+            failureHandler);
   }
 
   @Test
@@ -89,6 +83,7 @@ public class CrudControllerTest {
     verify(itemLinkValidationHandler, times(1)).handleItemTypeCases(routingContext);
     verify(routingContext, never()).next();
   }
+
   @Test
   void testHandlerWhenIsUacIsTrue() {
     isUac = true;
@@ -153,7 +148,8 @@ public class CrudControllerTest {
     when(response.setStatusCode(anyInt())).thenReturn(response);
     when(routingContext.queryParams()).thenReturn(mock(MultiMap.class));
     when(routingContext.queryParams().get("id")).thenReturn(itemId);
-    when(crudService.getItem(any(JsonObject.class))).thenReturn(Future.succeededFuture(retrievedItem));
+    when(crudService.getItem(any(JsonObject.class)))
+        .thenReturn(Future.succeededFuture(retrievedItem));
 
     crudController.getItemHandler(routingContext);
 
@@ -165,25 +161,25 @@ public class CrudControllerTest {
   @Test
   void testGetItemFailure404() {
     String itemId = "item1";
-    String errorResponse = new RespBuilder()
-        .withType(TYPE_ITEM_NOT_FOUND)
-        .withTitle(TITLE_ITEM_NOT_FOUND)
-        .withDetail("Fail: Doc doesn't exist, can't perform operation")
-        .getResponse();
-
+    String errorResponse =
+        new RespBuilder()
+            .withType(TYPE_ITEM_NOT_FOUND)
+            .withTitle(TITLE_ITEM_NOT_FOUND)
+            .withDetail("Fail: Doc doesn't exist, can't perform operation")
+            .getResponse();
 
     when(routingContext.response()).thenReturn(response);
     when(response.setStatusCode(anyInt())).thenReturn(response);
     when(routingContext.queryParams()).thenReturn(mock(MultiMap.class));
     when(routingContext.queryParams().get("id")).thenReturn(itemId);
-    when(crudService.getItem(any(JsonObject.class)))
-        .thenReturn(Future.failedFuture(errorResponse));
+    when(crudService.getItem(any(JsonObject.class))).thenReturn(Future.failedFuture(errorResponse));
 
     crudController.getItemHandler(routingContext);
 
     verify(crudService, times(1)).getItem(any(JsonObject.class));
     verify(response).setStatusCode(404);
   }
+
   @Test
   void testGetItemFailure400() {
     String itemId = "item1";
@@ -236,6 +232,7 @@ public class CrudControllerTest {
     verify(response).setStatusCode(400);
     verify(response).end("Deletion Failed");
   }
+
   @Test
   void testDeleteItemFailure404() {
     String itemId = "item1";
@@ -244,7 +241,9 @@ public class CrudControllerTest {
     when(routingContext.queryParams()).thenReturn(mock(MultiMap.class));
     when(routingContext.queryParams().get("id")).thenReturn(itemId);
     when(crudService.deleteItem(any(JsonObject.class)))
-        .thenReturn(Future.failedFuture(new NoSuchElementException("Fail: Doc doesn't exist, can't perform operation")));
+        .thenReturn(
+            Future.failedFuture(
+                new NoSuchElementException("Fail: Doc doesn't exist, can't perform operation")));
 
     crudController.deleteItemHandler(routingContext);
 
@@ -291,6 +290,7 @@ public class CrudControllerTest {
     verify(response).setStatusCode(404);
     verify(response).end("Doc doesn't exist");
   }
+
   @Test
   void testUpdateItemFailure400() {
     JsonObject itemRequest = new JsonObject().put("id", "item1").put("name", "Updated Item");
@@ -313,10 +313,11 @@ public class CrudControllerTest {
   @Test
   void testCreateInstanceSuccess() {
     String itemId = "dummyId";
-    JsonObject itemRequest = new JsonObject()
-        .put(ID, itemId)
-        .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
-        .put(INSTANCE, "");
+    JsonObject itemRequest =
+        new JsonObject()
+            .put(ID, itemId)
+            .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
+            .put(INSTANCE, "");
     JsonObject createdItem = new JsonObject().put("id", itemId);
 
     when(routingContext.response()).thenReturn(response);
@@ -331,13 +332,15 @@ public class CrudControllerTest {
     verify(crudService, times(1)).createItem(eq(itemRequest));
     verify(response).setStatusCode(201);
   }
+
   @Test
   void testCreateInstanceFailure() {
     String instance = "dummyId";
-    JsonObject itemRequest = new JsonObject()
-        .put(ID, instance)
-        .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
-        .put(INSTANCE, "");
+    JsonObject itemRequest =
+        new JsonObject()
+            .put(ID, instance)
+            .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
+            .put(INSTANCE, "");
 
     when(routingContext.response()).thenReturn(response);
     when(response.setStatusCode(anyInt())).thenReturn(response);
@@ -370,6 +373,7 @@ public class CrudControllerTest {
     verify(crudService, times(1)).deleteItem(eq(itemRequest));
     verify(response).setStatusCode(200);
   }
+
   @Test
   void testDeleteInstanceFailure() {
     String instance = "dummyId";
