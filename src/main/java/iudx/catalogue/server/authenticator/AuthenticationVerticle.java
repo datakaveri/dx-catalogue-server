@@ -1,14 +1,26 @@
 package iudx.catalogue.server.authenticator;
 
-import static iudx.catalogue.server.authenticator.Constants.*;
-import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.authenticator.Constants.AUTH_CERTIFICATE_PATH;
+import static iudx.catalogue.server.authenticator.Constants.CERTS_ENDPOINT;
+import static iudx.catalogue.server.authenticator.Constants.KEYCLOACK_HOST;
+import static iudx.catalogue.server.authenticator.Constants.UAC_DEPLOYMENT;
+import static iudx.catalogue.server.util.Constants.AUTH_SERVICE_ADDRESS;
+import static iudx.catalogue.server.util.Constants.PUBLIC_KEY;
 
-import com.nimbusds.jose.*;
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.source.*;
-import com.nimbusds.jose.proc.*;
-import com.nimbusds.jwt.*;
-import com.nimbusds.jwt.proc.*;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import com.nimbusds.jwt.proc.JWTClaimsSetVerifier;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -21,6 +33,9 @@ import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.serviceproxy.ServiceBinder;
+import iudx.catalogue.server.authenticator.service.AuthenticationService;
+import iudx.catalogue.server.authenticator.service.JwtAuthenticationServiceImpl;
+import iudx.catalogue.server.authenticator.service.KcAuthenticationServiceImpl;
 import iudx.catalogue.server.util.Api;
 import java.io.IOException;
 import java.net.URL;
@@ -36,8 +51,8 @@ import org.apache.logging.log4j.Logger;
  *
  * <h1>Authentication Verticle</h1>
  *
- * <p>The Authentication Verticle implementation in the the IUDX Catalogue Server exposes the {@link
- * iudx.catalogue.server.authenticator.AuthenticationService} over the Vert.x Event Bus.
+ * <p>The Authentication Verticle implementation in the IUDX Catalogue Server exposes the {@link
+ * iudx.catalogue.server.authenticator.service.AuthenticationService} over the Vert.x Event Bus.
  *
  * @version 1.0
  * @since 2020-05-31
@@ -58,7 +73,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
     return createWebClient(vertx, config, false);
   }
 
-  static WebClient createWebClient(Vertx vertx, JsonObject config, boolean testing) {
+  public static WebClient createWebClient(Vertx vertx, JsonObject config, boolean testing) {
     WebClientOptions webClientOptions = new WebClientOptions();
     if (testing) {
       webClientOptions.setTrustAll(true).setVerifyHost(false);
@@ -67,7 +82,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
     return WebClient.create(vertx, webClientOptions);
   }
 
-  static Future<String> getJwtPublicKey(Vertx vertx, JsonObject config) {
+  public static Future<String> getJwtPublicKey(Vertx vertx, JsonObject config) {
     Promise<String> promise = Promise.promise();
     webClient = createWebClient(vertx, config);
     if (config.containsKey(PUBLIC_KEY)) {
@@ -129,13 +144,11 @@ public class AuthenticationVerticle extends AbstractVerticle {
                     "JWT ignore expiration set to true, do not "
                         + "set IgnoreExpiration in production!!");
               }
-              jwtAuthOptions.getJWTOptions().setLeeway(JWT_LEEWAY_TIME);
-
               JWTAuth jwtAuth = JWTAuth.create(vertx, jwtAuthOptions);
 
               dxApiBasePath = config().getString("dxApiBasePath");
               api = Api.getInstance(dxApiBasePath);
-              jwtAuthenticationService = new JwtAuthenticationServiceImpl(jwtAuth, config(), api);
+              jwtAuthenticationService = new JwtAuthenticationServiceImpl(jwtAuth, config());
 
               /* Publish the Authentication service with the Event Bus against an address. */
               consumer = binder.register(AuthenticationService.class, jwtAuthenticationService);

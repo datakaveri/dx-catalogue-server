@@ -9,15 +9,16 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.serviceproxy.ServiceBinder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import iudx.catalogue.server.nlpsearch.service.NLPSearchService;
+import iudx.catalogue.server.nlpsearch.service.NLPSearchServiceImpl;
 
 /**
  * The NLPSearch Verticle.
  * <h1>A NLPSearch Verticle</h1>
+ *
  * <p>
  * The NLPSearch Verticle implementation in the the IUDX Catalogue Server exposes the
- * {@link iudx.catalogue.server.nlpsearch.NLPSearchService} over the Vert.x Event Bus.
+ * {@link NLPSearchService} over the Vert.x Event Bus.
  * </p>
  *
  *

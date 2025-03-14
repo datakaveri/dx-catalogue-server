@@ -4,19 +4,18 @@
     "zookeeper"
   ],
   "commonConfig": {
+    "httpPort": 8080,
+    "docIndex": "",
     "dxApiBasePath": "",
     "dxAuthBasePath": "",
+    "@context": "",
     "isUACInstance": false
   },
   "clusterId": "iudx-catalogue-cluster",
   "host": "server",
   "modules": [
     {
-      "id": "iudx.catalogue.server.database.DatabaseVerticle",
-      "optionalModules": [
-        "iudx.catalogue.server.geocoding",
-        "iudx.catalogue.server.nlpsearch"
-      ],
+      "id": "iudx.catalogue.server.database.elastic.ElasticsearchVerticle",
       "verticleInstances": 2,
       "databaseIP": "",
       "ratingIndex": "",
@@ -29,7 +28,7 @@
       "bypassAuth": true
     },
     {
-       "id": "iudx.catalogue.server.authenticator.AuthenticationVerticle",
+      "id": "iudx.catalogue.server.authenticator.AuthenticationVerticle",
       "host": "",
       "consumerHost": "",
       "verticleInstances": 1,
@@ -49,10 +48,13 @@
     },
     {
       "id": "iudx.catalogue.server.apiserver.ApiServerVerticle",
+      "optionalModules": [
+        "iudx.catalogue.server.geocoding",
+        "iudx.catalogue.server.nlpsearch"
+      ],
       "catAdmin": "",
       "verticleInstances": 2,
       "ip": "",
-      "httpPort": 8080,
       "ssl": false,
       "host": "",
       "databaseIP": "",
@@ -87,12 +89,19 @@
     {
       "id": "iudx.catalogue.server.rating.RatingVerticle",
       "verticleInstances": 1,
+      "ratingDatabaseIP": "",
+      "ratingDatabasePort": 5433,
+      "ratingDatabaseName": "",
+      "ratingDatabaseUserName": "",
+      "ratingDatabasePassword": "",
+      "ratingPoolSize": 25,
       "ratingExchangeName": "",
       "rsAuditingTableName": "",
+      "ratingIndex": "",
       "minReadNumber": 100
     },
     {
-      "id": "iudx.catalogue.server.databroker.DataBrokerVerticle",
+      "id": "iudx.catalogue.server.databroker.RabbitMQVerticle",
       "verticleInstances": 1,
       "dataBrokerIP": "",
       "dataBrokerPort": 1234,
@@ -111,6 +120,9 @@
       "verticleInstances": 1,
       "databaseTable": "",
       "catSummaryTable" : "",
+      "mlayerInstanceIndex": "",
+      "mlayerDomainIndex": "",
+      "docIndex": "",
       "excluded_ids": []
     },
     {

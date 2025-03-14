@@ -7,22 +7,38 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import iudx.catalogue.server.apiserver.util.ExceptionHandler;
-import iudx.catalogue.server.auditing.AuditingService;
-import iudx.catalogue.server.authenticator.AuthenticationService;
-import iudx.catalogue.server.database.DatabaseService;
-import iudx.catalogue.server.geocoding.GeocodingService;
-import iudx.catalogue.server.mlayer.MlayerService;
-import iudx.catalogue.server.nlpsearch.NLPSearchService;
-import iudx.catalogue.server.rating.RatingService;
+import iudx.catalogue.server.apiserver.crud.CrudController;
+import iudx.catalogue.server.apiserver.crud.CrudService;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
+import iudx.catalogue.server.apiserver.item.service.ItemServiceImpl;
+import iudx.catalogue.server.apiserver.stack.controller.StacController;
+import iudx.catalogue.server.auditing.handler.AuditHandler;
+import iudx.catalogue.server.auditing.service.AuditingService;
+import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
+import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHandler;
+import iudx.catalogue.server.authenticator.service.AuthenticationService;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.exceptions.FailureHandler;
+import iudx.catalogue.server.geocoding.controller.GeocodingController;
+import iudx.catalogue.server.geocoding.service.GeocodingService;
+import iudx.catalogue.server.mlayer.controller.MlayerController;
+import iudx.catalogue.server.mlayer.service.MlayerService;
+import iudx.catalogue.server.nlpsearch.service.NLPSearchService;
+import iudx.catalogue.server.rating.controller.RatingController;
+import iudx.catalogue.server.rating.service.RatingService;
+import iudx.catalogue.server.relationship.controller.RelationshipController;
+import iudx.catalogue.server.relationship.service.RelationshipService;
+import iudx.catalogue.server.relationship.service.RelationshipServiceImpl;
 import iudx.catalogue.server.util.Api;
-import iudx.catalogue.server.validator.ValidatorService;
+import iudx.catalogue.server.validator.service.ValidatorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,6 +50,7 @@ import org.apache.logging.log4j.Logger;
  * <p>The API Server verticle implements the IUDX Catalogue Server APIs. It handles the API requests
  * from the clients and interacts with the associated Service to respond.
  *
+ * @version 1.0
  * @see io.vertx.core.Vertx
  * @see io.vertx.core.AbstractVerticle
  * @see io.vertx.core.http.HttpServer
@@ -41,31 +58,31 @@ import org.apache.logging.log4j.Logger;
  * @see io.vertx.servicediscovery.ServiceDiscovery
  * @see io.vertx.servicediscovery.types.EventBusService
  * @see io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
- * @version 1.0
  * @since 2020-05-31
  */
 public class ApiServerVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(ApiServerVerticle.class);
+  private AuthHandler authHandler;
+  private AuthorizationHandler authorizationHandler;
+  private CrudController crudController;
+  private ListController listController;
+  private RatingController ratingController;
+  private GeocodingController geocodingController;
+  private SearchController searchController;
+  private RelationshipController relationshipController;
+  private MlayerController mlayerController;
   private HttpServer server;
-  private CrudApis crudApis;
-  private SearchApis searchApis;
   private String keystore;
   private String keystorePassword;
-  private ListApis listApis;
-  private RelationshipApis relApis;
-  private GeocodingApis geoApis;
-  private RatingApis ratingApis;
-  private MlayerApis mlayerApis;
-
-  @SuppressWarnings("unused")
-  private Router router;
-
   private String catAdmin;
   private boolean isSsL;
   private int port;
   private String dxApiBasePath;
+  private String host;
+  private String docIndex;
   private Api api;
+  private JsonArray optionalModules;
 
   /**
    * This method is used to start the Verticle and joing a cluster.
@@ -74,10 +91,29 @@ public class ApiServerVerticle extends AbstractVerticle {
    */
   @Override
   public void start() throws Exception {
+    Router router = Router.router(vertx);
+    // API Routes and Callbacks
+    // Routes - Defines the routes and callbacks
+    router.route().handler(BodyHandler.create());
+    router.route().handler(CorsHandler.create("*")
+        .allowedHeaders(ALLOWED_HEADERS)
+        .allowedMethods(ALLOWED_METHODS));
 
-    router = Router.router(vertx);
+    router.route().handler(
+        routingContext -> {
+          routingContext
+              .response()
+              .putHeader("Cache-Control",
+                  "no-cache, no-store, max-age=0, must-revalidate")
+              .putHeader("Pragma", "no-cache")
+              .putHeader("Expires", "0")
+              .putHeader("X-Content-Type-Options", "nosniff");
+          routingContext.next();
+        });
 
     dxApiBasePath = config().getString("dxApiBasePath");
+    host = config().getString(HOST);
+    docIndex = config().getString("docIndex");
     api = Api.getInstance(dxApiBasePath);
 
     /* Configure */
@@ -89,114 +125,63 @@ public class ApiServerVerticle extends AbstractVerticle {
     if (isSsL) {
       LOGGER.debug("Info: Starting HTTPs server");
 
-      /* Read the configuration and set the HTTPs server properties. */
-
-      keystore = config().getString("keystore");
-      keystorePassword = config().getString("keystorePassword");
-
-      /*
-       * Default port when ssl is enabled is 8443. If set through config, then that value is taken
-       */
-      port = config().getInteger(PORT) == null ? 8443 : config().getInteger(PORT);
-
-      /* Setup the HTTPs server properties, APIs and port. */
-
-      serverOptions
-          .setSsl(true)
-          .setKeyStoreOptions(new JksOptions().setPath(keystore).setPassword(keystorePassword));
+      startHttpsServer(serverOptions);
 
     } else {
       LOGGER.debug("Info: Starting HTTP server");
 
-      /* Setup the HTTP server properties, APIs and port. */
-
-      serverOptions.setSsl(false);
-      /*
-       * Default port when ssl is disabled is 8080. If set through config, then that value is taken
-       */
-      port = config().getInteger(PORT) == null ? 8080 : config().getInteger(PORT);
+      startHttpServer(serverOptions);
     }
     LOGGER.debug("Started HTTP server at port : " + port);
 
     serverOptions.setCompressionSupported(true).setCompressionLevel(5);
     // Instantiate this server
     server = vertx.createHttpServer(serverOptions);
-
-    boolean isUac = config().getBoolean(UAC_DEPLOYMENT);
     // API Callback managers
-    crudApis = new CrudApis(api, isUac);
-    searchApis = new SearchApis(api);
-    listApis = new ListApis();
-    relApis = new RelationshipApis();
-    geoApis = new GeocodingApis();
-    ratingApis = new RatingApis();
-    mlayerApis = new MlayerApis(api);
 
     // Todo - Set service proxies based on availability?
-    DatabaseService dbService = DatabaseService.createProxy(vertx, DATABASE_SERVICE_ADDRESS);
-
-    RatingService ratingService = RatingService.createProxy(vertx, RATING_SERVICE_ADDRESS);
-    ratingApis.setRatingService(ratingService);
-
-    MlayerService mlayerService = MlayerService.createProxy(vertx, MLAYER_SERVICE_ADDRESSS);
-    mlayerApis.setMlayerService(mlayerService);
-
-    crudApis.setDbService(dbService);
-    listApis.setDbService(dbService);
-    relApis.setDbService(dbService);
-    // TODO : set db service for Rating APIs
-    crudApis.setHost(config().getString(HOST));
-    ratingApis.setHost(config().getString(HOST));
-    mlayerApis.setHost(config().getString(HOST));
-
-    AuthenticationService authService =
-        AuthenticationService.createProxy(vertx, AUTH_SERVICE_ADDRESS);
-    crudApis.setAuthService(authService);
-    ratingApis.setAuthService(authService);
-    mlayerApis.setAuthService(authService);
-
-    ValidatorService validationService =
-        ValidatorService.createProxy(vertx, VALIDATION_SERVICE_ADDRESS);
-    crudApis.setValidatorService(validationService);
-    ratingApis.setValidatorService(validationService);
-    mlayerApis.setValidatorService(validationService);
-
     GeocodingService geoService = GeocodingService.createProxy(vertx, GEOCODING_SERVICE_ADDRESS);
-    geoApis.setGeoService(geoService);
+    geocodingController = new GeocodingController(geoService);
 
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
-
-    searchApis.setService(dbService, geoService, nlpsearchService);
-
+    ElasticsearchService elasticsearchService =
+        ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
+    ItemService itemService;
+    optionalModules = config().getJsonArray(OPTIONAL_MODULES);
+    if (optionalModules.contains(NLPSEARCH_PACKAGE_NAME)
+        && optionalModules.contains(GEOCODING_PACKAGE_NAME)) {
+      itemService =
+          new ItemServiceImpl(elasticsearchService, geoService, nlpsearchService, config());
+    } else {
+      itemService = new ItemServiceImpl(elasticsearchService, config());
+    }
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
-    crudApis.setAuditingService(auditingService);
-    ratingApis.setAuditingService(auditingService);
-    ExceptionHandler exceptionhandler = new ExceptionHandler();
-
-    // API Routes and Callbacks
-
-    // Routes - Defines the routes and callbacks
-    Router router = Router.router(vertx);
-    router.route().handler(BodyHandler.create());
-    router
-        .route()
-        .handler(
-            CorsHandler.create("*")
-                .allowedHeaders(ALLOWED_HEADERS)
-                .allowedMethods(ALLOWED_METHODS));
-
-    router
-        .route()
-        .handler(
-            routingContext -> {
-              routingContext
-                  .response()
-                  .putHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
-                  .putHeader("Pragma", "no-cache")
-                  .putHeader("Expires", "0")
-                  .putHeader("X-Content-Type-Options", "nosniff");
-              routingContext.next();
-            });
+    AuditHandler auditHandler = new AuditHandler(auditingService);
+    FailureHandler failureHandler = new FailureHandler();
+    CrudService crudService = new CrudService(itemService);
+    AuthenticationService authService =
+        AuthenticationService.createProxy(vertx, AUTH_SERVICE_ADDRESS);
+    authHandler = new AuthHandler(authService);
+    AuthValidationHandler validateToken = new AuthValidationHandler(authService);
+    authorizationHandler = new AuthorizationHandler();
+    ValidatorService validationService =
+        ValidatorService.createProxy(vertx, VALIDATION_SERVICE_ADDRESS);
+    boolean isUac = config().getBoolean(UAC_DEPLOYMENT);
+    crudController = new CrudController(isUac, host, crudService,
+        validationService, authHandler, validateToken, authorizationHandler, auditHandler,
+        failureHandler);
+    RatingService ratingService = RatingService.createProxy(vertx, RATING_SERVICE_ADDRESS);
+    ratingController = new RatingController(validationService, ratingService,
+        host, authHandler, validateToken, authorizationHandler, auditHandler,
+        failureHandler);
+    listController = new ListController(elasticsearchService, docIndex);
+    searchController = new SearchController(elasticsearchService, geoService, nlpsearchService,
+        failureHandler, dxApiBasePath, docIndex);
+    MlayerService mlayerService = MlayerService.createProxy(vertx, MLAYER_SERVICE_ADDRESS);
+    mlayerController = new MlayerController(host, validationService,
+        mlayerService, failureHandler, authHandler, validateToken);
+    RelationshipService relService = new RelationshipServiceImpl(elasticsearchService, docIndex);
+    relationshipController = new RelationshipController(relService);
 
     //  Documentation routes
 
@@ -242,434 +227,18 @@ public class ApiServerVerticle extends AbstractVerticle {
               response.sendFile("ui/dist/dk-customer-ui/index.html");
             });
 
-    // Routes for item CRUD
+    StacController stacController = new StacController(api, config(), validationService,
+        auditHandler, elasticsearchService, authHandler, validateToken, failureHandler);
 
-    /* Create Item - Body contains data */
-    router
-        .post(api.getRouteItems())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                crudApis.createItemHandler(routingContext);
-              } else {
-                LOGGER.warn("Fail: Unathorized CRUD operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Get Item */
-    router
-        .get(api.getRouteItems())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              crudApis.getItemHandler(routingContext);
-            });
-
-    /* Update Item - Body contains data */
-    router
-        .put(api.getRoutUpdateItems())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                // Update params checked in createItemHandler
-                crudApis.createItemHandler(routingContext);
-              } else {
-                LOGGER.warn("Unathorized CRUD operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Delete Item - Query param contains id */
-    router
-        .delete(api.getRouteDeleteItems())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)
-                  && routingContext.queryParams().contains(ID)) {
-                // Update params checked in createItemHandler
-                crudApis.deleteItemHandler(routingContext);
-              } else {
-                LOGGER.warn("Unathorized CRUD operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Create instance - Instance name in query param */
-    router
-        .post(api.getRouteInstance())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                crudApis.createInstanceHandler(routingContext, catAdmin);
-              } else {
-                LOGGER.warn("Fail: Unathorized CRUD operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Delete instance - Instance name in query param */
-    router
-        .delete(api.getRouteInstance())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              /* checking auhthentication info in requests */
-              LOGGER.debug("Info: HIT instance");
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                crudApis.deleteInstanceHandler(routingContext, catAdmin);
-              } else {
-                LOGGER.warn("Fail: Unathorized CRUD operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    // Routes for search and count
-
-    /* Search for an item */
-    router
-        .get(api.getRouteSearch())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              searchApis.searchHandler(routingContext);
-            });
-
-    /* NLP Search */
-    router
-        .get(api.getRouteNlpSearch())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              searchApis.nlpSearchHandler(routingContext);
-            });
-
-    /* Count the Cataloque server items */
-    router
-        .get(api.getRouteCount())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              searchApis.searchHandler(routingContext);
-            });
-
-    //  Routes for list
-
-    /* list the item from database using itemId */
-    router
-        .get(api.getRouteListItems())
-        .produces(MIME_APPLICATION_JSON)
-        .handler(
-            routingContext -> {
-              listApis.listItemsHandler(routingContext);
-            });
-
-    //  Routes for relationships
-
-    /* Relationship related search */
-    router
-        .get(api.getRouteRelSearch())
-        .handler(
-            routingContext -> {
-              relApis.relSearchHandler(routingContext);
-            });
-
-    /* Get all resources belonging to a resource group */
-    router
-        .get(api.getRouteRelationship())
-        .handler(
-            routingContext -> {
-              relApis.listRelationshipHandler(routingContext);
-            });
-
-    //  Routes for Geocoding
-
-    router
-        .get(api.getRouteGeoCoordinates())
-        .handler(
-            routingContext -> {
-              geoApis.getCoordinates(routingContext);
-            });
-
-    router
-        .get(api.getRouteGeoReverse())
-        .handler(
-            routingContext -> {
-              geoApis.getLocation(routingContext);
-            });
-
-    //  Routes for Rating APIs
-
-    /* Create Rating */
-    router
-        .post(ROUTE_RATING)
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                ratingApis.createRatingHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Get Ratings */
-    router
-        .get(ROUTE_RATING)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().params().contains("type")) {
-                ratingApis.getRatingHandler(routingContext);
-              } else {
-                if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                  ratingApis.getRatingHandler(routingContext);
-                } else {
-                  LOGGER.error("Unauthorized Operation");
-                  routingContext.response().setStatusCode(401).end();
-                }
-              }
-            });
-
-    /* Update Rating */
-    router
-        .put(ROUTE_RATING)
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                ratingApis.updateRatingHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Delete Rating */
-    router
-        .delete(ROUTE_RATING)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                ratingApis.deleteRatingHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    // Routes for Mlayer Instance APIs
-
-    /* Create Mlayer Instance */
-    router
-        .post(api.getRouteMlayerInstance())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.createMlayerInstanceHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Get Mlayer Instance */
-    router
-        .get(api.getRouteMlayerInstance())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerInstanceHandler(routingContext);
-            });
-
-    /* Delete Mlayer Instance */
-    router
-        .delete(api.getRouteMlayerInstance())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.deleteMlayerInstanceHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Update Mlayer Instance */
-    router
-        .put(api.getRouteMlayerInstance())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.updateMlayerInstanceHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    // Routes for Mlayer Domain APIs
-
-    /* Create Mlayer Domain */
-    router
-        .post(api.getRouteMlayerDomains())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.createMlayerDomainHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Get Mlayer Domain */
-    router
-        .get(api.getRouteMlayerDomains())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerDomainHandler(routingContext);
-            });
-
-    /* Update Mlayer Domain */
-    router
-        .put(api.getRouteMlayerDomains())
-        .consumes(MIME_APPLICATION_JSON)
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.updateMlayerDomainHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    /* Delete Mlayer Domain */
-    router
-        .delete(api.getRouteMlayerDomains())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
-                mlayerApis.deleteMlayerDomainHandler(routingContext);
-              } else {
-                LOGGER.error("Unauthorized Operation");
-                routingContext.response().setStatusCode(401).end();
-              }
-            });
-
-    // Routes for Mlayer Provider API
-    router
-        .get(api.getRouteMlayerProviders())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerProvidersHandler(routingContext);
-            });
-
-    // Routes for Mlayer GeoQuery API
-    router
-        .post(api.getRouteMlayerGeoQuery())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerGeoQueryHandler(routingContext);
-            });
-
-    // Routes for Mlayer Dataset API
-    /* route to get all datasets*/
-    router
-        .get(api.getRouteMlayerDataset())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerAllDatasetsHandler(routingContext);
-            });
-    /* route to get a dataset detail*/
-    router
-        .post(api.getRouteMlayerDataset())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerDatasetHandler(routingContext);
-            });
-
-    // Route for Mlayer PopularDatasets API
-    router
-        .get(api.getRouteMlayerPopularDatasets())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getMlayerPopularDatasetsHandler(routingContext);
-            });
-
-    // Total Count Api and Monthly Count & Size(MLayer)
-    router
-        .get(api.getSummaryCountSizeApi())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getSummaryCountSizeApi(routingContext);
-            });
-    router
-        .get(api.getRealDatasetApi())
-        .produces(MIME_APPLICATION_JSON)
-        .failureHandler(exceptionhandler)
-        .handler(
-            routingContext -> {
-              mlayerApis.getCountSizeApi(routingContext);
-            });
-
-    router
-        .route(api.getStackRestApis() + "/*")
-        .subRouter(
-            new StacRestApi(
-                     router, api, config(), validationService, authService, auditingService)
-                .init());
+    // Initialize controllers and register their routes
+    router.route(api.getStackRestApis() + "/*").subRouter(stacController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(geocodingController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(crudController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(ratingController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(listController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(searchController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(relationshipController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(mlayerController.init(router));
 
     // Start server
     server.requestHandler(router).listen(port);
@@ -677,6 +246,34 @@ public class ApiServerVerticle extends AbstractVerticle {
     /* Print the deployed endpoints */
     printDeployedEndpoints(router);
     LOGGER.info("API server deployed on :" + serverOptions.getPort());
+  }
+
+  private void startHttpServer(HttpServerOptions serverOptions) {
+    /* Set up the HTTP server properties, APIs and port. */
+
+    serverOptions.setSsl(false);
+    /*
+     * Default port when ssl is disabled is 8080. If set through config, then that value is taken
+     */
+    port = config().getInteger(PORT) == null ? 8080 : config().getInteger(PORT);
+  }
+
+  private void startHttpsServer(HttpServerOptions serverOptions) {
+    /* Read the configuration and set the HTTPs server properties. */
+
+    keystore = config().getString("keystore");
+    keystorePassword = config().getString("keystorePassword");
+
+    /*
+     * Default port when ssl is enabled is 8443. If set through config, then that value is taken
+     */
+    port = config().getInteger(PORT) == null ? 8443 : config().getInteger(PORT);
+
+    /* Set up the HTTPs server properties, APIs and port. */
+
+    serverOptions
+        .setSsl(true)
+        .setKeyStoreOptions(new JksOptions().setPath(keystore).setPassword(keystorePassword));
   }
 
   private void printDeployedEndpoints(Router router) {

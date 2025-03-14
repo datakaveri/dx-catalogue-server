@@ -1,5 +1,6 @@
 package iudx.catalogue.server.apiserver;
 
+import static iudx.catalogue.server.apiserver.util.Constants.UAC_DEPLOYMENT;
 import static iudx.catalogue.server.util.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.vertx.core.DeploymentOptions;
@@ -11,9 +12,11 @@ import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 import iudx.catalogue.server.Configuration;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
-import iudx.catalogue.server.database.ElasticClient;
-import iudx.catalogue.server.validator.ValidatorService;
-import iudx.catalogue.server.validator.ValidatorServiceImpl;
+import iudx.catalogue.server.database.elastic.ElasticClient;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchServiceImpl;
+import iudx.catalogue.server.validator.service.ValidatorService;
+import iudx.catalogue.server.validator.service.ValidatorServiceImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -30,6 +33,7 @@ public class ConstraintsValidationTest {
   private static ValidatorService validator;
   private static Vertx vertxObj;
   private static ElasticClient client;
+  private static ElasticsearchService esService;
   private static String databaseIP;
   private static String docIndex;
   private static int databasePort;
@@ -44,7 +48,6 @@ public class ConstraintsValidationTest {
   static void startVertx(Vertx vertx, VertxTestContext testContext) {
 
     JsonObject apiconfig = Configuration.getConfiguration("./configs/config-test.json", 3);
-    apiconfig.put("dxApiBasePath","/iudx/cat/v1");
     JsonObject validationconfig = Configuration.getConfiguration("./configs/config-test.json", 2);
 
     vertx.deployVerticle(new ApiServerVerticle(), new DeploymentOptions().setConfig(apiconfig),
@@ -56,11 +59,13 @@ public class ConstraintsValidationTest {
     databaseUser = validationconfig.getString(DATABASE_UNAME);
     databasePassword = validationconfig.getString(DATABASE_PASSWD);
     docIndex = validationconfig.getString(DOC_INDEX);
+    isUACinstance = apiconfig.getBoolean(UAC_DEPLOYMENT);
     vocContext = "xyz";
 
     fileSystem = vertx.fileSystem();
     client = new ElasticClient(databaseIP, databasePort, docIndex, databaseUser, databasePassword);
-    validator = new ValidatorServiceImpl(client,docIndex,isUACinstance, vocContext);
+    esService = new ElasticsearchServiceImpl(client);
+    validator = new ValidatorServiceImpl(esService,docIndex,isUACinstance, vocContext);
 
     testContext.completed();
   }
@@ -432,9 +437,14 @@ public class ConstraintsValidationTest {
         .toJsonArray().getJsonObject(0);
     resource.put(NAME, id);
 
-    validator.validateSchema(resource, testContext.failing(response -> testContext.verify(() -> {
-      testContext.completeNow();
-    })));
+    validator.validateSchema(resource)
+        .onComplete(handler -> {
+          if(handler.succeeded()){
+            testContext.failNow("Fail;");
+          } else {
+            testContext.completeNow();
+          }
+        });
   }
 
  /* @Test

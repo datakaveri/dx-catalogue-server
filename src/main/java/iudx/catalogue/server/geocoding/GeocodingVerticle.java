@@ -9,14 +9,15 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.serviceproxy.ServiceBinder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import iudx.catalogue.server.geocoding.service.GeocodingService;
+import iudx.catalogue.server.geocoding.service.GeocodingServiceImpl;
 
 /**
  * The Geocoding Verticle.
  * <h1>A Geocoding Verticle</h1>
+ *
  * <p>The Geocoding Verticle implementation in the the IUDX Catalogue Server exposes the
- * {@link iudx.catalogue.server.geocoding.GeocodingService} over the Vert.x Event Bus.
+ * {@link GeocodingService} over the Vert.x Event Bus.
  * </p>
  *
  *

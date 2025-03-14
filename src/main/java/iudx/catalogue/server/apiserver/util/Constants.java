@@ -23,6 +23,7 @@ public class Constants {
 
 
   public static final String HEADER_TOKEN = "token";
+  public static final String HEADER_BEARER_AUTHORIZATION = "Bearer";
   public static final String HEADER_CONTENT_LENGTH = "Content-Length";
   public static final String HEADER_CONTENT_TYPE = "Content-Type";
   public static final String HEADER_HOST = "Host";

@@ -12,15 +12,15 @@ public class Constants {
 
 
   /** Service Addresses. */
-  public static final String DATABASE_SERVICE_ADDRESS = "iudx.catalogue.database.service";
+  public static final String ELASTIC_SERVICE_ADDRESS = "iudx.catalogue.elastic.service";
   public static final String AUTH_SERVICE_ADDRESS = "iudx.catalogue.authentication.service";
   public static final String VALIDATION_SERVICE_ADDRESS = "iudx.catalogue.validator.service";
   public static final String GEOCODING_SERVICE_ADDRESS = "iudx.catalogue.geocoding.service";
   public static final String NLP_SERVICE_ADDRESS = "iudx.catalogue.nlpsearch.service";
   public static final String AUDITING_SERVICE_ADDRESS = "iudx.catalogue.auditing.service";
   public static final String RATING_SERVICE_ADDRESS = "iudx.catalogue.rating.service";
-  public static final String MLAYER_SERVICE_ADDRESSS = "iudx.catalogue.mlayer.service";
-  public static final String BROKER_SERVICE_ADDRESS = "iudx.catalogue.databroker.service";
+  public static final String MLAYER_SERVICE_ADDRESS = "iudx.catalogue.mlayer.service";
+  public static final String RMQ_SERVICE_ADDRESS = "iudx.catalogue.rabbitmq.service";
   public static final String PG_SERVICE_ADDRESS = "iudx.catalogue.pgsql.service";
 
 
@@ -43,6 +43,7 @@ public class Constants {
   public static final String PUBLIC_KEY = "publicKey";
   public static final String DATABASE_PASSWD = "databasePassword";
   public static final String SOURCE = "_source";
+  public static final String KEYWORD_KEY = ".keyword";
 
   public static final Pattern UUID_PATTERN =
       Pattern.compile(
@@ -61,6 +62,7 @@ public class Constants {
   public static final String ALL = "all";
   public static final String COS = "cos";
   public static final String OWNER = "owner";
+  public static final String COS_ADMIN = "cos_admin";
   public static final String PROVIDER_USER_ID = "ownerUserId";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
   public static final String COS_ITEM = "cos";
@@ -140,6 +142,8 @@ public class Constants {
 
   /** DB Query. */
   public static final String TOTAL_HITS = "totalHits";
+  public static final String INCLUDE_FIELDS = "includeFields";
+  public static final String FIELD = "field";
   public static final String QUERY_KEY = "query";
   public static final String HITS = "hits";
   public static final String TOTAL = "total";
@@ -184,8 +188,10 @@ public class Constants {
   public static final int MAX_RESULT_WINDOW = 10000;
   public static final int MAXDISTANCE_LIMIT = 10000; // 10KM
   public static final int SERVICE_TIMEOUT = 3000;
-  public static final int POPULAR_DATASET_COUNT = 6;
 
+  public static final int POPULAR_DATASET_COUNT = 6;
+  public static final String FILTER_PAGINATION_FROM = "0";
+  public static final String MAX_LIMIT = "10000";
 
 
   public static final String SUCCESS = "Success";
@@ -234,6 +240,7 @@ public class Constants {
   public static final String DETAIL_INTERNAL_SERVER_ERROR = "Internal error";
   public static final String DETAIL_WRONG_ITEM_TYPE = "Wrong Item Type";
   public static final String DETAIL_ID_NOT_FOUND = "id not present in the request";
+  public static final String DETAIL_ITEM_NOT_FOUND = "Item not found";
 
   public static final String TYPE_INVALID_GEO_PARAM = "urn:dx:cat:InvalidGeoParam";
   public static final String TITLE_INVALID_GEO_PARAM = "Geoquery parameter error";

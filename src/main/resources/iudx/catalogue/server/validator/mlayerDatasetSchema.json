@@ -35,9 +35,10 @@
       "description": "Instance name from where the datasets belong to",
       "default": "",
       "examples": [
-        "pune"
+        "pune",
+        "rsac_up"
       ],
-      "pattern": "^[a-zA-Z ]*$"
+      "pattern": "^[a-zA-Z0-9_ ]*$"
     },
     "tags": {
       "$id": "#/properties/tags",

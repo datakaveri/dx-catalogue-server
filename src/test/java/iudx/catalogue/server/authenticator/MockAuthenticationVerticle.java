@@ -2,6 +2,8 @@ package iudx.catalogue.server.authenticator;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
+import iudx.catalogue.server.authenticator.service.AuthenticationService;
+import iudx.catalogue.server.authenticator.service.MockAuthenticationServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.vertx.core.json.JsonObject;
@@ -19,7 +21,7 @@ import static iudx.catalogue.server.util.Constants.*;
  * <h1>Authentication Verticle</h1>
  * <p>
  * The Authentication Verticle implementation in the the IUDX Catalogue Server exposes the
- * {@link iudx.catalogue.server.authenticator.AuthenticationService} over the Vert.x Event Bus.
+ * {@link iudx.catalogue.server.authenticator.service.AuthenticationService} over the Vert.x Event Bus.
  * </p>
  * 
  * @version 1.0
@@ -46,7 +48,6 @@ public class MockAuthenticationVerticle extends AbstractVerticle {
     String authHost = config().getString(AUTH_SERVER_HOST);
     authentication = new MockAuthenticationServiceImpl(createWebClient(vertx, config()), authHost);
 
-
     new ServiceBinder(vertx).setAddress(AUTH_SERVICE_ADDRESS)
       .register(AuthenticationService.class, authentication);
   }
@@ -60,7 +61,6 @@ public class MockAuthenticationVerticle extends AbstractVerticle {
    * required to call Auth APIs (has to be class 1). Since it's a pure function, it can be used as a helper in testing
    * initializations also.
    * @param vertx the vertx instance
-   * @param properties the properties field of the verticle
    * @param testing a bool which is used to disable client side ssl checks for testing purposes
    * @return a web client initialized with the relevant client certificate
    */

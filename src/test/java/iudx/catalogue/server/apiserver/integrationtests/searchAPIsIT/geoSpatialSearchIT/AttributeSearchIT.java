@@ -32,6 +32,20 @@ public class AttributeSearchIT {
                 .response();
     }
     @Test
+    @DisplayName("testing Attribute Search - 200 Success - Simple Attribute")
+    void GetSimpleAttributeForDxType() {
+        Response response = given()
+            .param("property","[type]")
+            .param("value","[[iudx:Resource, iudx:ResourceGroup]]")
+            .when()
+            .get("/search")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+    @Test
     @DisplayName("testing Attribute Search - 200 Success - Simple Attribute Multi value")
     void GetSimpleAttributeMulVal() {
         Response response = given()

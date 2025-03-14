@@ -5,11 +5,7 @@
   "host": "",
   "modules": [
     {
-      "id": "iudx.catalogue.server.database.DatabaseVerticle",
-      "optionalModules": [
-        "iudx.catalogue.server.geocoding.GeocodingVerticle",
-        "iudx.catalogue.server.nlp.NLPSearchVerticle"
-      ],
+      "id": "iudx.catalogue.server.database.elastic.ElasticsearchVerticle",
       "verticleInstances": 2,
       "databaseIP": "",
       "docIndex": "",
@@ -60,10 +56,15 @@
       "databasePort": 1234,
       "databasePassword": "",
       "databaseUser": "",
-      "docIndex": ""
+      "docIndex": "",
+      "@context": ""
     },
     {
       "id": "iudx.catalogue.server.apiserver.ApiServerVerticle",
+      "optionalModules": [
+        "iudx.catalogue.server.geocoding.GeocodingVerticle",
+        "iudx.catalogue.server.nlp.NLPSearchVerticle"
+      ],
       "keystorePath": "",
       "keystorePassword": "",
       "token":"",
@@ -74,6 +75,7 @@
       "httpPort": 1234,
       "ssl": false,
       "host": "",
+      "dxApiBasePath": "",
       "isUACInstance": false,
       "databaseIP": "",
       "docIndex": "",
@@ -115,10 +117,12 @@
       "ratingPoolSize": 25,
       "ratingExchangeName": "",
       "rsAuditingTableName": "",
-      "minReadNumber": 100
+      "minReadNumber": 100,
+      "docIndex": "",
+      "ratingIndex": ""
     },
     {
-      "id": "iudx.catalogue.server.databroker.DataBrokerVerticle",
+      "id": "iudx.catalogue.server.databroker.RabbitMQVerticle",
       "verticleInstances": 1,
       "dataBrokerIP": "",
       "dataBrokerPort": 1234,
@@ -137,6 +141,9 @@
       "verticleInstances": 1,
       "databaseTable": "",
       "catSummaryTable" : "",
+      "docIndex": "",
+      "mlayerInstanceIndex": "",
+      "mlayerDomainIndex": "",
       "excluded_ids": []
     },
     {

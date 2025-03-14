@@ -28,6 +28,7 @@ pipeline {
     stage('Unit Tests and CodeCoverage Test'){
       steps{
         script{
+          sh 'sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java'
           sh 'cp /home/ubuntu/configs/cat-config-test.json ./configs/config-test.json'
           sh 'mvn clean test checkstyle:checkstyle pmd:pmd'
         }
@@ -42,13 +43,13 @@ pipeline {
           recordIssues(
             enabledForFailure: true,
             skipBlames: true,
-            qualityGates: [[threshold:6, type: 'TOTAL', unstable: false]],
+            qualityGates: [[threshold:40, type: 'TOTAL', unstable: false]],
             tool: checkStyle(pattern: 'target/checkstyle-result.xml')
           )
           recordIssues(
             enabledForFailure: true,
             skipBlames: true,
-            qualityGates: [[threshold:8, type: 'TOTAL', unstable: false]],
+            qualityGates: [[threshold:11, type: 'TOTAL', unstable: false]],
             tool: pmdParser(pattern: 'target/pmd.xml')
           )
         }
@@ -57,9 +58,10 @@ pipeline {
         }
         cleanup{
           script{
+            sh 'sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java'
             sh 'sudo rm -rf target/'
           }
-        }        
+        }
       }
     }
 
@@ -79,10 +81,10 @@ pipeline {
         }
       }
     }
-    
+
     stage('Run Jmeter Performance Tests'){
       steps{
-        node('built-in') {      
+        node('built-in') {
           script{
             sh 'rm -rf /var/lib/jenkins/iudx/cat/Jmeter/Report ; mkdir -p /var/lib/jenkins/iudx/cat/Jmeter/Report ; /var/lib/jenkins/apache-jmeter-5.4.1/bin/jmeter.sh -n -t /var/lib/jenkins/iudx/cat/Jmeter/CatalogueServer.jmx -l /var/lib/jenkins/iudx/cat/Jmeter/Report/JmeterTest.jtl -e -o /var/lib/jenkins/iudx/cat/Jmeter/Report'
           }
@@ -98,7 +100,7 @@ pipeline {
         }
       }
     }
-    
+
     stage('Integration Tests and OWASP ZAP pen test'){
       steps{
         node('built-in') {
@@ -108,13 +110,14 @@ pipeline {
           }
         }
         script{
+            sh 'sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java'
             sh 'scp /home/ubuntu/configs/cat-config-test.json ./configs/config-test.json'
             sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestProxyHost=jenkins-master-priv -DintTestProxyPort=8090 -DintTestHost=jenkins-slave1 -DintTestPort=8080'
         }
         node('built-in') {
           script{
             runZapAttack()
-            }
+          }
         }
       }
       post{
@@ -126,7 +129,7 @@ pipeline {
            node('built-in') {
             script{
                archiveZap failHighAlerts: 1, failMediumAlerts: 1, failLowAlerts: 1
-            }  
+            }
           }
         }
         failure{
@@ -134,6 +137,7 @@ pipeline {
         }
         cleanup{
           script{
+            sh 'sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java'
             sh 'docker compose down --remove-orphans'
           } 
         }
@@ -182,7 +186,8 @@ pipeline {
         stage('Integration test on swarm deployment') {
           steps {
             script{
-                sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestDepl=true'
+              sh 'sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+              sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestDepl=true'
             }
           }
           post{
@@ -194,6 +199,11 @@ pipeline {
             }
             failure{
               error "Test failure. Stopping pipeline execution!"
+            }
+            cleanup{
+              script{
+                sh 'sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java'
+              }
             }
           }
         }

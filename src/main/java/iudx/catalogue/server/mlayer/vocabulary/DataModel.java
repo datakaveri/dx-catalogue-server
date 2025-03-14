@@ -1,6 +1,12 @@
 package iudx.catalogue.server.mlayer.vocabulary;
 
-import static iudx.catalogue.server.database.Constants.GET_ALL_DATASETS_BY_RS_GRP;
+import static iudx.catalogue.server.database.elastic.util.Constants.RESULT;
+import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
+import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
+import static iudx.catalogue.server.util.Constants.FIELD;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE_GROUP;
+import static iudx.catalogue.server.util.Constants.MAX_LIMIT;
+import static iudx.catalogue.server.util.Constants.VALUE;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -10,9 +16,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import iudx.catalogue.server.database.ElasticClient;
+import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
+import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
+import iudx.catalogue.server.database.elastic.model.QueryModel;
+import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.database.elastic.util.QueryType;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -23,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 public class DataModel {
   private static final Logger LOGGER = LogManager.getLogger(DataModel.class);
   private static final int MAX_CONCURRENT_REQUESTS = 10; // limit to 10 concurrent requests
-  private final ElasticClient client;
+  private final ElasticsearchService esService;
   private final WebClient webClient;
   private final String docIndex;
   private final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_REQUESTS);
@@ -31,12 +42,12 @@ public class DataModel {
   /**
    * Constructor for DataModel.
    *
-   * @param client The ElasticClient instance
+   * @param esService The ElasticsearchService instance
    * @param docIndex The index name where data are stored/retrieved in elastic.
    */
-  public DataModel(WebClient webClient, ElasticClient client, String docIndex) {
+  public DataModel(WebClient webClient, ElasticsearchService esService, String docIndex) {
     this.webClient = webClient;
-    this.client = client;
+    this.esService = esService;
     this.docIndex = docIndex;
   }
 
@@ -72,16 +83,33 @@ public class DataModel {
    * @return Future containing JsonArray of search results.
    */
   private Future<JsonArray> getAllDatasetsByRsGrp() {
-    Promise<JsonArray> promise = Promise.promise();
+    QueryModel shouldQuery = new QueryModel(QueryType.MATCH, Map.of(
+        FIELD, "type.keyword", VALUE, ITEM_TYPE_RESOURCE_GROUP
+    ));
+    QueryModel innerBoolQuery = new QueryModel(QueryType.BOOL);
+    innerBoolQuery.addShouldQuery(shouldQuery);
+    QueryModel outerBoolQuery = new QueryModel(QueryType.BOOL);
+    outerBoolQuery.addMustQuery(innerBoolQuery);
+    QueryModel finalQueryModel = new QueryModel();
+    finalQueryModel.setQueries(outerBoolQuery);
+    finalQueryModel.setLimit(MAX_LIMIT);
 
-    client.searchAsync(
-        GET_ALL_DATASETS_BY_RS_GRP,
-        docIndex,
-        searchHandler -> {
+    Promise<JsonArray> promise = Promise.promise();
+    esService.search(docIndex, finalQueryModel)
+        .onComplete(searchHandler -> {
           if (searchHandler.succeeded()) {
             LOGGER.debug("Successful Elastic request");
-            JsonObject response = searchHandler.result();
-            JsonArray results = response.getJsonArray("results");
+            List<ElasticsearchResponse> responseList = searchHandler.result();
+            DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
+            responseMsg.statusSuccess();
+            responseList.stream()
+                .map(ElasticsearchResponse::getSource)
+                .peek(source -> {
+                  source.remove(SUMMARY_KEY);
+                  source.remove(WORD_VECTOR_KEY);
+                })
+                .forEach(responseMsg::addResult);
+            JsonArray results = responseMsg.getResponse().getJsonArray(RESULT);
             promise.complete(results);
           } else {
             LOGGER.error("Failed Elastic Request: {}", searchHandler.cause().getMessage());

@@ -7,29 +7,29 @@
     <artifactId>iudx.catalogue.server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <properties>
-        <vertx.version>4.5.4</vertx.version>
-        <openjdk.version>11</openjdk.version>
+        <vertx.version>4.5.11</vertx.version>
+        <openjdk.version>21</openjdk.version>
         <hazelcast.version>4.0.2</hazelcast.version>
-        <micrometer.version>1.12.3</micrometer.version>
-        <curator.version>5.6.0</curator.version>
-        <junit-jupiter-engine.version>5.10.2</junit-jupiter-engine.version>
-        <apache-log4j2.version>2.23.0</apache-log4j2.version>
+        <micrometer.version>1.14.1</micrometer.version>
+        <curator.version>5.7.1</curator.version>
+        <junit-jupiter-engine.version>5.11.3</junit-jupiter-engine.version>
+        <apache-log4j2.version>2.24.2</apache-log4j2.version>
         <lmax-disruptor.version>4.0.0</lmax-disruptor.version>
-        <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
-        <checkstyle.version>10.13.0</checkstyle.version>
-        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
-        <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-        <exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
-        <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
-        <maven-checkstyle-plugin-google.version>3.3.1</maven-checkstyle-plugin-google.version>
-        <maven-surefire-report-plugin.version>3.2.5</maven-surefire-report-plugin.version>
-        <elastic-search-rest-client>8.12.1</elastic-search-rest-client>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <checkstyle.version>10.20.1</checkstyle.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+        <maven-javadoc-plugin.version>3.11.1</maven-javadoc-plugin.version>
+        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+        <maven-pmd-plugin.version>3.26.0</maven-pmd-plugin.version>
+        <maven-checkstyle-plugin-google.version>3.6.0</maven-checkstyle-plugin-google.version>
+        <maven-surefire-report-plugin.version>3.5.2</maven-surefire-report-plugin.version>
+        <elastic-search-rest-client>8.16.1</elastic-search-rest-client>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.mainClass>iudx.catalogue.server.deploy.Deployer</exec.mainClass>
         <exec.mainClassDev>iudx.catalogue.server.deploy.DeployerDev</exec.mainClassDev>
-        <testcontainer.params>1.19.6</testcontainer.params>
-        <testcontainer-postgres.version>1.19.6</testcontainer-postgres.version>
+        <testcontainer.params>1.20.4</testcontainer.params>
+        <testcontainer-postgres.version>1.20.4</testcontainer-postgres.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.2</version>
+            <version>42.7.4</version>
         </dependency>
         <dependency>
             <groupId>com.ongres.scram</groupId>
@@ -97,6 +97,11 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-validation</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
             <artifactId>vertx-rx-java2</artifactId>
             <version>${vertx.version}</version>
         </dependency>
@@ -104,23 +109,23 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>2.16.1</version>
+            <version>2.18.1</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.16.1</version>
+            <version>2.18.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.16.1</version>
+            <version>2.18.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
+            <version>33.3.1-jre</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
@@ -142,9 +147,20 @@
             <version>${elastic-search-rest-client}</version>
         </dependency>
         <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+            <version>${elastic-search-rest-client}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.java-json-tools</groupId>
             <artifactId>json-schema-validator</artifactId>
             <version>2.2.14</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.1.0</version>
         </dependency>
         <!-- Packages for Vertx metrics through micrometer  -->
         <dependency>
@@ -161,6 +177,11 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
             <version>${micrometer.version}</version>
         </dependency>
         <!-- Packages for Vertx Hazelcast cluster manager  -->
@@ -207,18 +228,18 @@
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-junit5</artifactId>
-            <version>2.25.0</version>
+            <version>2.29.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-commons</artifactId>
-            <version>1.10.2</version>
+            <version>1.11.3</version>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-engine</artifactId>
-            <version>1.10.2</version>
+            <version>1.11.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -242,14 +263,22 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.10.0</version>
+            <version>5.14.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.14.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Rest Assured -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>5.4.0</version>
+            <version>5.5.0</version>
             <scope>test</scope>
         </dependency>
         <!-- test container dependency-->
@@ -276,7 +305,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.37.3</version>
+            <version>9.47</version>
         </dependency>
     </dependencies>
     <build>
@@ -468,7 +497,8 @@
                     <useSystemClassLoader>true</useSystemClassLoader>
                     <testFailureIgnore>true</testFailureIgnore>
                     <argLine>
-                        @{argLine} -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/1.9.21.1/aspectjweaver-1.9.21.1.jar"
+                        @{argLine}
+                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/1.9.22.1/aspectjweaver-1.9.22.1.jar"
                     </argLine>
                     <systemProperties>
                         <property>
@@ -481,14 +511,14 @@
                     <dependency>
                         <groupId>org.aspectj</groupId>
                         <artifactId>aspectjweaver</artifactId>
-                        <version>1.9.21.1</version>
+                        <version>1.9.22.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
             <plugin>
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>
-                <version>2.12.0</version>
+                <version>2.15.2</version>
                 <configuration>
                     <reportVersion>2.4.1</reportVersion>
                 </configuration>

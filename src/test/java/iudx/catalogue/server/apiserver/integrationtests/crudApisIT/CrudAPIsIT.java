@@ -27,6 +27,7 @@ public class CrudAPIsIT {
     public static String resource_server_id;
     public static String provider_id;
     public static String resource_group_id;
+    public static String resource_group_vthInstance_id;
     public static String resource_item_id;
 
     // Helper method to check item existence
@@ -298,6 +299,66 @@ public class CrudAPIsIT {
 
     @Test
     @Order(6)
+    @DisplayName("Testing create DX Resource Group Item Entity - With Instance - 201")
+    void createDXResourceGroupItemEntityVthInstance() {
+        LOGGER.debug("Provider ID before check: " + provider_id);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Thread interrupted", e);
+        }
+
+        if (!itemExists(provider_id)) {
+            LOGGER.warn("Provider item does not exist. Retrying...");
+            return;
+        }
+
+        JsonObject jsonPayload = new JsonObject()
+            .put("@context", "https://voc.iudx.org.in/")
+            .put("name", "TESTRGX")
+            .put("label", "TEST RG-X")
+            .put("type", new JsonArray().add("iudx:ResourceGroup"))
+            .put("description", "TEST RG")
+            .put("tags", new JsonArray().add("Functional Areas (Administrative Boundaries)"))
+            .put("location", new JsonObject()
+                .put("type", "Place")
+                .put("address", "India")
+                .put("geometry", new JsonObject()
+                    .put("type", "Polygon")
+                    .put("coordinates", new JsonArray().add(
+                        new JsonArray()
+                            .add(new JsonArray().add(82.08984375000001).add(21.53484700204879))
+                            .add(new JsonArray().add(83.84765625000001).add(21.53484700204879))
+                            .add(new JsonArray().add(83.84765625000001).add(25.562265014427492))
+                            .add(new JsonArray().add(82.08984375000001).add(25.562265014427492))
+                            .add(new JsonArray().add(82.08984375000001).add(21.53484700204879))
+                    ))));
+
+        jsonPayload.put("provider", provider_id);
+        jsonPayload.put("itemStatus", "ACTIVE");
+
+        Response response = given()
+            .contentType("application/json")
+            .header("token", token)
+            .body(jsonPayload.toString())
+            .when()
+            .post("/item/")
+            .then()
+            .statusCode(201)
+            .body("type", is("urn:dx:cat:Success"))
+            .body("title", is("Success"))
+            .body("detail", equalTo("Success: Item created"))
+            .body("results.id", notNullValue())
+            .extract()
+            .response();
+
+        resource_group_vthInstance_id = response.path("results.id");
+    }
+
+    @Test
+    @Order(7)
     @DisplayName("testing create DX Resource Item - 201")
     void createDXResourceItem() {
         LOGGER.debug("from DX RS item..."+resource_server_id +" "+provider_id+" "+resource_group_id);
@@ -357,7 +418,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     @DisplayName("testing create a DX Resource item - 400")
     void createDXResourceItem400() {
         JsonObject jsonPayload = new JsonObject()
@@ -387,7 +448,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     @DisplayName("testing create DX Entity - 400")
     void createDXEntity400() {
         LOGGER.info("owner_id: "+owner_id);
@@ -413,7 +474,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     @DisplayName("testing create DX Entity - 400 Invalid UUID")
     void createDXEntityInvalidUUID400() {
         JsonObject jsonPayload = new JsonObject()
@@ -450,7 +511,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     @DisplayName("testing create DX Entity - 401 Invalid Credentials")
     void createDXEntityInvalidCredentials() {
         JsonObject jsonPayload = new JsonObject()
@@ -482,7 +543,7 @@ public class CrudAPIsIT {
      */
 
     @Test
-    @Order(11)
+    @Order(12)
     @DisplayName("testing update owner item - 200")
     void updateOwnerItem() {
         JsonObject jsonPayload = new JsonObject()
@@ -506,7 +567,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     @DisplayName("testing update COS item - 200")
     void updateCOSItem() {
         JsonObject jsonPayload = new JsonObject()
@@ -534,7 +595,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     @DisplayName("testing update DX Resource Server Item - 200")
     void updateDXResourceItem(){
         JsonObject jsonPayload = new JsonObject()
@@ -591,7 +652,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     @DisplayName("testing updation of DX Provider Item - 200")
     void updateDXProviderItem() {
         JsonObject jsonPayload = new JsonObject()
@@ -628,7 +689,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(15)
+    @Order(16)
     @DisplayName("testing updation of DX Resource Group Item - 200")
     void updateDXResourceGroupItem() {
         JsonObject jsonPayload = new JsonObject()
@@ -652,7 +713,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(16)
+    @Order(17)
     @DisplayName("testing updation of DX Resource Item - 200")
     void updateDXResourceItem200() {
         JsonObject jsonPayload = new JsonObject()
@@ -683,7 +744,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(17)
+    @Order(18)
     @DisplayName("testing updation of DX Entity - 400")
     void updateDXEntity400() {
         JsonObject jsonPayload = new JsonObject()
@@ -708,7 +769,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(18)
+    @Order(19)
     @DisplayName("testing updation of DX Entity - 400 (Invalid links)")
     void updateDXEntity400InvalidLinks() {
         JsonObject jsonPayload = new JsonObject()
@@ -738,7 +799,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(19)
+    @Order(20)
     @DisplayName("testing update DX Entity - 401 Invalid Credentials")
     void updateDXEntityInvalidCredentials() {
         JsonObject jsonPayload = new JsonObject()
@@ -765,7 +826,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(20)
+    @Order(21)
     @DisplayName("testing update DX Entity - 404 Not Found")
     void updateDXEntityNotFound() {
         JsonObject jsonPayload = new JsonObject()
@@ -800,7 +861,7 @@ public class CrudAPIsIT {
      * DX Provider items, DX Resource Group items, and DX Resource items.
      */
     @Test
-    @Order(21)
+    @Order(22)
     @DisplayName("testing get DX Entity by ID- 200 Success")
     void getDXEntityByID() {
         LOGGER.info("owner_id: "+owner_id);
@@ -817,7 +878,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(22)
+    @Order(23)
     @DisplayName("testing get DX Entity by ID - 404 Not Found")
     void getDXEntityNotFound() {
         Response response = given()
@@ -833,7 +894,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(23)
+    @Order(24)
     @DisplayName("testing get DX Entity by ID - 400 Invalid UUID")
     void getDXEntityInvalidUUID() {
         Response response = given()
@@ -849,7 +910,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(24)
+    @Order(25)
     @DisplayName("testing list Type (Data Model) given Resource Id - 200 type of item")
     void getDXEntityTypeRS() {
         Response response = given()
@@ -867,7 +928,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(25)
+    @Order(26)
     @DisplayName("testing list Type (Data Model) given Resource Group Id - 200 type of item")
     void getDXEntityRSGroup() {
         Response response = given()
@@ -890,7 +951,7 @@ public class CrudAPIsIT {
      * DX Provider items, DX Resource Group items, and DX Resource items.
      */
     @Test
-    @Order(26)
+    @Order(27)
     @DisplayName("testing delete a Resource Item DX Entity - 200")
     void DeleteRSItemDXEntity() {
         Response response = given()
@@ -906,7 +967,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(27)
+    @Order(28)
     @DisplayName("testing delete a Resource Group DX Entity - 200")
     void DeleteRSGroupDXEntity() {
         Response response = given()
@@ -922,7 +983,23 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(28)
+    @Order(29)
+    @DisplayName("testing delete a Resource Group DX Entity - 200")
+    void DeleteRSGroupVthInstanceDXEntity() {
+        Response response = given()
+            .param("id", resource_group_vthInstance_id)
+            .header("token", token)
+            .contentType("application/json")
+            .when()
+            .delete("/item")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+    @Test
+    @Order(30)
     @DisplayName("testing delete a Provider DX Entity - 200")
     void DeleteProviderDXEntity() {
         Response response = given()
@@ -938,7 +1015,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(29)
+    @Order(31)
     @DisplayName("testing delete a Resource Server DX Entity - 200")
     void DeleteResourceServerDXEntity() {
         Response response = given()
@@ -954,7 +1031,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(31)
+    @Order(32)
     @DisplayName("testing delete a Owner DX Entity - 200")
     void DeleteOwnerDXEntity() {
         Response response = given()
@@ -970,7 +1047,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(30)
+    @Order(33)
     @DisplayName("testing delete a COS DX Entity - 200")
     void DeleteCosDXEntity() {
         Response response = given()
@@ -986,7 +1063,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(32)
+    @Order(34)
     @DisplayName("testing delete a DX Entity - 404 Not Found")
     void DeleteDXEntity404() {
         Response response = given()
@@ -1002,7 +1079,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(33)
+    @Order(35)
     @DisplayName("testing delete a DX Entity - 400 Invalid UUID")
     void DeleteDXEntityInvalidUUID() {
         Response response = given()
@@ -1018,7 +1095,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(34)
+    @Order(36)
     @DisplayName("testing delete a DX Entity - 401 Invalid credentials")
     void DeleteDXEntityInvalidCred() {
         Response response = given()
