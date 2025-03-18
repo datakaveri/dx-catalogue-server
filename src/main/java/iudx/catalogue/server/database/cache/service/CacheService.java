@@ -1,17 +1,17 @@
 package iudx.catalogue.server.database.cache.service;
 
 import io.vertx.core.Future;
-import iudx.catalogue.server.database.cache.models.DeleteQuery;
-import iudx.catalogue.server.database.cache.models.InsertQuery;
-import iudx.catalogue.server.database.cache.models.QueryResult;
-import iudx.catalogue.server.database.cache.models.SelectQuery;
-import iudx.catalogue.server.database.cache.models.UpdateQuery;
+
+import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public interface CacheService {
-  Future<QueryResult> insert(InsertQuery query);
-  Future<QueryResult> update(UpdateQuery query);
-  Future<QueryResult> search(SelectQuery query, int limit, int offset);
-  Future<QueryResult> delete(DeleteQuery query);
-  Future<Integer> count(SelectQuery query);
+  Future<JsonObject> getPopularDatasetCounts(String table);
+
+  Future<JsonObject> getSummaryCountSizeApi(String table);
+
+  Future<JsonObject> getRealTimeDataSetApi(String databaseTable, JsonArray excludedIdsJson);
+  Future<Integer> getAuditingInfo(String tableName, String userId, String resourceId);
 }
 

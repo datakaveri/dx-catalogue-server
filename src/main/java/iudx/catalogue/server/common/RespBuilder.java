@@ -4,6 +4,7 @@ import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
 
 
 public class RespBuilder {
@@ -96,6 +97,11 @@ public class RespBuilder {
   }
 
   public RespBuilder withResult(JsonObject results) {
+    response.put(RESULTS, results);
+    return this;
+  }
+
+  public RespBuilder withResult(List<JsonObject> results) {
     response.put(RESULTS, results);
     return this;
   }
