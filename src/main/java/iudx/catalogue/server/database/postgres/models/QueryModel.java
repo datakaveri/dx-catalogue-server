@@ -1,4 +1,4 @@
-package iudx.catalogue.server.database.cache.models;
+package iudx.catalogue.server.database.postgres.models;
 
 import java.util.List;
 
