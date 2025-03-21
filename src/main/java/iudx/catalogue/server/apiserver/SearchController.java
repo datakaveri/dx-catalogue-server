@@ -6,14 +6,13 @@
 
 package iudx.catalogue.server.apiserver;
 
+import static iudx.catalogue.server.apiserver.QueryModelUtil.*;
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.*;
 import static iudx.catalogue.server.database.elastic.util.Constants.*;
-import static iudx.catalogue.server.geocoding.util.Constants.*;
-import static iudx.catalogue.server.geocoding.util.Constants.BBOX;
+import static iudx.catalogue.server.database.elastic.util.ResponseFilter.*;
 import static iudx.catalogue.server.geocoding.util.Constants.COORDINATES;
 import static iudx.catalogue.server.geocoding.util.Constants.GEOMETRY;
-import static iudx.catalogue.server.geocoding.util.Constants.TYPE;
 import static iudx.catalogue.server.util.Constants.*;
 import static iudx.catalogue.server.util.Constants.RESULTS;
 
@@ -27,14 +26,12 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
-import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
-import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
 import iudx.catalogue.server.database.elastic.util.QueryDecoder;
-import iudx.catalogue.server.database.elastic.util.QueryType;
 import iudx.catalogue.server.exceptions.FailureHandler;
 import iudx.catalogue.server.geocoding.service.GeocodingService;
 import iudx.catalogue.server.nlpsearch.service.NLPSearchService;
@@ -46,26 +43,19 @@ import org.apache.logging.log4j.Logger;
 public final class SearchController {
   private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
   private final QueryDecoder queryDecoder = new QueryDecoder();
-  private final ElasticsearchService esService;
+  private final ItemService itemService;
   private final GeocodingService geoService;
   private final NLPSearchService nlpService;
   private final FailureHandler failureHandler;
   private final String dxApiBasePath;
-  private final String docIndex;
 
-  public SearchController(
-      ElasticsearchService esService,
-      GeocodingService geoService,
-      NLPSearchService nlpService,
-      FailureHandler failureHandler,
-      String dxApiBasePath,
-      String docIndex) {
-    this.esService = esService;
+  public SearchController(ItemService itemService, GeocodingService geoService,
+                          NLPSearchService nlpService, FailureHandler failureHandler, String dxApiBasePath) {
+    this.itemService = itemService;
     this.geoService = geoService;
     this.nlpService = nlpService;
     this.failureHandler = failureHandler;
     this.dxApiBasePath = dxApiBasePath;
-    this.docIndex = docIndex;
   }
 
   // Routes for search and count
@@ -75,22 +65,22 @@ public final class SearchController {
     router
         .get(ROUTE_SEARCH)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::searchHandler);
+        .handler(this::searchHandler)
+        .failureHandler(failureHandler);
 
     /* NLP Search */
     router
         .get(ROUTE_NLP_SEARCH)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::nlpSearchHandler);
+        .handler(this::nlpSearchHandler)
+        .failureHandler(failureHandler);
 
     /* Count the Cataloque server items */
     router
         .get(ROUTE_COUNT)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::searchHandler);
+        .handler(this::searchHandler)
+        .failureHandler(failureHandler);
     return router;
   }
 
@@ -101,10 +91,8 @@ public final class SearchController {
    * @param routingContext Handles web request in Vert.x web
    */
   public void searchHandler(RoutingContext routingContext) {
-
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-
     JsonObject requestBody = new JsonObject();
 
     /* HTTP request instance/host details */
@@ -167,7 +155,7 @@ public final class SearchController {
       requestBody.put(HEADER_INSTANCE, instanceId);
 
       JsonObject resp = QueryMapper.validateQueryParam(requestBody);
-      String path = routingContext.normalisedPath();
+      String path = routingContext.normalizedPath();
       if (resp.getString(STATUS).equals(SUCCESS)) {
         if (path.equals(dxApiBasePath + ROUTE_SEARCH)) {
           searchQuery(requestBody)
@@ -256,30 +244,17 @@ public final class SearchController {
     }
 
     QueryModel queryModel = (QueryModel) query.getValue(QUERY_KEY);
-    LOGGER.debug("Info: Query constructed;" + queryModel.getQueries().getQueryType());
-
-    esService
-        .search(docIndex, queryModel)
+    LOGGER.debug("Info: Query constructed;");
+    itemService.search(queryModel, SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
-            searchRes -> {
-              if (searchRes.succeeded()) {
-                LOGGER.debug("Success: Successful DB request");
-                List<ElasticsearchResponse> response = searchRes.result();
-                DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-                responseMsg.statusSuccess().setTotalHits(response.size());
-                response.stream()
-                    .map(ElasticsearchResponse::getSource)
-                    .peek(
-                        source -> {
-                          source.remove(SUMMARY_KEY);
-                          source.remove(WORD_VECTOR_KEY);
-                        })
-                    .forEach(responseMsg::addResult);
-
-                promise.complete(responseMsg.getResponse());
+            res -> {
+              if (res.failed()) {
+                LOGGER.error("Fail: DB request has failed;" + res.cause());
+                promise.fail(res.cause());
               } else {
-                LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());
-                promise.fail(internalErrorResp());
+                DbResponseMessageBuilder responseMsg = res.result();
+                LOGGER.debug("Success: Successful DB Request");
+                promise.complete(responseMsg.getResponse());
               }
             });
     return promise.future();
@@ -288,38 +263,29 @@ public final class SearchController {
   public Future<JsonObject> countQuery(JsonObject request) {
     Promise<JsonObject> promise = Promise.promise();
     request.put(SEARCH, false);
-
     /* Validate the Request */
     if (!request.containsKey(SEARCH_TYPE)) {
       promise.fail(internalErrorResp());
       return promise.future();
     }
-
     /* Construct the query to be made */
     JsonObject query = queryDecoder.searchQuery(request);
     if (query.containsKey(ERROR)) {
-
       LOGGER.error("Fail: Query returned with an error");
-
       promise.fail(query.getJsonObject(ERROR).toString());
       return promise.future();
     }
 
     QueryModel queryModel = (QueryModel) query.getValue(QUERY_KEY);
     LOGGER.debug("Info: Query constructed;" + queryModel.toString());
-
-    esService
-        .count(docIndex, queryModel)
+    itemService.count(queryModel)
         .onComplete(
             searchRes -> {
               if (searchRes.succeeded()) {
                 LOGGER.debug("Success: Successful DB request");
-                DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-                responseMsg.statusSuccess().setTotalHits(searchRes.result());
-                promise.complete(responseMsg.getResponse());
+                promise.complete(searchRes.result().getResponse());
               } else {
-                LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());
-                promise.fail(internalErrorResp());
+                promise.fail(searchRes.cause());
               }
             });
     return promise.future();
@@ -444,32 +410,17 @@ public final class SearchController {
   public Future<JsonObject> nlpSearchQuery(JsonArray request) {
     Promise<JsonObject> promise = Promise.promise();
     JsonArray embeddings = request.getJsonArray(0);
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(
-        new QueryModel(QueryType.SCRIPT_SCORE, Map.of("query_vector", embeddings)));
-    queryModel.setExcludeFields(List.of("_word_vector"));
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getNlpSearchQuery(embeddings);
+    itemService.search(queryModel, SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
-            searchRes -> {
-              if (searchRes.succeeded()) {
-                LOGGER.debug("Success:Successful DB request");
-                List<ElasticsearchResponse> response = searchRes.result();
-                DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-                responseMsg.statusSuccess().setTotalHits(response.size());
-                response.stream()
-                    .map(ElasticsearchResponse::getSource)
-                    .peek(
-                        source -> {
-                          source.remove(SUMMARY_KEY);
-                          source.remove(WORD_VECTOR_KEY);
-                        })
-                    .forEach(responseMsg::addResult);
-
-                promise.complete(responseMsg.getResponse());
+            res -> {
+              if (res.failed()) {
+                LOGGER.error("Fail: DB request has failed;" + res.cause());
+                promise.fail(res.cause());
               } else {
-                LOGGER.error("Fail: DB request;" + searchRes.cause().getMessage());
-                promise.fail(internalErrorResp());
+                DbResponseMessageBuilder responseMsg = res.result();
+                LOGGER.debug("Success: Successful DB Request");
+                promise.complete(responseMsg.getResponse());
               }
             });
     return promise.future();
@@ -525,123 +476,21 @@ public final class SearchController {
 
   private Future<JsonObject> scriptLocationSearch(JsonArray embeddings, JsonObject param) {
     Promise<JsonObject> promise = Promise.promise();
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(generateGeoScriptScoreQuery(param, embeddings));
-    queryModel.setExcludeFields(List.of("_word_vector"));
-    esService
-        .search(docIndex, queryModel)
-        .onSuccess(
-            searchRes -> {
-              LOGGER.debug("Success: Successful DB request");
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess().setTotalHits(searchRes.size());
-              searchRes.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
-              promise.complete(responseMsg.getResponse());
-            })
-        .onFailure(
-            throwable -> {
-              LOGGER.debug("Fail: {}", throwable.getLocalizedMessage());
-              promise.fail(internalErrorResp());
+
+    QueryModel queryModel = generateGeoScriptScoreQuery(param, embeddings);
+    itemService.search(queryModel, SOURCE_WITHOUT_EMBEDDINGS)
+        .onComplete(
+            res -> {
+              if (res.failed()) {
+                LOGGER.error("Fail: DB request has failed;" + res.cause());
+                promise.fail(res.cause());
+              } else {
+                DbResponseMessageBuilder responseMsg = res.result();
+                LOGGER.debug("Success: Successful DB Request");
+                promise.complete(responseMsg.getResponse());
+              }
             });
     return promise.future();
   }
 
-  public QueryModel generateGeoScriptScoreQuery(JsonObject queryParams, JsonArray queryVector) {
-
-    QueryModel boolQueryModel = new QueryModel(QueryType.BOOL);
-
-    // Adding MatchQuery clauses for each of the fields based on the queryParams
-    if (queryParams.containsKey(BOROUGH)) {
-      boolQueryModel.addShouldQuery(
-          new QueryModel(
-              QueryType.MATCH,
-              Map.of(
-                  FIELD,
-                  "_geosummary._geocoded.results.borough",
-                  VALUE,
-                  queryParams.getString(BOROUGH))));
-    }
-    if (queryParams.containsKey(LOCALITY)) {
-      boolQueryModel.addShouldQuery(
-          new QueryModel(
-              QueryType.MATCH,
-              Map.of(
-                  FIELD,
-                  "_geosummary._geocoded.results.locality",
-                  VALUE,
-                  queryParams.getString(LOCALITY))));
-    }
-    if (queryParams.containsKey(COUNTY)) {
-      boolQueryModel.addShouldQuery(
-          new QueryModel(
-              QueryType.MATCH,
-              Map.of(
-                  FIELD,
-                  "_geosummary._geocoded.results.county",
-                  VALUE,
-                  queryParams.getString(COUNTY))));
-    }
-    if (queryParams.containsKey(REGION)) {
-      boolQueryModel.addShouldQuery(
-          new QueryModel(
-              QueryType.MATCH,
-              Map.of(
-                  FIELD,
-                  "_geosummary._geocoded.results.region",
-                  VALUE,
-                  queryParams.getString(REGION))));
-    }
-    if (queryParams.containsKey(COUNTRY)) {
-      boolQueryModel.addShouldQuery(
-          new QueryModel(
-              QueryType.MATCH,
-              Map.of(
-                  FIELD,
-                  "_geosummary._geocoded.results.country",
-                  VALUE,
-                  queryParams.getString(COUNTRY))));
-    }
-
-    // Set minimum_should_match to 1
-    boolQueryModel.setMinimumShouldMatch("1");
-
-    // Geo shape filter
-    if (queryParams.containsKey(BBOX)) {
-      JsonArray bboxCoords = queryParams.getJsonArray(BBOX);
-      JsonArray coordinates =
-          new JsonArray()
-              .add(
-                  new JsonArray()
-                      .add(bboxCoords.getFloat(0)) // minLon
-                      .add(bboxCoords.getFloat(3))) // maxLat
-              .add(
-                  new JsonArray()
-                      .add(bboxCoords.getFloat(2)) // maxLon
-                      .add(bboxCoords.getFloat(1))); // minLat
-      boolQueryModel.addFilterQuery(
-          new QueryModel(
-              QueryType.GEO_SHAPE,
-              Map.of(
-                  GEOPROPERTY,
-                  "location.geometry",
-                  TYPE,
-                  GEO_BBOX,
-                  COORDINATES,
-                  coordinates,
-                  "relation",
-                  INTERSECTS)));
-    }
-
-    // Script score for cosine similarity
-    return new QueryModel(
-        QueryType.SCRIPT_SCORE,
-        Map.of("query_vector", queryVector, "custom_query", boolQueryModel.toJson()));
-  }
 }

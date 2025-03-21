@@ -10,6 +10,7 @@ import static iudx.catalogue.server.util.Constants.TYPE_SUCCESS;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
 
 /**
  * DbResponseMessageBuilder Message builder for search APIs.

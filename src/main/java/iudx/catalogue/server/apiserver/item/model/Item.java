@@ -1,18 +1,18 @@
 package iudx.catalogue.server.apiserver.item.model;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Abstract class representing a catalog item in the system.
- * Provides getter, setter, and JSON conversion methods for common item attributes.
+ * Abstract class representing a catalog item in the system. Provides getter, setter, and JSON
+ * conversion methods for common item attributes.
  */
 public interface Item {
   String getContext();
 
   void setContext(String context);
-
 
   UUID getId();
 
@@ -37,6 +37,18 @@ public interface Item {
   String getItemCreatedAt();
 
   void setItemCreatedAt(String itemCreatedAt);
+
+  String getSummary();
+
+  void setSummary(String summary);
+
+  JsonObject getGeoSummary();
+
+  void setGeoSummary(JsonObject geoSummary);
+
+  JsonArray getWordVector();
+
+  void setWordVector(JsonArray wordVector);
 
   JsonObject toJson();
 }

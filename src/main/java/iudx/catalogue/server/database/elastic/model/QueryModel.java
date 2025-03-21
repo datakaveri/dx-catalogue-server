@@ -1,37 +1,19 @@
 package iudx.catalogue.server.database.elastic.model;
 
 import static iudx.catalogue.server.database.elastic.util.Constants.GEO_CIRCLE;
-import static iudx.catalogue.server.util.Constants.COORDINATES;
-import static iudx.catalogue.server.util.Constants.FIELD;
-import static iudx.catalogue.server.util.Constants.GEOPROPERTY;
-import static iudx.catalogue.server.util.Constants.Q_VALUE;
-import static iudx.catalogue.server.util.Constants.TYPE;
-import static iudx.catalogue.server.util.Constants.VALUE;
+import static iudx.catalogue.server.database.elastic.util.Constants.GREATER_THAN_EQ_OP;
+import static iudx.catalogue.server.database.elastic.util.Constants.GREATER_THAN_OP;
+import static iudx.catalogue.server.database.elastic.util.Constants.LESS_THAN_EQ_OP;
+import static iudx.catalogue.server.database.elastic.util.Constants.LESS_THAN_OP;
+import static iudx.catalogue.server.util.Constants.*;
 
-import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.GeoLocation;
-import co.elastic.clients.elasticsearch._types.GeoShapeRelation;
-import co.elastic.clients.elasticsearch._types.LatLonGeoLocation;
-import co.elastic.clients.elasticsearch._types.SortOptions;
-import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.*;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.GeoBoundingBoxQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.GeoShapeFieldQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryStringQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.ScriptScoreQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
-import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.search.SourceConfig;
 import co.elastic.clients.json.JsonData;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.database.elastic.util.AggregationFactory;
@@ -43,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +34,8 @@ import org.apache.logging.log4j.Logger;
  * Represents a query model for constructing Elasticsearch searches, with support for basic query
  * types, boolean logic, filters, and aggregations.
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen
 public class QueryModel {
   private static final Logger LOGGER = LogManager.getLogger(QueryModel.class);
   String minimumShouldMatch;
@@ -78,6 +62,15 @@ public class QueryModel {
   private List<String> includeFields;
   private List<String> excludeFields;
   private Map<String, String> sortFields; // Key: Field name, Value: Sort order ("asc" or "desc")
+
+  // Field for storing the script source (the actual script)
+  private String scriptSource;
+
+  // Field for storing the script language (e.g., "painless")
+  private String scriptLanguage;
+
+  // Field for storing the script parameters (if any)
+  private Map<String, Object> scriptParams;
 
   /**
    * Constructor for initializing QueryModel from a JSON object.
@@ -375,6 +368,29 @@ public class QueryModel {
   public void setSortFields(Map<String, String> sortFields) {
     this.sortFields = sortFields;
   }
+  public String getScriptSource() {
+    return scriptSource;
+  }
+
+  public void setScriptSource(String scriptSource) {
+    this.scriptSource = scriptSource;
+  }
+
+  public String getScriptLanguage() {
+    return scriptLanguage;
+  }
+
+  public void setScriptLanguage(String scriptLanguage) {
+    this.scriptLanguage = scriptLanguage;
+  }
+
+  public Map<String, Object> getScriptParams() {
+    return scriptParams;
+  }
+
+  public void setScriptParams(Map<String, Object> scriptParams) {
+    this.scriptParams = scriptParams;
+  }
 
   /**
    * Converts this QueryModel into an Elasticsearch Query object.
@@ -544,6 +560,29 @@ public class QueryModel {
                     return qs;
                   })
               ._toQuery();
+        case RANGE:
+          return RangeQuery.of(
+              r -> r.date(DateRangeQuery.of(
+                  dr -> {
+                    DateRangeQuery.Builder builder = new DateRangeQuery.Builder()
+                        .field(queryParameters.get(FIELD).toString());
+
+                    Map<String, Consumer<String>> rangeConditions = Map.of(
+                        GREATER_THAN_EQ_OP, builder::gte,
+                        LESS_THAN_EQ_OP, builder::lte,
+                        GREATER_THAN_OP, builder::gt,
+                        LESS_THAN_OP, builder::lt
+                    );
+
+                    rangeConditions.forEach((key, setter) -> {
+                      if (queryParameters.containsKey(key)) {
+                        setter.accept(queryParameters.get(key).toString());
+                      }
+                    });
+
+                    return builder;
+                  })
+              ))._toQuery();
 
         default:
           throw new UnsupportedOperationException("Query type not supported: " + this.queryType);
@@ -598,17 +637,42 @@ public class QueryModel {
     }
 
     return sortFields.entrySet().stream()
-        .map(
-            entry ->
-                SortOptions.of(
-                    s ->
-                        s.field(
-                            f ->
-                                f.field(entry.getKey())
-                                    .order(
-                                        "asc".equalsIgnoreCase(entry.getValue())
-                                            ? SortOrder.Asc
-                                            : SortOrder.Desc))))
+        .map(entry ->
+            SortOptions.of(s ->
+                s.field(f ->
+                    f.field(entry.getKey())
+                        .order("asc".equalsIgnoreCase(entry.getValue())
+                            ? SortOrder.Asc : SortOrder.Desc))))
         .collect(Collectors.toList());
   }
+
+  /**
+   * Converts this QueryModel's script configuration into an Elasticsearch Script object.
+   *
+   * @return Elasticsearch Script object, or null if no script configuration is available.
+   */
+  public Script toElasticsearchScript() {
+    // Check if the QueryModel contains the necessary script-related properties
+    if (scriptSource != null && !scriptSource.isEmpty()) {
+      Script.Builder scriptBuilder = new Script.Builder();
+
+      // Set the script source (e.g., Painless script code)
+      scriptBuilder.source(scriptSource);
+
+      // Set the language for the script (e.g., "painless")
+      if (scriptLanguage != null && !scriptLanguage.isEmpty()) {
+        scriptBuilder.lang(scriptLanguage);
+      } else {
+        scriptBuilder.lang("painless"); // Default to "painless" if no language is specified
+      }
+      Map<String, JsonData> params = scriptParams.entrySet().stream()
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> JsonData.of(e.getValue())));
+      scriptBuilder.params(params);
+
+      return scriptBuilder.build();
+    }
+    // Return null if there's no script source provided in the QueryModel
+    return null;
+  }
+
 }

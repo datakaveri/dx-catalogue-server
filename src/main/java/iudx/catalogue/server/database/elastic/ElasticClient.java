@@ -24,7 +24,6 @@ public class ElasticClient {
   public ElasticClient(
       String databaseIp,
       int databasePort,
-      String index,
       String databaseUser,
       String databasePassword) {
 

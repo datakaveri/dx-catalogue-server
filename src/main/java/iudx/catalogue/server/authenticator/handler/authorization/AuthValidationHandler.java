@@ -24,7 +24,7 @@ public class AuthValidationHandler implements Handler<RoutingContext> {
   }
 
   /**
-   * @param event
+   * @param event The RoutingContext object representing the event
    */
   @Override
   public void handle(RoutingContext event) {

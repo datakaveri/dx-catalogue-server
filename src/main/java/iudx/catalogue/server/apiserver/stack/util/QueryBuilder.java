@@ -10,6 +10,7 @@ import static iudx.catalogue.server.util.Constants.VALUE;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.stack.model.StacLink;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
 import iudx.catalogue.server.database.elastic.util.QueryType;
 import java.util.List;
@@ -24,19 +25,19 @@ public class QueryBuilder {
     return queryModel;
   }
 
-  public String getPatchQuery(JsonObject request) {
+  public String getPatchQuery(StacLink request) {
     StringBuilder query =
         new StringBuilder(
             PATCH_QUERY
-                .replace("$1", request.getString("rel"))
-                .replace("$2", request.getString("href")));
-    if (request.containsKey("type")) {
-      StringBuilder type = new StringBuilder(TYPE.replace("$1", request.getString("type")));
+                .replace("$1", request.getRel())
+                .replace("$2", request.getHref()));
+    if (request.getType() != null) {
+      StringBuilder type = new StringBuilder(TYPE.replace("$1", request.getType()));
       query.append(',');
       query.append(type);
     }
-    if (request.containsKey("title")) {
-      StringBuilder title = new StringBuilder(TITLE.replace("$1", request.getString("title")));
+    if (request.getTitle() != null) {
+      StringBuilder title = new StringBuilder(TITLE.replace("$1", request.getTitle()));
       query.append(',');
       query.append(title);
     }

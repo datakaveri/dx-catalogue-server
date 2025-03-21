@@ -25,7 +25,14 @@ public interface ElasticsearchService {
 
   Future<JsonObject> updateDocument(String index, String id, JsonObject document);
 
-  Future<JsonObject> patchDocument(String index, String id, JsonObject document);
+  /**
+   * Partially updates an existing item in the Elasticsearch index.
+   *
+   * @param queryModel The query instance document containing the fields to update.
+   * @param docId The unique identifier of the document to be updated.
+   * @return A Future containing the updated document.
+   */
+  Future<JsonObject> patchDocument(String index, String docId, QueryModel queryModel);
 
   Future<JsonObject> deleteDocument(String index, String id);
 

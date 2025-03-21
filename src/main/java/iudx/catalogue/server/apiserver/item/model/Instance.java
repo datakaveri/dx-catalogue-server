@@ -85,6 +85,30 @@ public class Instance implements Item {
   public void setItemCreatedAt(String itemCreatedAt) {}
 
   @Override
+  public String getSummary() {
+    return null;
+  }
+
+  @Override
+  public void setSummary(String summary) {}
+
+  @Override
+  public JsonObject getGeoSummary() {
+    return null;
+  }
+
+  @Override
+  public void setGeoSummary(JsonObject geoSummary) {}
+
+  @Override
+  public JsonArray getWordVector() {
+    return null;
+  }
+
+  @Override
+  public void setWordVector(JsonArray wordVector) {}
+
+  @Override
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
 

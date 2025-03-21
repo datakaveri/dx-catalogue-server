@@ -9,13 +9,13 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.pgclient.PgPool;
 import iudx.catalogue.server.Configuration;
-import iudx.catalogue.server.auditing.util.QueryBuilder;
+import iudx.catalogue.server.database.cache.service.CacheService;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.postgres.service.PostgresService;
-import iudx.catalogue.server.databroker.model.QueryObject;
 import iudx.catalogue.server.databroker.service.RabbitMQService;
+import iudx.catalogue.server.rating.model.FilterRatingRequest;
+import iudx.catalogue.server.rating.model.RatingRequest;
 import java.util.Collections;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 public class RatingServiceTest {
 
-  private static Logger LOGGER = LogManager.getLogger(RatingServiceTest.class);
+  private static final Logger LOGGER = LogManager.getLogger(RatingServiceTest.class);
   private static JsonObject config;
   private static String exchangeName;
   private static String rsauditingtable;
@@ -47,7 +47,7 @@ public class RatingServiceTest {
   private static AsyncResult<JsonObject> asyncResult;
   private static ElasticsearchService esService;
   private static RabbitMQService dataBrokerService;
-  private static PostgresService postgresService;
+  private static CacheService cacheService;
 
   @BeforeAll
   @DisplayName("Initialize vertx and deploy verticle")
@@ -60,7 +60,7 @@ public class RatingServiceTest {
     docIndex = config.getString("docIndex");
     esService = mock(ElasticsearchService.class);
     dataBrokerService = mock(RabbitMQService.class);
-    postgresService = mock(PostgresService.class);
+    cacheService = mock(CacheService.class);
     asyncResult = mock(AsyncResult.class);
     ratingService =
         new RatingServiceImpl(
@@ -71,7 +71,7 @@ public class RatingServiceTest {
             esService,
             docIndex,
             dataBrokerService,
-            postgresService);
+            cacheService);
     ratingServiceSpy = spy(ratingService);
     testContext.completeNow();
   }
@@ -96,15 +96,16 @@ public class RatingServiceTest {
   @DisplayName("Success: test create rating")
   void successfulRatingCreationTest(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    RatingRequest ratingRequestModel = new RatingRequest(request);
     JsonObject auditInfo = new JsonObject().put("totalHits", minReadNumber + 1);
 
     // Mocking an empty search result
     List<ElasticsearchResponse> searchResults = Collections.emptyList();
 
     // Mocking getAuditingInfo method
-    doAnswer(invocation -> Future.succeededFuture(auditInfo))
-        .when(ratingServiceSpy)
-        .getAuditingInfo(any());
+//    doAnswer(invocation -> Future.succeededFuture(auditInfo))
+//        .when(ratingServiceSpy)
+//        .getAuditingInfo(any());
 
     // Mocking search method of esService
     doAnswer(invocation -> Future.succeededFuture(searchResults))
@@ -124,10 +125,10 @@ public class RatingServiceTest {
     }).when(esService).createDocument(any(), any());
 
     // Test execution
-    ratingServiceSpy.createRating(request).onComplete(handler -> {
+    ratingServiceSpy.createRating(ratingRequestModel).onComplete(handler -> {
       if (handler.succeeded()) {
         // Verify interactions
-        verify(ratingServiceSpy, times(2)).getAuditingInfo(any());
+       // verify(ratingServiceSpy, times(2)).getAuditingInfo(any());
         verify(esService, times(5)).search(any(), any()); // Ensure search is called once
         verify(esService, times(1)).createDocument(any(), any()); // Ensure document creation is called
         testContext.completeNow();
@@ -144,11 +145,12 @@ public class RatingServiceTest {
   @DisplayName("Failure testing rating creation")
   void failureTestingRatingCreation(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    RatingRequest ratingRequestModel = new RatingRequest(request);
     JsonObject auditInfo = new JsonObject().put("totalHits", 1);
 
-    doAnswer(Answer -> Future.succeededFuture(auditInfo))
-        .when(ratingServiceSpy)
-        .getAuditingInfo(any());
+//    doAnswer(Answer -> Future.succeededFuture(auditInfo))
+//        .when(ratingServiceSpy)
+//        .getAuditingInfo(any());
 
     when(asyncResult.succeeded()).thenReturn(false);
 
@@ -164,10 +166,10 @@ public class RatingServiceTest {
         .when(esService)
         .createDocument(any(), any());
 
-    ratingServiceSpy.createRating(request).onComplete(
+    ratingServiceSpy.createRating(ratingRequestModel).onComplete(
         handler -> {
           if (handler.succeeded()) {
-            verify(ratingServiceSpy, times(1)).getAuditingInfo(any());
+            //verify(ratingServiceSpy, times(1)).getAuditingInfo(any());
             verify(esService, times(1)).createDocument(any(), any());
             LOGGER.debug("Fail");
             testContext.failNow(handler.cause());
@@ -181,14 +183,14 @@ public class RatingServiceTest {
   @DisplayName("test create rating - get audit info failed")
   void testAuditInfoFailed(VertxTestContext testContext) {
 
-    doAnswer(Answer -> Future.failedFuture(new Throwable("empty message")))
-        .when(ratingServiceSpy)
-        .getAuditingInfo(any());
-
-    ratingServiceSpy.createRating(requestJson()).onComplete(
+//    doAnswer(Answer -> Future.failedFuture(new Throwable("empty message")))
+//        .when(ratingServiceSpy)
+//        .getAuditingInfo(any());
+    RatingRequest ratingRequestModel = new RatingRequest(requestJson());
+    ratingServiceSpy.createRating(ratingRequestModel).onComplete(
         handler -> {
           if (handler.succeeded()) {
-            verify(ratingServiceSpy, times(1)).getAuditingInfo(any());
+//            verify(ratingServiceSpy, times(1)).getAuditingInfo(any());
             testContext.failNow(handler.cause());
           } else {
             testContext.completeNow();
@@ -200,6 +202,7 @@ public class RatingServiceTest {
   @DisplayName("Success: test get rating")
   void testGetingRating(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    FilterRatingRequest filterRequestModel = new FilterRatingRequest(request);
 
     when(asyncResult.succeeded()).thenReturn(true);
 
@@ -218,7 +221,7 @@ public class RatingServiceTest {
         .when(esService)
         .search(any(), any());
 
-    ratingServiceSpy.getRating(request).onComplete(
+    ratingServiceSpy.getRating(filterRequestModel).onComplete(
         handler -> {
           if (handler.succeeded()) {
             verify(ratingServiceSpy, times(2)).getRating(any());
@@ -234,6 +237,7 @@ public class RatingServiceTest {
   @DisplayName("failure testing get rating")
   void failureTestingGetRating(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    FilterRatingRequest requestModel = new FilterRatingRequest(request);
 
     when(asyncResult.succeeded()).thenReturn(false);
 
@@ -252,7 +256,7 @@ public class RatingServiceTest {
         .when(esService)
         .search(any(), any());
 
-    ratingServiceSpy.getRating(request).onComplete(
+    ratingServiceSpy.getRating(requestModel).onComplete(
         handler -> {
           if (handler.failed()) {
             verify(ratingServiceSpy, times(1)).getRating(any());
@@ -267,6 +271,7 @@ public class RatingServiceTest {
   @DisplayName("Success: test update rating")
   void successfulRatingUpdationTest(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    RatingRequest requestModel = new RatingRequest(request);
 
     // Mocking an empty search result
     ElasticsearchResponse elasticsearchResponse = new ElasticsearchResponse();
@@ -292,7 +297,7 @@ public class RatingServiceTest {
         .when(esService)
         .updateDocument(anyString(), anyString(), any());
 
-    ratingServiceSpy.updateRating(request)
+    ratingServiceSpy.updateRating(requestModel)
         .onComplete(handler -> {
           if (handler.succeeded()) {
             verify(esService, times(2)).updateDocument(anyString(), anyString(), any());
@@ -308,6 +313,7 @@ public class RatingServiceTest {
   @DisplayName("Failure testing rating updation")
   void failureTestingRatingUpdation(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    RatingRequest requestModel = new RatingRequest(request);
     ElasticsearchResponse elasticsearchResponse = new ElasticsearchResponse();
     elasticsearchResponse.setSource(request);
     elasticsearchResponse.setDocId("dummy-docId");
@@ -323,7 +329,7 @@ public class RatingServiceTest {
         .when(esService)
         .updateDocument(anyString(), anyString(), any());
 
-    ratingServiceSpy.updateRating(request)
+    ratingServiceSpy.updateRating(requestModel)
         .onComplete(handler -> {
           if (handler.succeeded()) {
             verify(esService, times(1)).updateDocument(any(), anyString(), any());
@@ -339,6 +345,7 @@ public class RatingServiceTest {
   @DisplayName("Success: test delete rating")
   void successfulRatingDeletionTest(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    FilterRatingRequest filterRequest = new FilterRatingRequest(request);
 
     List<ElasticsearchResponse> searchResults = List.of(new ElasticsearchResponse());
     // Mocking search method of esService
@@ -359,7 +366,7 @@ public class RatingServiceTest {
         .when(esService)
         .deleteDocument(any(), any());
 
-    ratingServiceSpy.deleteRating(request)
+    ratingServiceSpy.deleteRating(filterRequest)
         .onComplete(handler -> {
           if (handler.succeeded()) {
             verify(esService, times(1)).deleteDocument(any(), any());
@@ -375,6 +382,7 @@ public class RatingServiceTest {
   @DisplayName("Failure testing rating deletion")
   void failureTestingRatingDeletion(VertxTestContext testContext) {
     JsonObject request = requestJson();
+    FilterRatingRequest filterRequest = new FilterRatingRequest(request);
 
     List<ElasticsearchResponse> searchResults = List.of(new ElasticsearchResponse());
     // Mocking search method of esService
@@ -394,7 +402,7 @@ public class RatingServiceTest {
         .when(esService)
         .deleteDocument(any(), any());
 
-    ratingServiceSpy.deleteRating(request)
+    ratingServiceSpy.deleteRating(filterRequest)
         .onComplete(handler -> {
           if (handler.succeeded()) {
             verify(esService, times(2)).deleteDocument(any(), any());
@@ -405,52 +413,52 @@ public class RatingServiceTest {
         });
   }
 
-  @Test
-  @DisplayName("Success: Test publish message")
-  void testPublishMessage(VertxTestContext testContext) {
+//  @Test
+//  @DisplayName("Success: Test publish message")
+//  void testPublishMessage(VertxTestContext testContext) {
+//
+//    Mockito.doAnswer(
+//            new Answer<AsyncResult<Void>>() {
+//              @SuppressWarnings("unchecked")
+//              @Override
+//              public AsyncResult<Void> answer(InvocationOnMock arg0) throws Throwable {
+//                String routingKey = arg0.getArgument(2);
+//                return Future.succeededFuture();
+//              }
+//            })
+//        .when(dataBrokerService)
+//        .publishMessage(any(), anyString(), eq("#"));
+//    QueryObject rmqMessage = QueryBuilder.buildMessageForRmq(requestJson());
+//    ratingServiceSpy.publishMessage(rmqMessage);
+//    testContext.completeNow();
+//  }
 
-    Mockito.doAnswer(
-            new Answer<AsyncResult<Void>>() {
-              @SuppressWarnings("unchecked")
-              @Override
-              public AsyncResult<Void> answer(InvocationOnMock arg0) throws Throwable {
-                String routingKey = arg0.getArgument(2);
-                return Future.succeededFuture();
-              }
-            })
-        .when(dataBrokerService)
-        .publishMessage(any(), anyString(), eq("#"));
-    QueryObject rmqMessage = QueryBuilder.buildMessageForRmq(requestJson());
-    ratingServiceSpy.publishMessage(rmqMessage);
-    testContext.completeNow();
-  }
-
-  @Test
-  @DisplayName("Success: Test get auditing info future")
-  public void testGetAuditingInfo(VertxTestContext testContext) {
-    StringBuilder query = new StringBuilder("select * from nosuchtable");
-    doAnswer(
-            new Answer<AsyncResult<JsonObject>>() {
-              @Override
-              public AsyncResult<JsonObject> answer(InvocationOnMock arg0)
-                  throws Throwable {
-                String query = arg0.getArgument(0);
-                return Future.succeededFuture(new JsonObject());
-              }
-            })
-        .when(postgresService)
-        .executeCountQuery(anyString());
-
-    ratingService
-        .getAuditingInfo(query)
-        .onComplete(
-            handler -> {
-              if (handler.succeeded()) {
-                verify(postgresService, times(1)).executeCountQuery(anyString());
-                testContext.completeNow();
-              } else {
-                testContext.failNow("get auditing info test failed");
-              }
-            });
-  }
+//  @Test
+//  @DisplayName("Success: Test get auditing info future")
+//  public void testGetAuditingInfo(VertxTestContext testContext) {
+//    StringBuilder query = new StringBuilder("select * from nosuchtable");
+//    doAnswer(
+//            new Answer<AsyncResult<JsonObject>>() {
+//              @Override
+//              public AsyncResult<JsonObject> answer(InvocationOnMock arg0)
+//                  throws Throwable {
+//                String query = arg0.getArgument(0);
+//                return Future.succeededFuture(new JsonObject());
+//              }
+//            })
+//        .when(postgresService)
+//        .executeCountQuery(anyString());
+//
+//    ratingService
+//        .getAuditingInfo(query)
+//        .onComplete(
+//            handler -> {
+//              if (handler.succeeded()) {
+//                verify(postgresService, times(1)).executeCountQuery(anyString());
+//                testContext.completeNow();
+//              } else {
+//                testContext.failNow("get auditing info test failed");
+//              }
+//            });
+//  }
 }

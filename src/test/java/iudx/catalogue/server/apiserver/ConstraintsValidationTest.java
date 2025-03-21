@@ -3,6 +3,8 @@ package iudx.catalogue.server.apiserver;
 import static iudx.catalogue.server.apiserver.util.Constants.UAC_DEPLOYMENT;
 import static iudx.catalogue.server.util.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -11,6 +13,7 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
 import iudx.catalogue.server.Configuration;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.database.elastic.ElasticClient;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
@@ -34,6 +37,7 @@ public class ConstraintsValidationTest {
   private static Vertx vertxObj;
   private static ElasticClient client;
   private static ElasticsearchService esService;
+  private static ItemService itemService;
   private static String databaseIP;
   private static String docIndex;
   private static int databasePort;
@@ -63,9 +67,10 @@ public class ConstraintsValidationTest {
     vocContext = "xyz";
 
     fileSystem = vertx.fileSystem();
-    client = new ElasticClient(databaseIP, databasePort, docIndex, databaseUser, databasePassword);
+    client = new ElasticClient(databaseIP, databasePort, databaseUser, databasePassword);
     esService = new ElasticsearchServiceImpl(client);
-    validator = new ValidatorServiceImpl(esService,docIndex,isUACinstance, vocContext);
+    itemService = mock(ItemService.class);
+    validator = new ValidatorServiceImpl(itemService,isUACinstance, vocContext);
 
     testContext.completed();
   }

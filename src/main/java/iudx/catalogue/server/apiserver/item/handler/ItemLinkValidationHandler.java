@@ -1,6 +1,5 @@
 package iudx.catalogue.server.apiserver.item.handler;
 
-import static iudx.catalogue.server.apiserver.util.Constants.HEADER_TOKEN;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.invalidUuidResponse;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.itemNotFoundResponse;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.linkValidationFailureResponse;
@@ -13,23 +12,26 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import iudx.catalogue.server.apiserver.crud.CrudService;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.common.RoutingContextHelper;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
+import iudx.catalogue.server.exceptions.InternalServerException;
 import iudx.catalogue.server.validator.service.ValidatorService;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ItemLinkValidationHandler implements Handler<RoutingContext> {
   private static final Logger LOGGER = LogManager.getLogger(ItemLinkValidationHandler.class);
-  private final CrudService crudService;
+  private final ItemService itemService;
   private final ValidatorService validatorService;
 
-  public ItemLinkValidationHandler(CrudService crudService, ValidatorService validatorService) {
-    this.crudService = crudService;
+  public ItemLinkValidationHandler(ItemService itemService, ValidatorService validatorService) {
+    this.itemService = itemService;
     this.validatorService = validatorService;
   }
 
@@ -123,18 +125,24 @@ public class ItemLinkValidationHandler implements Handler<RoutingContext> {
             COS_ADMIN);
     JsonObject req = new JsonObject().put(ID, itemId).put(INCLUDE_FIELDS, includeFields);
     LOGGER.debug(req);
-    crudService
-        .getItem(req)
+    itemService
+        .search(itemId, includeFields)
         .onComplete(
             handler -> {
               if (handler.succeeded()) {
-                if (handler.result().getInteger(TOTAL_HITS) != 1) {
+                promise.complete(handler.result().getResponse().getJsonArray("results").getJsonObject(0));
+              } else {
+                if (handler.cause() instanceof NoSuchElementException) {
+                  LOGGER.error("Fail: Item not found");
                   promise.fail(
                       itemNotFoundResponse("Fail: Doc doesn't exist, can't perform operation"));
-                } else {
-                  promise.complete(handler.result().getJsonArray("results").getJsonObject(0));
+                  return;
+                } else if (handler.cause() instanceof InternalServerException exception) {
+                  promise.fail(
+                      new InternalServerException(exception.getMessage(), exception.getMethod()));
+                } else if (handler.cause() instanceof DatabaseFailureException exception) {
+                  promise.fail(exception);
                 }
-              } else {
                 promise.fail(handler.cause());
               }
             });

@@ -1,9 +1,11 @@
 package iudx.catalogue.server.database.elastic.model;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
-@DataObject(generateConverter = true)
+@DataObject
+@JsonGen
 public class ElasticsearchResponse {
   private static JsonObject aggregations;
   private String docId;

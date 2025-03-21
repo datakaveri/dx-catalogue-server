@@ -665,11 +665,6 @@ public class QueryDecoderTest {
     jsonArray.add("dummy");
     request.put(SEARCH_TYPE,"getParentObjectInfo")
             .put(ID,"id");
-    JsonObject elasticQuery =
-        new JsonObject(
-            GET_DOC_QUERY
-                .replace("$1", request.getString(ID))
-                .replace("$2", "\"type\",\"provider\",\"ownerUserId\",\"resourceGroup\",\"resourceServer\", \"resourceServerRegURL\", \"cos\", \"cos_admin\""));
     JsonObject query =  queryDecoder.searchQuery(request);
     QueryModel queryModel = (QueryModel) query.getValue(QUERY_KEY);
 
@@ -692,11 +687,9 @@ public class QueryDecoderTest {
             .put(ID,"id")
             .put(COS_ITEM,"value");
     String cosId = request.getString(COS_ITEM);
-    String  subQuery = TERM_QUERY.replace("$1", ID + KEYWORD_KEY).replace("$2", cosId);
-    String elasticQuery = BOOL_MUST_QUERY.replace("$1", subQuery);
+
     Integer limit =
             request.getInteger(LIMIT, FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));
-    JsonObject tempQuery = new JsonObject(elasticQuery).put(SIZE_KEY, limit.toString());
     JsonObject query = queryDecoder.listRelationshipQueryModel(request).toJson();
     assertEquals(limit.toString(), query.getString("limit"));
     assertEquals(ID_KEYWORD, query.getJsonArray("mustQueries").getJsonObject(0).getJsonObject(

@@ -54,7 +54,7 @@ public class ElasticsearchVerticle extends AbstractVerticle {
     databasePassword = config().getString(DATABASE_PASSWD);
     docIndex = config().getString(DOC_INDEX);
 
-    client = new ElasticClient(databaseIp, databasePort, docIndex, databaseUser, databasePassword);
+    client = new ElasticClient(databaseIp, databasePort, databaseUser, databasePassword);
 
     database = new ElasticsearchServiceImpl(client);
 

@@ -1,8 +1,6 @@
 package iudx.catalogue.server.database.cache.service;
 
 import io.vertx.core.Future;
-
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

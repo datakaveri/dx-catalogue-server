@@ -1,9 +1,11 @@
 package iudx.catalogue.server.authenticator.model;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen
 public final class JwtData {
 
   private String accessToken;

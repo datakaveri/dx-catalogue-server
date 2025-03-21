@@ -22,7 +22,8 @@ public class Util {
       return VALIDATION_FAILURE_MSG;
     }
     type.retainAll(ITEM_TYPES);
-    String itemType = type.toString().replaceAll("\\[", "").replaceAll("\\]", "");
+    String itemType = type.toString().replaceAll("\\[", "")
+        .replaceAll("\\]", "");
     return itemType;
   }
 }

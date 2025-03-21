@@ -14,8 +14,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import iudx.catalogue.server.apiserver.crud.CrudController;
-import iudx.catalogue.server.apiserver.crud.CrudService;
+import iudx.catalogue.server.apiserver.item.controller.ItemController;
 import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.apiserver.item.service.ItemServiceImpl;
 import iudx.catalogue.server.apiserver.stack.controller.StacController;
@@ -63,26 +62,7 @@ import org.apache.logging.log4j.Logger;
 public class ApiServerVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(ApiServerVerticle.class);
-  private AuthHandler authHandler;
-  private AuthorizationHandler authorizationHandler;
-  private CrudController crudController;
-  private ListController listController;
-  private RatingController ratingController;
-  private GeocodingController geocodingController;
-  private SearchController searchController;
-  private RelationshipController relationshipController;
-  private MlayerController mlayerController;
-  private HttpServer server;
-  private String keystore;
-  private String keystorePassword;
-  private String catAdmin;
-  private boolean isSsL;
   private int port;
-  private String dxApiBasePath;
-  private String host;
-  private String docIndex;
-  private Api api;
-  private JsonArray optionalModules;
 
   /**
    * This method is used to start the Verticle and joing a cluster.
@@ -111,14 +91,14 @@ public class ApiServerVerticle extends AbstractVerticle {
           routingContext.next();
         });
 
-    dxApiBasePath = config().getString("dxApiBasePath");
-    host = config().getString(HOST);
-    docIndex = config().getString("docIndex");
-    api = Api.getInstance(dxApiBasePath);
+    String dxApiBasePath = config().getString("dxApiBasePath");
+    String host = config().getString(HOST);
+    String docIndex = config().getString("docIndex");
+    Api api = Api.getInstance(dxApiBasePath);
 
     /* Configure */
-    catAdmin = config().getString(CAT_ADMIN);
-    isSsL = config().getBoolean(IS_SSL);
+    String catAdmin = config().getString(CAT_ADMIN);
+    boolean isSsL = config().getBoolean(IS_SSL);
 
     HttpServerOptions serverOptions = new HttpServerOptions();
 
@@ -136,52 +116,51 @@ public class ApiServerVerticle extends AbstractVerticle {
 
     serverOptions.setCompressionSupported(true).setCompressionLevel(5);
     // Instantiate this server
-    server = vertx.createHttpServer(serverOptions);
+    HttpServer server = vertx.createHttpServer(serverOptions);
     // API Callback managers
 
     // Todo - Set service proxies based on availability?
     GeocodingService geoService = GeocodingService.createProxy(vertx, GEOCODING_SERVICE_ADDRESS);
-    geocodingController = new GeocodingController(geoService);
+    GeocodingController geocodingController = new GeocodingController(geoService);
 
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
     ElasticsearchService elasticsearchService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
     ItemService itemService;
-    optionalModules = config().getJsonArray(OPTIONAL_MODULES);
+    JsonArray optionalModules = config().getJsonArray(OPTIONAL_MODULES);
     if (optionalModules.contains(NLPSEARCH_PACKAGE_NAME)
         && optionalModules.contains(GEOCODING_PACKAGE_NAME)) {
-      itemService =
-          new ItemServiceImpl(elasticsearchService, geoService, nlpsearchService, config());
+      itemService = new ItemServiceImpl(docIndex, elasticsearchService, geoService,
+          nlpsearchService);
     } else {
-      itemService = new ItemServiceImpl(elasticsearchService, config());
+      itemService = new ItemServiceImpl(docIndex, elasticsearchService);
     }
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
     AuditHandler auditHandler = new AuditHandler(auditingService);
     FailureHandler failureHandler = new FailureHandler();
-    CrudService crudService = new CrudService(itemService);
     AuthenticationService authService =
         AuthenticationService.createProxy(vertx, AUTH_SERVICE_ADDRESS);
-    authHandler = new AuthHandler(authService);
+    AuthHandler authHandler = new AuthHandler(authService);
     AuthValidationHandler validateToken = new AuthValidationHandler(authService);
-    authorizationHandler = new AuthorizationHandler();
+    AuthorizationHandler authorizationHandler = new AuthorizationHandler();
     ValidatorService validationService =
         ValidatorService.createProxy(vertx, VALIDATION_SERVICE_ADDRESS);
     boolean isUac = config().getBoolean(UAC_DEPLOYMENT);
-    crudController = new CrudController(isUac, host, crudService,
-        validationService, authHandler, validateToken, authorizationHandler, auditHandler,
-        failureHandler);
+    ItemController itemController = new ItemController(isUac, host, itemService, validationService,
+        authHandler, validateToken, authorizationHandler, auditHandler, failureHandler);
     RatingService ratingService = RatingService.createProxy(vertx, RATING_SERVICE_ADDRESS);
-    ratingController = new RatingController(validationService, ratingService,
+    RatingController ratingController = new RatingController(validationService, ratingService,
         host, authHandler, validateToken, authorizationHandler, auditHandler,
         failureHandler);
-    listController = new ListController(elasticsearchService, docIndex);
-    searchController = new SearchController(elasticsearchService, geoService, nlpsearchService,
-        failureHandler, dxApiBasePath, docIndex);
+    ListController listController = new ListController(itemService);
+    SearchController searchController =
+        new SearchController(itemService, geoService, nlpsearchService,
+            failureHandler, dxApiBasePath);
     MlayerService mlayerService = MlayerService.createProxy(vertx, MLAYER_SERVICE_ADDRESS);
-    mlayerController = new MlayerController(host, validationService,
+    MlayerController mlayerController = new MlayerController(host, validationService,
         mlayerService, failureHandler, authHandler, validateToken);
-    RelationshipService relService = new RelationshipServiceImpl(elasticsearchService, docIndex);
-    relationshipController = new RelationshipController(relService);
+    RelationshipService relService = new RelationshipServiceImpl(itemService, docIndex);
+    RelationshipController relationshipController = new RelationshipController(relService);
 
     //  Documentation routes
 
@@ -227,13 +206,13 @@ public class ApiServerVerticle extends AbstractVerticle {
               response.sendFile("ui/dist/dk-customer-ui/index.html");
             });
 
-    StacController stacController = new StacController(api, config(), validationService,
-        auditHandler, elasticsearchService, authHandler, validateToken, failureHandler);
+    StacController stacController = new StacController(api, docIndex, auditHandler,
+        elasticsearchService, authHandler, validateToken, failureHandler);
 
     // Initialize controllers and register their routes
     router.route(api.getStackRestApis() + "/*").subRouter(stacController.init(router));
     router.route(dxApiBasePath + "/*").subRouter(geocodingController.init(router));
-    router.route(dxApiBasePath + "/*").subRouter(crudController.init(router));
+    router.route(dxApiBasePath + "/*").subRouter(itemController.init(router));
     router.route(dxApiBasePath + "/*").subRouter(ratingController.init(router));
     router.route(dxApiBasePath + "/*").subRouter(listController.init(router));
     router.route(dxApiBasePath + "/*").subRouter(searchController.init(router));
@@ -261,8 +240,8 @@ public class ApiServerVerticle extends AbstractVerticle {
   private void startHttpsServer(HttpServerOptions serverOptions) {
     /* Read the configuration and set the HTTPs server properties. */
 
-    keystore = config().getString("keystore");
-    keystorePassword = config().getString("keystorePassword");
+    String keystore = config().getString("keystore");
+    String keystorePassword = config().getString("keystorePassword");
 
     /*
      * Default port when ssl is enabled is 8443. If set through config, then that value is taken

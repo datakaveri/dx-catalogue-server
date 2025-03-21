@@ -11,13 +11,20 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.apiserver.item.util.ItemCategory;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
 import iudx.catalogue.server.authenticator.handler.authorization.AuthValidationHandler;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo.Builder;
 import iudx.catalogue.server.common.RoutingContextHelper;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
 import iudx.catalogue.server.exceptions.FailureHandler;
+import iudx.catalogue.server.exceptions.DocAlreadyExistsException;
+import iudx.catalogue.server.mlayer.model.MlayerDatasetRequest;
+import iudx.catalogue.server.mlayer.model.MlayerDomainRequest;
+import iudx.catalogue.server.mlayer.model.MlayerGeoQueryRequest;
+import iudx.catalogue.server.mlayer.model.MlayerInstanceRequest;
 import iudx.catalogue.server.mlayer.service.MlayerService;
 import iudx.catalogue.server.validator.service.ValidatorService;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +60,6 @@ public class MlayerController {
         .post(ROUTE_MLAYER_INSTANCE)
         .consumes(MIME_APPLICATION_JSON)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_POST))
         .handler(authHandler) // Authentication
@@ -67,20 +73,20 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     /* Get Mlayer Instance */
     router
         .get(ROUTE_MLAYER_INSTANCE)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerInstanceHandler);
+        .handler(this::getMlayerInstanceHandler)
+        .failureHandler(failureHandler);
 
     /* Delete Mlayer Instance */
     router
         .delete(ROUTE_MLAYER_INSTANCE)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(routingContext -> populateAuthInfo(routingContext, REQUEST_DELETE))
         .handler(authHandler) // Authentication
         .handler(validateToken)
@@ -92,14 +98,14 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     /* Update Mlayer Instance */
     router
         .put(ROUTE_MLAYER_INSTANCE)
         .consumes(MIME_APPLICATION_JSON)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_PUT))
         .handler(authHandler) // Authentication
@@ -112,7 +118,8 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     // Routes for Mlayer Domain APIs
 
@@ -121,7 +128,6 @@ public class MlayerController {
         .post(ROUTE_MLAYER_DOMAIN)
         .consumes(MIME_APPLICATION_JSON)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_POST))
         .handler(authHandler) // Authentication
@@ -134,21 +140,21 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     /* Get Mlayer Domain */
     router
         .get(ROUTE_MLAYER_DOMAIN)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerDomainHandler);
+        .handler(this::getMlayerDomainHandler)
+        .failureHandler(failureHandler);
 
     /* Update Mlayer Domain */
     router
         .put(ROUTE_MLAYER_DOMAIN)
         .consumes(MIME_APPLICATION_JSON)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_PUT))
         .handler(authHandler) // Authentication
@@ -161,13 +167,13 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     /* Delete Mlayer Domain */
     router
         .delete(ROUTE_MLAYER_DOMAIN)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
         .handler(
             routingContext -> populateAuthInfo(routingContext, REQUEST_DELETE))
         .handler(authHandler) // Authentication
@@ -180,54 +186,55 @@ public class MlayerController {
                 LOGGER.error("Unauthorized Operation");
                 routingContext.response().setStatusCode(401).end();
               }
-            });
+            })
+        .failureHandler(failureHandler);
 
     // Routes for Mlayer Provider API
     router
         .get(ROUTE_MLAYER_PROVIDER)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerProvidersHandler);
+        .handler(this::getMlayerProvidersHandler)
+        .failureHandler(failureHandler);
 
     // Routes for Mlayer GeoQuery API
     router
         .post(ROUTE_MLAYER_GEOQUERY)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerGeoQueryHandler);
+        .handler(this::getMlayerGeoQueryHandler)
+        .failureHandler(failureHandler);
 
     // Routes for Mlayer Dataset API
     /* route to get all datasets*/
     router
         .get(ROUTE_MLAYER_DATASET)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerAllDatasetsHandler);
+        .handler(this::getMlayerAllDatasetsHandler)
+        .failureHandler(failureHandler);
     /* route to get a dataset detail*/
     router
         .post(ROUTE_MLAYER_DATASET)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerDatasetHandler);
+        .handler(this::getMlayerDatasetHandler)
+        .failureHandler(failureHandler);
 
     // Route for Mlayer PopularDatasets API
     router
         .get(ROUTE_MLAYER_POPULAR_DATASETS)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getMlayerPopularDatasetsHandler);
+        .handler(this::getMlayerPopularDatasetsHandler)
+        .failureHandler(failureHandler);
 
     // Total Count Api and Monthly Count & Size(MLayer)
     router
         .get(SUMMARY_TOTAL_COUNT_SIZE_API)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getSummaryCountSizeApi);
+        .handler(this::getSummaryCountSizeApi)
+        .failureHandler(failureHandler);
     router
         .get(COUNT_SIZE_API)
         .produces(MIME_APPLICATION_JSON)
-        .failureHandler(failureHandler)
-        .handler(this::getCountSizeApi);
+        .handler(this::getCountSizeApi)
+        .failureHandler(failureHandler);
 
     return router;
   }
@@ -242,37 +249,36 @@ public class MlayerController {
 
     JsonObject requestBody = routingContext.body().asJsonObject();
     HttpServerResponse response = routingContext.response();
-
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
-    Future<JsonObject> validateMlayerFuture = validatorService.validateMlayerInstance(requestBody);
+    //Validates the schema
+    MlayerInstanceRequest mlayerInstanceRequest = new MlayerInstanceRequest(requestBody);
+    LOGGER.debug("Validation Successful");
 
-    validateMlayerFuture.onFailure(validationFailure -> {
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SCHEMA)
-                  .withTitle(TITLE_INVALID_SCHEMA)
-                  .withDetail("The Schema of requested body is invalid.")
-                  .getResponse());
-    }).onSuccess(validationSuccessResult -> {
-      LOGGER.debug("Validation Successful");
-      mlayerService.createMlayerInstance(requestBody)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(201).end(handler.result().toString());
+    mlayerService.createMlayerInstance(mlayerInstanceRequest)
+        .onSuccess(result -> response.setStatusCode(201).end(result.toString()))
+        .recover(err -> {
+          LOGGER.debug("Call back to controller...");
+          LOGGER.debug(err);
+          LOGGER.debug(err.fillInStackTrace());
+          LOGGER.debug(err instanceof DocAlreadyExistsException);
 
-            } else {
-              if (handler.cause().getMessage().contains("Item already exists")) {
-                response.setStatusCode(409).end(handler.cause().getMessage());
-              } else {
-                response.setStatusCode(400).end(handler.cause().getMessage());
-              }
-            }
-          });
-    });
+          JsonObject errorJson = new JsonObject(err.getMessage());
+          if (errorJson.getString(TYPE).equals("DocAlreadyExistsException")) {
+            routingContext.fail(new DocAlreadyExistsException(
+                errorJson.getString("itemId")));
+          } else if (errorJson.getString(TYPE).equals("DatabaseFailureException")) {
+            routingContext.fail(new DatabaseFailureException(ItemCategory.MLAYER_INSTANCE,
+                errorJson.getString("itemId"), errorJson.getString("message")));
+          } else {
+            LOGGER.error("Error occurred: {}", err.getMessage());
+            response.setStatusCode(400).end(err.getMessage());
+          }
+          return Future.failedFuture(err);
+        });
   }
+
+
 
   /**
    * Get mlayer instance handler.
@@ -336,29 +342,22 @@ public class MlayerController {
     JsonObject requestBody = routingContext.body().asJsonObject();
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();
-
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
-    Future<JsonObject> validationFuture = validatorService.validateMlayerInstance(requestBody);
-    validationFuture.onFailure(failureResponse -> {
-      response.setStatusCode(400)
-          .end(new RespBuilder()
-              .withType(TYPE_INVALID_SCHEMA)
-              .withTitle(TITLE_INVALID_SCHEMA)
-              .withDetail("The Schema of requested body is invalid.")
-              .getResponse());
-    }).onSuccess(successResponse -> {
-      String instanceId = request.getParam(MLAYER_ID);
-      requestBody.put(INSTANCE_ID, instanceId);
-      mlayerService.updateMlayerInstance(requestBody)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(200).end(handler.result().toString());
-            } else {
-              response.setStatusCode(400).end(handler.cause().getMessage());
-            }
-          });
-    });
+    String instanceId = request.getParam(MLAYER_ID);
+    requestBody.put(INSTANCE_ID, instanceId);
+    //Validates the schema
+    MlayerInstanceRequest mlayerInstanceRequest = new MlayerInstanceRequest(requestBody);
+    LOGGER.debug("Validation Successful");
+
+    mlayerService.updateMlayerInstance(mlayerInstanceRequest)
+        .onComplete(handler -> {
+          if (handler.succeeded()) {
+            response.setStatusCode(200).end(handler.result().toString());
+          } else {
+            response.setStatusCode(400).end(handler.cause().getMessage());
+          }
+        });
   }
 
   /* Populate authentication info */
@@ -387,32 +386,25 @@ public class MlayerController {
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
-    Future<JsonObject> validationFuture = validatorService.validateMlayerDomain(requestBody);
-    validationFuture.onFailure(validationFailureHandler -> {
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SCHEMA)
-                  .withTitle(TITLE_INVALID_SCHEMA)
-                  .withDetail("The Schema of requested body is invalid.")
-                  .getResponse());
-    }).onSuccess(validationSuccessResponse -> {
-      LOGGER.debug("Validation Successful");
-      mlayerService.createMlayerDomain(requestBody)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(201).end(handler.result().toString());
-            } else {
-              if (handler.cause().getMessage().contains("Item already exists")) {
-                response.setStatusCode(409).end(handler.cause().getMessage());
-              } else {
-                response.setStatusCode(400).end(handler.cause().getMessage());
-              }
-            }
-          });
-    });
-
+    //Validate the schema
+    MlayerDomainRequest domainRequest = new MlayerDomainRequest(requestBody);
+    LOGGER.debug("Validation Successful");
+    mlayerService.createMlayerDomain(domainRequest)
+        .onSuccess(result -> response.setStatusCode(201).end(result.toString()))
+        .recover(err -> {
+          JsonObject errorJson = new JsonObject(err.getMessage());
+          if (errorJson.getString(TYPE).equals("DocAlreadyExistsException")) {
+            routingContext.fail(new DocAlreadyExistsException(
+                errorJson.getString("itemId")));
+          } else if (errorJson.getString(TYPE).equals("DatabaseFailureException")) {
+            routingContext.fail(new DatabaseFailureException(ItemCategory.MLAYER_DOMAIN,
+                errorJson.getString("itemId"), errorJson.getString("message")));
+          } else {
+            LOGGER.error("Error occurred: {}", err.getMessage());
+            response.setStatusCode(400).end(err.getMessage());
+          }
+          return Future.failedFuture(err);
+        });
   }
 
   /**
@@ -513,37 +505,26 @@ public class MlayerController {
    * @param routingContext {@link RoutingContext}
    */
   public void updateMlayerDomainHandler(RoutingContext routingContext) {
-    LOGGER.debug("Info: Updating Mlayer Instance");
+    LOGGER.debug("Info: Updating Mlayer Domain");
 
     JsonObject requestBody = routingContext.body().asJsonObject();
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();
-
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
+    //Validates schema
+    String domainId = request.getParam(MLAYER_ID);
+    requestBody.put(DOMAIN_ID, domainId);
 
-    Future<JsonObject> validationFuture = validatorService.validateMlayerDomain(requestBody);
-
-    validationFuture.onFailure(validationFailure -> {
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SCHEMA)
-                  .withTitle(TITLE_INVALID_SCHEMA)
-                  .withDetail("The Schema of requested body is invalid.")
-                  .getResponse());
-    }).onSuccess(validationSuccessHandler -> {
-      String domainId = request.getParam(MLAYER_ID);
-      requestBody.put(DOMAIN_ID, domainId);
-      mlayerService.updateMlayerDomain(requestBody)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(200).end(handler.result().toString());
-            } else {
-              response.setStatusCode(400).end(handler.cause().getMessage());
-            }
-          });
-    });
+    MlayerDomainRequest domainRequest = new MlayerDomainRequest(requestBody);
+    LOGGER.debug("Validation Successful");
+    mlayerService.updateMlayerDomain(domainRequest)
+        .onComplete(handler -> {
+          if (handler.succeeded()) {
+            response.setStatusCode(200).end(handler.result().toString());
+          } else {
+            response.setStatusCode(400).end(handler.cause().getMessage());
+          }
+        });
   }
 
   /**
@@ -556,9 +537,7 @@ public class MlayerController {
 
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();
-
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-
 
     String domainId = request.getParam(MLAYER_ID);
     mlayerService.deleteMlayerDomain(domainId)
@@ -625,26 +604,18 @@ public class MlayerController {
     JsonObject requestBody = routingContext.body().asJsonObject();
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-    Future<JsonObject> validationFuture = validatorService.validateMlayerGeoQuery(requestBody);
-    validationFuture.onFailure(validationFailure -> {
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SCHEMA)
-                  .withTitle(TITLE_INVALID_SCHEMA)
-                  .withDetail("The Schema of requested body is invalid.")
-                  .getResponse());
-    }).onSuccess(successResponse -> {
-      mlayerService.getMlayerGeoQuery(requestBody)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(200).end(handler.result().toString());
-            } else {
-              response.setStatusCode(400).end(handler.cause().getMessage());
-            }
-          });
-    });
+
+    //Validate the schema
+    MlayerGeoQueryRequest geoQueryRequest = new MlayerGeoQueryRequest(requestBody);
+    LOGGER.debug("Validation Successful");
+    mlayerService.getMlayerGeoQuery(geoQueryRequest)
+        .onComplete(handler -> {
+          if (handler.succeeded()) {
+            response.setStatusCode(200).end(handler.result().toString());
+          } else {
+            response.setStatusCode(400).end(handler.cause().getMessage());
+          }
+        });
   }
 
   /**
@@ -657,7 +628,10 @@ public class MlayerController {
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
     JsonObject requestParams = parseRequestParams(routingContext);
-    mlayerService.getMlayerAllDatasets(requestParams)
+    Integer limit = requestParams.getInteger(LIMIT);
+    Integer offset = requestParams.getInteger(OFFSET);
+
+    mlayerService.getMlayerAllDatasets(limit, offset)
         .onComplete(handler -> {
           if (handler.succeeded()) {
             response.setStatusCode(200).end(handler.result().toString());
@@ -689,49 +663,40 @@ public class MlayerController {
     LOGGER.debug("Info : fetching details of the dataset");
     HttpServerResponse response = routingContext.response();
     JsonObject requestData = routingContext.body().asJsonObject();
-
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-    Future<JsonObject> validationFuture = validatorService.validateMlayerDatasetId(requestData);
-    validationFuture.onFailure(validationFailure -> {
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SCHEMA)
-                  .withTitle(TITLE_INVALID_SCHEMA)
-                  .withDetail("The Schema of requested body is invalid.")
-                  .getResponse());
-    }).onSuccess(successResponse -> {
-      LOGGER.debug("Validation of dataset Id Successful");
-      JsonObject requestParam = parseRequestParams(routingContext);
-      requestData
-          .put(LIMIT, requestParam.getInteger(LIMIT))
-          .put(OFFSET, requestParam.getInteger(OFFSET));
-      mlayerService.getMlayerDataset(requestData)
-          .onComplete(handler -> {
-            if (handler.succeeded()) {
-              response.setStatusCode(200).end(handler.result().toString());
-            } else {
-              if (handler.cause().getMessage().contains(NO_CONTENT_AVAILABLE)) {
-                response.setStatusCode(204).end();
-              } else if (handler.cause().getMessage().contains("urn:dx:cat:ItemNotFound")) {
-                response.setStatusCode(404).end(handler.cause().getMessage());
-              } else if (handler.cause().getMessage().contains(VALIDATION_FAILURE_MSG)) {
-                response
-                    .setStatusCode(400)
-                    .end(
-                        new RespBuilder()
-                            .withType(TYPE_INVALID_SCHEMA)
-                            .withTitle(TITLE_INVALID_SCHEMA)
-                            .withDetail("The Schema of dataset is invalid")
-                            .getResponse());
-              } else {
-                response.setStatusCode(400).end(handler.cause().getMessage());
-              }
-            }
-          });
-    });
 
+    JsonObject requestParam = parseRequestParams(routingContext);
+    requestData
+        .put(LIMIT, requestParam.getInteger(LIMIT))
+        .put(OFFSET, requestParam.getInteger(OFFSET));
+
+    MlayerDatasetRequest datasetModel = new MlayerDatasetRequest(requestData);
+    LOGGER.debug("Validation of dataset Id Successful");
+    LOGGER.debug(datasetModel.toJson());
+
+    mlayerService.getMlayerDataset(datasetModel)
+        .onComplete(handler -> {
+          if (handler.succeeded()) {
+            response.setStatusCode(200).end(handler.result().toString());
+          } else {
+            if (handler.cause().getMessage().contains(NO_CONTENT_AVAILABLE)) {
+              response.setStatusCode(204).end();
+            } else if (handler.cause().getMessage().contains("urn:dx:cat:ItemNotFound")) {
+              response.setStatusCode(404).end(handler.cause().getMessage());
+            } else if (handler.cause().getMessage().contains(VALIDATION_FAILURE_MSG)) {
+              response
+                  .setStatusCode(400)
+                  .end(
+                      new RespBuilder()
+                          .withType(TYPE_INVALID_SCHEMA)
+                          .withTitle(TITLE_INVALID_SCHEMA)
+                          .withDetail("The Schema of dataset is invalid")
+                          .getResponse());
+            } else {
+              response.setStatusCode(400).end(handler.cause().getMessage());
+            }
+          }
+        });
 
   }
 

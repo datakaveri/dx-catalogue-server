@@ -16,6 +16,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.apiserver.item.util.ItemCategory;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.auditing.handler.AuditHandler;
 import iudx.catalogue.server.authenticator.handler.authentication.AuthHandler;
@@ -24,7 +25,11 @@ import iudx.catalogue.server.authenticator.handler.authorization.AuthorizationHa
 import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.common.RoutingContextHelper;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
 import iudx.catalogue.server.exceptions.FailureHandler;
+import iudx.catalogue.server.exceptions.DocAlreadyExistsException;
+import iudx.catalogue.server.rating.model.FilterRatingRequest;
+import iudx.catalogue.server.rating.model.RatingRequest;
 import iudx.catalogue.server.rating.service.RatingService;
 import iudx.catalogue.server.rating.util.Constants;
 import iudx.catalogue.server.validator.service.ValidatorService;
@@ -64,8 +69,8 @@ public class RatingController {
     final String SKIP_AUTH = "skipAuth";
     Handler<RoutingContext> userAccessHandler =
         authorizationHandler.forRoleBasedAccess(CONSUMER);
-    //  Routes for Rating APIs
-    /* Create Rating */
+    //  Routes for RatingRequest APIs
+    /* Create RatingRequest */
     router
         .post(ROUTE_RATING)
         .consumes(MIME_APPLICATION_JSON)
@@ -137,7 +142,7 @@ public class RatingController {
             })
         .failureHandler(failureHandler);
 
-    /* Update Rating */
+    /* Update RatingRequest */
     router
         .put(ROUTE_RATING)
         .consumes(MIME_APPLICATION_JSON)
@@ -153,7 +158,7 @@ public class RatingController {
         .handler(context -> auditHandler.handle(context, ROUTE_RATING))
         .failureHandler(failureHandler);
 
-    /* Delete Rating */
+    /* Delete RatingRequest */
     router
         .delete(ROUTE_RATING)
         .produces(MIME_APPLICATION_JSON)
@@ -225,51 +230,47 @@ public class RatingController {
 
   void validateSchema(RoutingContext routingContext) {
     LOGGER.debug("Info: Validating Schema");
-
-    HttpServerResponse response = routingContext.response();
     JsonObject requestBody = routingContext.body().asJsonObject();
     String id = routingContext.request().getParam(ID);
     JwtData jwtData = RoutingContextHelper.getJwtData(routingContext);
     String userID = jwtData.getSub();
 
     requestBody.put(ID, id).put(USER_ID, userID).put("status", APPROVED);
+    //Validate the RatingRequest schema
+    RatingRequest rating = new RatingRequest(requestBody);
     RoutingContextHelper.setValidatedRequest(routingContext, requestBody);
-
-    Future<JsonObject> validationFuture = validatorService.validateRating(requestBody);
-
-    validationFuture
-        .onFailure(
-            validationFailure ->
-                response
-                    .setStatusCode(400)
-                    .end(
-                        new RespBuilder()
-                            .withType(TYPE_INVALID_SCHEMA)
-                            .withTitle(TITLE_INVALID_SCHEMA)
-                            .withDetail("The Schema of requested body is invalid.")
-                            .getResponse()))
-        .onSuccess(validationResult -> routingContext.next());
+    routingContext.next();
   }
 
   /**
-   * Create Rating handler.
+   * Create RatingRequest handler.
    *
    * @param routingContext {@link RoutingContext}
    */
   public void createRatingHandler(RoutingContext routingContext) {
-    LOGGER.debug("Info: Creating Rating");
+    LOGGER.debug("Info: Creating RatingRequest");
 
     JsonObject requestBody = RoutingContextHelper.getValidatedRequest(routingContext);
-    ratingService
-        .createRating(requestBody)
-        .onComplete(
+    RatingRequest rating = new RatingRequest(requestBody);
+    ratingService.createRating(rating)
+        .onSuccess(
             handler -> {
-              if (handler.succeeded()) {
-                routingContext.response().setStatusCode(201).end(handler.result().toString());
+                routingContext.response().setStatusCode(201).end(handler.toString());
                 routingContext.next();
-              } else {
-                routingContext.response().setStatusCode(400).end(handler.cause().getMessage());
+            })
+        .recover(
+            postRatingFailure -> {
+              JsonObject errorJson = new JsonObject(postRatingFailure.getMessage());
+              if (errorJson.getString(TYPE).equals("DocAlreadyExistsException")) {
+                routingContext.fail(new DocAlreadyExistsException(
+                    errorJson.getString("itemId")));
+              } else if (errorJson.getString(TYPE).equals("DatabaseFailureException")) {
+                routingContext.fail(new DatabaseFailureException(ItemCategory.RATING,
+                    errorJson.getString("itemId"), errorJson.getString("message")));
               }
+              LOGGER.error("Fail: DB request has failed; " + postRatingFailure.getMessage());
+              routingContext.response().setStatusCode(400).end(postRatingFailure.getMessage());
+              return Future.failedFuture(postRatingFailure.getMessage());
             });
   }
 
@@ -285,7 +286,8 @@ public class RatingController {
     // If the 'type' parameter is present, skip authorization
     if (request.params().contains("type")) {
       String requestType = request.getParam("type");
-      if (requestType.equalsIgnoreCase("average") || requestType.equalsIgnoreCase("group")) {
+      if (requestType.equalsIgnoreCase("average") ||
+          requestType.equalsIgnoreCase("group")) {
         requestBody.put("type", requestType);
         RoutingContextHelper.setValidatedRequest(routingContext, requestBody);
         routingContext.next(); // Skip the authHandler
@@ -321,9 +323,8 @@ public class RatingController {
     } else {
       requestBody = RoutingContextHelper.getValidatedRequest(routingContext);
     }
-
-    ratingService
-        .getRating(requestBody)
+    FilterRatingRequest filterRequestModel = new FilterRatingRequest(requestBody);
+    ratingService.getRating(filterRequestModel)
         .onComplete(
             handler -> {
               if (handler.succeeded()) {
@@ -354,13 +355,13 @@ public class RatingController {
    * @param routingContext {@link RoutingContext}
    */
   public void updateRatingHandler(RoutingContext routingContext) {
-    LOGGER.debug("Info: Updating Rating");
+    LOGGER.debug("Info: Updating RatingRequest");
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
     JsonObject requestBody = RoutingContextHelper.getValidatedRequest(routingContext);
+    RatingRequest ratingRequest = new RatingRequest(requestBody);
 
-    ratingService
-        .updateRating(requestBody)
+    ratingService.updateRating(ratingRequest)
         .onComplete(
             handler -> {
               if (handler.succeeded()) {
@@ -383,17 +384,17 @@ public class RatingController {
    * @param routingContext {@link RoutingContext}
    */
   public void deleteRatingHandler(RoutingContext routingContext) {
-    LOGGER.debug("Info: Deleting Rating");
+    LOGGER.debug("Info: Deleting RatingRequest");
     String id = routingContext.request().getParam(ID);
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-
     JsonObject requestBody =
         new JsonObject()
             .put(USER_ID, RoutingContextHelper.getJwtData(routingContext).getSub())
             .put(ID, id);
-    ratingService
-        .deleteRating(requestBody)
+    FilterRatingRequest filterRequest = new FilterRatingRequest(requestBody);
+
+    ratingService.deleteRating(filterRequest)
         .onComplete(
             dbHandler -> {
               if (dbHandler.succeeded()) {
