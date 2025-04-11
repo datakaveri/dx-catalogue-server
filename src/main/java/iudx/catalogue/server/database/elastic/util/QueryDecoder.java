@@ -13,7 +13,6 @@ import iudx.catalogue.server.database.elastic.model.QueryModel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -424,12 +423,11 @@ public final class QueryDecoder {
         && RESOURCE_GRP.equals(relationshipType)
         && itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
       JsonArray providerIds = request.getJsonArray("providerIds");
-      StringBuilder first = new StringBuilder(GET_RS1);
       List<String> ids =
           providerIds.stream()
               .map(JsonObject.class::cast)
               .map(providerId -> providerId.getString(ID))
-              .collect(Collectors.toList());
+              .toList();
       ids.forEach(id -> queryModel.addShouldQuery(new QueryModel(QueryType.MATCH,
           Map.of(FIELD, PROVIDER + KEYWORD_KEY, VALUE, id))));
       queryModel.setMinimumShouldMatch("1");

@@ -8,7 +8,7 @@ import java.util.List;
 
 
 public class RespBuilder {
-  private JsonObject response = new JsonObject();
+  private final JsonObject response = new JsonObject();
 
   public RespBuilder withType(String type) {
     response.put(TYPE, type);

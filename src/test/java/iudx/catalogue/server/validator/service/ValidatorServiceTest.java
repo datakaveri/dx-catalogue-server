@@ -1,5 +1,6 @@
 package iudx.catalogue.server.validator.service;
 
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.database.elastic.ElasticClient;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchServiceImpl;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static iudx.catalogue.server.util.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -27,6 +29,7 @@ public class ValidatorServiceTest {
   private static Vertx vertxObj;
   private static ElasticClient client;
   private static ElasticsearchService esService;
+  private static ItemService itemRespository;
   private static String databaseIP;
   private static String docIndex;
   private static int databasePort;
@@ -52,9 +55,10 @@ public class ValidatorServiceTest {
     vocContext = "xyz";
 
     // TODO : Need to enable TLS using xpack security
-    client = new ElasticClient(databaseIP, databasePort, docIndex, databaseUser, databasePassword);
+    client = new ElasticClient(databaseIP, databasePort, databaseUser, databasePassword);
     esService = new ElasticsearchServiceImpl(client);
-    validator = new ValidatorServiceImpl(esService, docIndex,isUacInstance, vocContext);
+    itemRespository = mock(ItemService.class);
+    validator = new ValidatorServiceImpl(itemRespository,isUacInstance, vocContext);
     testContext.completeNow();
   }
 
@@ -278,7 +282,7 @@ public class ValidatorServiceTest {
   }
 
   @Test
-  @DisplayName("Valid Rating schema")
+  @DisplayName("Valid RatingRequest schema")
   void validRatingSchemaTest(VertxTestContext testContext) {
     JsonObject request =
         new JsonObject()
@@ -310,7 +314,7 @@ public class ValidatorServiceTest {
   }
 
   @Test
-  @DisplayName("Invalid Rating schema")
+  @DisplayName("Invalid RatingRequest schema")
   void invalidRatingSchemaTest(VertxTestContext testContext) {
     JsonObject request =
         new JsonObject()

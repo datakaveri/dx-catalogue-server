@@ -1,40 +1,37 @@
 package iudx.catalogue.server.apiserver.stack.service;
 
+import static iudx.catalogue.server.apiserver.stack.util.QueryModelUtil.*;
 import static iudx.catalogue.server.apiserver.stack.util.StackConstants.DOC_ID;
 import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
 import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
 import static iudx.catalogue.server.util.Constants.*;
-import static iudx.catalogue.server.util.Constants.TITLE_ITEM_NOT_FOUND;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import iudx.catalogue.server.apiserver.stack.util.QueryBuilder;
-import iudx.catalogue.server.common.RespBuilder;
+import iudx.catalogue.server.apiserver.stack.model.StacCatalog;
+import iudx.catalogue.server.apiserver.stack.model.StacLink;
 import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
+import iudx.catalogue.server.exceptions.DocAlreadyExistsException;
+import iudx.catalogue.server.exceptions.InternalServerException;
 import java.util.List;
-import java.util.UUID;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class StacServiceImpl implements StacService {
   private static final Logger LOGGER = LogManager.getLogger(StacServiceImpl.class);
-
+  private final String docIndex;
   private final ElasticsearchService esService;
-  private final String index;
-  public RespBuilder respBuilder;
-  Supplier<String> idSuppler = () -> UUID.randomUUID().toString();
-  private final QueryBuilder queryBuilder = new QueryBuilder();
-
-  public StacServiceImpl(ElasticsearchService esService, String index) {
+  public StacServiceImpl(ElasticsearchService esService, String docIndex) {
     this.esService = esService;
-    this.index = index;
+    this.docIndex = docIndex;
   }
 
   /**
@@ -43,124 +40,88 @@ public class StacServiceImpl implements StacService {
    */
   @Override
   public Future<JsonObject> get(String stackId) {
-    Promise<JsonObject> promise = Promise.promise();
-    QueryModel query = queryBuilder.getQuery(stackId);
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(query);
-    esService.search(index, queryModel)
-        .onComplete(clientHandler -> {
-          if (clientHandler.succeeded()) {
-            LOGGER.debug("Success: Successful DB request");
-            List<ElasticsearchResponse> responseList = clientHandler.result();
-            DbResponseMessageBuilder result = new DbResponseMessageBuilder();
-            result.statusSuccess();
-            result.setTotalHits(responseList.size());
-            responseList.stream()
-                .map(ElasticsearchResponse::getSource)
-                .peek(source -> {
-                  source.remove(SUMMARY_KEY);
-                  source.remove(WORD_VECTOR_KEY);
-                })
-                .forEach(result::addResult);
+    LOGGER.debug("get () method started");
+    QueryModel queryModel = getStacQuery(stackId);
 
-            if (result.getResponse().getInteger(TOTAL_HITS) > 0) {
-              promise.complete(result.getResponse());
-            } else {
-              LOGGER.error("Fail: Item not found");
-              respBuilder =
-                  new RespBuilder()
-                      .withType(TYPE_ITEM_NOT_FOUND)
-                      .withTitle(TITLE_ITEM_NOT_FOUND)
-                      .withDetail("Fail: Stac doesn't exist");
-              promise.fail(respBuilder.getResponse());
-            }
-          } else {
-            LOGGER.error("Fail: DB request has failed;" + clientHandler.cause());
-            respBuilder =
-                new RespBuilder()
-                    .withType(FAILED)
-                    .withResult(stackId, REQUEST_GET, FAILED)
-                    .withDetail(DATABASE_ERROR);
-            promise.fail(respBuilder.getResponse());
+    return esService
+        .search(docIndex, queryModel)
+        .compose(esResponse -> {
+          if (esResponse.isEmpty()) {
+            return Future.failedFuture(new NoSuchElementException("Item not found"));
           }
-        });
-
-    return promise.future();
+          DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder()
+              .statusSuccess().setTotalHits(esResponse.size());
+          esResponse.stream()
+              .map(ElasticsearchResponse::getSource)
+              .peek(source -> {
+                source.remove(SUMMARY_KEY);
+                source.remove(WORD_VECTOR_KEY);
+              })
+              .forEach(responseMsg::addResult);
+          LOGGER.info("Success: Stac item retrieved;");
+          return Future.succeededFuture(responseMsg.getResponse());
+        })
+        .recover(
+            err -> {
+              LOGGER.error("Fail: Item retrieval failed; " + err.getMessage());
+              return Future.failedFuture(new InternalServerException(err.getMessage(),
+                  REQUEST_GET));
+            });
   }
 
   /**
-   * @param request json
+   * @param stacCatalog StacCatalog instance
    * @return future json
    */
   @Override
-  public Future<JsonObject> create(JsonObject request) {
+  public Future<StacCatalog> create(StacCatalog stacCatalog) {
     LOGGER.debug("create () method started");
-    QueryModel query = queryBuilder.getQuery4CheckExistence(request);
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(query);
-    String id = idSuppler.get();
-    request.put(ID, id);
-    LOGGER.info("id :{}", request);
-    Promise<JsonObject> promise = Promise.promise();
-    esService.search(index, queryModel)
-        .onComplete(searchHandler -> {
-          if (searchHandler.succeeded()) {
-            if (searchHandler.result().isEmpty()) {
-              esService.createDocument(index, request)
-                  .onComplete(postHandler -> {
-                    if (postHandler.succeeded()) {
-                      LOGGER.info("Success: Stac creation");
-                      JsonObject result = postHandler.result();
-                      LOGGER.debug("Success : " + result);
-                      respBuilder =
-                          new RespBuilder()
-                              .withType(SUCCESS)
-                              .withResult(id, INSERT, SUCCESS)
-                              .withDetail(STAC_CREATION_SUCCESS);
-                      promise.complete(respBuilder.getJsonResponse());
-                    } else {
-                      LOGGER.error("Fail: STAC creation : {}", postHandler.cause().getMessage());
-                      respBuilder =
-                          new RespBuilder()
-                              .withType(FAILED)
-                              .withResult("stack", INSERT, FAILED)
-                              .withDetail(DATABASE_ERROR);
-                      promise.fail(respBuilder.getResponse());
-                    }
+
+    QueryModel queryModel = checkStacCatItemQuery(stacCatalog.toJson());
+    JsonObject doc = stacCatalog.toJson();
+
+    return esService.search(docIndex, queryModel)
+        .compose(searchRes -> {
+            if (searchRes.isEmpty()) {
+              return esService.createDocument(docIndex, doc)
+                  .compose(res -> {
+                    LOGGER.info("Success: Stac creation");
+                    LOGGER.debug("Success : " + res);
+                    return Future.succeededFuture(stacCatalog);
+                  })
+                  .recover(cause -> {
+                    LOGGER.error("Fail: STAC creation : {}", cause.getMessage());
+                    return Future.failedFuture(TYPE_DB_ERROR);
                   });
             } else {
               LOGGER.error("STAC already exists, skipping creation");
-              respBuilder =
-                  new RespBuilder()
-                      .withType(TYPE_CONFLICT)
-                      .withTitle(DETAIL_CONFLICT)
-                      .withDetail("STAC already exists,creation skipped");
-              promise.fail(respBuilder.getResponse());
+              return Future.failedFuture(TYPE_ALREADY_EXISTS);
             }
+        })
+        .recover(cause -> {
+          if (cause.getMessage().contains(TYPE_ALREADY_EXISTS)) {
+            return Future.failedFuture(new DocAlreadyExistsException(stacCatalog.getId().toString()));
+          } else if (cause.getMessage().contains(TYPE_DB_ERROR)) {
+            return Future.failedFuture(new DatabaseFailureException(stacCatalog.getId().toString(),
+                    cause.getMessage()));
           } else {
-            LOGGER.error("Fail: Search operation : {}", searchHandler.cause().getMessage());
-            respBuilder =
-                new RespBuilder()
-                    .withType(FAILED)
-                    .withResult("stac", INSERT, FAILED)
-                    .withDetail(DATABASE_ERROR);
-            promise.fail(respBuilder.getResponse());
+            LOGGER.error("Fail: Search operation : {}", cause.getMessage());
+            return Future.failedFuture(new InternalServerException(cause.getMessage(),
+                REQUEST_POST));
           }
         });
-
-    return promise.future();
   }
 
   /**
-   * @param stack Json object
+   * @param stacLink instance of StacLink
    * @return future json
    */
   @Override
-  public Future<JsonObject> update(JsonObject stack) {
+  public Future<String> update(StacLink stacLink) {
     LOGGER.debug("update () method started");
-    Promise<JsonObject> promise = Promise.promise();
+    Promise<String> promise = Promise.promise();
     ResultContainer result = new ResultContainer();
-    String stacId = stack.getString("id");
+    String stacId = stacLink.getId();
     Future<JsonObject> existFuture = isExist(stacId);
     existFuture
         .compose(
@@ -168,23 +129,18 @@ public class StacServiceImpl implements StacService {
               LOGGER.info(existHandler);
               result.links = existHandler.getJsonObject("_source").getJsonArray("links");
               result.docId = existHandler.getString(DOC_ID);
-              return isAllowPatch(stack, result.links);
+              return isAllowPatch(stacLink, result.links);
             })
         .compose(
-            allowHandler -> doUpdate(stack, result.docId, allowHandler))
-        .onSuccess(
-            successHandler -> {
-              respBuilder =
-                  new RespBuilder()
-                      .withType(TYPE_SUCCESS)
-                      .withTitle(TITLE_SUCCESS)
-                      .withResult(stacId)
-                      .withDetail("Success: Item updated successfully");
-              promise.complete(respBuilder.getJsonResponse());
-            })
+            allowHandler -> doUpdate(stacLink, result.docId, allowHandler))
+        .onSuccess(promise::complete)
         .onFailure(
             failureHandler -> {
               LOGGER.error("error : " + failureHandler.getMessage());
+              if(failureHandler instanceof NoSuchElementException exception){
+                promise.fail(exception);
+                return;
+              }
               promise.fail(failureHandler.getMessage());
             });
 
@@ -196,47 +152,33 @@ public class StacServiceImpl implements StacService {
    * @return future json
    */
   @Override
-  public Future<JsonObject> delete(String stacId) {
+  public Future<String> delete(String stacId) {
     LOGGER.debug("delete () method started");
-    Promise<JsonObject> promise = Promise.promise();
+    Promise<String> promise = Promise.promise();
     LOGGER.debug("stackId for delete :{}", stacId);
+
     isExist(stacId)
         .onComplete(
             existHandler -> {
               if (existHandler.succeeded()) {
                 JsonObject result = existHandler.result();
                 String docId = result.getString(DOC_ID);
-                esService.deleteDocument(index, docId)
+                esService.deleteDocument(docIndex, docId)
                     .onComplete(deleteHandler -> {
                       if (deleteHandler.succeeded()) {
                         LOGGER.info("Deletion success :{}", deleteHandler.result());
-                        respBuilder =
-                            new RespBuilder()
-                                .withType(SUCCESS)
-                                .withResult(stacId)
-                                .withDetail(STAC_DELETION_SUCCESS);
-                        promise.complete(respBuilder.getJsonResponse());
+                        promise.complete(stacId);
                       } else {
-                        LOGGER.error(
-                            "Fail: Delete operation failed : {}",
+                        LOGGER.error("Fail: Delete operation failed : {}",
                             deleteHandler.cause().getMessage());
-                        respBuilder =
-                            new RespBuilder()
-                                .withType(FAILED)
-                                .withResult(stacId, REQUEST_DELETE, FAILED)
-                                .withDetail(DATABASE_ERROR);
-                        promise.fail(respBuilder.getResponse());
+                        promise.fail(new InternalServerException(deleteHandler.cause().getMessage(),
+                            REQUEST_DELETE));
                       }
                     });
               } else {
                 LOGGER.error(
                     "Fail: Item not found for deletion : {}", existHandler.cause().getMessage());
-                respBuilder =
-                    new RespBuilder()
-                        .withType(TYPE_ITEM_NOT_FOUND)
-                        .withResult(stacId, REQUEST_DELETE, FAILED)
-                        .withDetail("Item not found, can't delete");
-                promise.fail(respBuilder.getResponse());
+                promise.fail(existHandler.cause().getMessage());
               }
             });
 
@@ -247,11 +189,10 @@ public class StacServiceImpl implements StacService {
     LOGGER.debug("isExist () method started");
     Promise<JsonObject> promise = Promise.promise();
     LOGGER.debug("stacId: {}", id);
-    QueryModel query = queryBuilder.getQuery(id);
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(query);
 
-    esService.search(index, queryModel)
+    QueryModel queryModel = getStacQuery(id);
+
+    esService.search(docIndex, queryModel)
         .onComplete(existHandler -> {
           LOGGER.debug("existHandler succeeded " + existHandler.succeeded());
           if (existHandler.failed()) {
@@ -261,12 +202,7 @@ public class StacServiceImpl implements StacService {
           }
           if (existHandler.result().isEmpty()) {
             LOGGER.debug("success: existHandler " + existHandler.result());
-            respBuilder =
-                new RespBuilder()
-                    .withType(TYPE_ITEM_NOT_FOUND)
-                    .withTitle(TITLE_ITEM_NOT_FOUND)
-                    .withDetail("Fail: stac doesn't exist");
-            promise.fail(respBuilder.getResponse());
+            promise.fail(new NoSuchElementException("Item not found"));
           } else {
             try {
               List<ElasticsearchResponse> response = existHandler.result();
@@ -290,11 +226,10 @@ public class StacServiceImpl implements StacService {
             }
           }
         });
-
     return promise.future();
   }
 
-  private Future<Boolean> isAllowPatch(JsonObject requestBody, JsonArray links) {
+  private Future<Boolean> isAllowPatch(StacLink requestBody, JsonArray links) {
     LOGGER.debug("isAllowPatch () method started");
     Promise<Boolean> promise = Promise.promise();
     AtomicBoolean allowPatch = new AtomicBoolean(true);
@@ -303,7 +238,7 @@ public class StacServiceImpl implements StacService {
         .forEach(
             child -> {
               if (child.getString("rel").equalsIgnoreCase("child")
-                  && child.getString("href").equalsIgnoreCase(requestBody.getString("href"))) {
+                  && child.getString("href").equalsIgnoreCase(requestBody.getHref())) {
                 allowPatch.set(false);
               }
             });
@@ -312,30 +247,24 @@ public class StacServiceImpl implements StacService {
     return promise.future();
   }
 
-  private Future<JsonObject> doUpdate(JsonObject request, String docId, boolean isAllowed) {
+  private Future<String> doUpdate(StacLink request, String docId, boolean isAllowed) {
     LOGGER.debug("doUpdate () method started");
     if (!isAllowed) {
       LOGGER.debug("Patch operations not allowed for duplicate child");
-      respBuilder =
-          new RespBuilder()
-              .withType(TYPE_CONFLICT)
-              .withTitle(TITLE_ALREADY_EXISTS)
-              .withDetail("Patch operations not allowed for duplicate child");
-      return Future.failedFuture(respBuilder.getResponse());
+      return Future.failedFuture(TITLE_ALREADY_EXISTS);
     }
     LOGGER.debug("docId: {}", docId);
-    request.remove("id");
-    String query = queryBuilder.getPatchQuery(request);
-    JsonObject doc = new JsonObject(query);
-    LOGGER.debug("patchQuery:: " + query);
-    Promise<JsonObject> promise = Promise.promise();
-    esService.patchDocument(index, docId, doc)
+    //request.remove("id");
+    QueryModel queryModel = getPatchQuery(request);
+    LOGGER.debug("patch queryModel: " + queryModel.toJson());
+    Promise<String> promise = Promise.promise();
+
+    esService.patchDocument(docIndex, docId, queryModel)
         .onComplete(patchHandler -> {
           if (patchHandler.succeeded()) {
-
             JsonObject result = patchHandler.result();
             LOGGER.debug("patch result " + result);
-            promise.complete(result);
+            promise.complete(request.getId());
           } else {
             LOGGER.error("failed:: " + patchHandler.cause().getMessage());
             promise.fail(patchHandler.cause().getMessage());

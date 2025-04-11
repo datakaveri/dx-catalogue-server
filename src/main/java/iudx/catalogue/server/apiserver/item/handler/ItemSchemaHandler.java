@@ -21,7 +21,6 @@ import static iudx.catalogue.server.util.Constants.REQUEST_PUT;
 import static iudx.catalogue.server.util.Constants.TYPE;
 
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -135,22 +134,15 @@ public class ItemSchemaHandler implements Handler<RoutingContext> {
 
   // Helper method to create Item based on item type
   private Item createItemFromType(String itemType, JsonObject requestBody) {
-    switch (itemType) {
-      case ITEM_TYPE_OWNER:
-        return new Owner(requestBody);
-      case ITEM_TYPE_COS:
-        return new COS(requestBody);
-      case ITEM_TYPE_RESOURCE_SERVER:
-        return new ResourceServer(requestBody);
-      case ITEM_TYPE_PROVIDER:
-        return new Provider(requestBody);
-      case ITEM_TYPE_RESOURCE_GROUP:
-        return new ResourceGroup(requestBody);
-      case ITEM_TYPE_RESOURCE:
-        return new Resource(requestBody);
-      default:
-        throw new IllegalArgumentException("Invalid item type: " + itemType);
-    }
+    return switch (itemType) {
+      case ITEM_TYPE_OWNER -> new Owner(requestBody);
+      case ITEM_TYPE_COS -> new COS(requestBody);
+      case ITEM_TYPE_RESOURCE_SERVER -> new ResourceServer(requestBody);
+      case ITEM_TYPE_PROVIDER -> new Provider(requestBody);
+      case ITEM_TYPE_RESOURCE_GROUP -> new ResourceGroup(requestBody);
+      case ITEM_TYPE_RESOURCE -> new Resource(requestBody);
+      default -> throw new IllegalArgumentException("Invalid item type: " + itemType);
+    };
   }
 
   /**

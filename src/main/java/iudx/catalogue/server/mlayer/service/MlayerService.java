@@ -6,6 +6,10 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.mlayer.model.MlayerDatasetRequest;
+import iudx.catalogue.server.mlayer.model.MlayerDomainRequest;
+import iudx.catalogue.server.mlayer.model.MlayerGeoQueryRequest;
+import iudx.catalogue.server.mlayer.model.MlayerInstanceRequest;
 
 @ProxyGen
 @VertxGen
@@ -15,29 +19,29 @@ public interface MlayerService {
     return new MlayerServiceVertxEBProxy(vertx, address);
   }
 
-  Future<JsonObject> createMlayerInstance(JsonObject request);
+  Future<JsonObject> createMlayerInstance(MlayerInstanceRequest request);
 
   Future<JsonObject> getMlayerInstance(JsonObject requestParams);
 
   Future<JsonObject> deleteMlayerInstance(String request);
 
-  Future<JsonObject> updateMlayerInstance(JsonObject request);
+  Future<JsonObject> updateMlayerInstance(MlayerInstanceRequest request);
 
-  Future<JsonObject> createMlayerDomain(JsonObject request);
+  Future<JsonObject> createMlayerDomain(MlayerDomainRequest request);
 
   Future<JsonObject> getMlayerDomain(JsonObject requestParams);
 
   Future<JsonObject> deleteMlayerDomain(String request);
 
-  Future<JsonObject> updateMlayerDomain(JsonObject request);
+  Future<JsonObject> updateMlayerDomain(MlayerDomainRequest request);
 
   Future<JsonObject> getMlayerProviders(JsonObject requestParams);
 
-  Future<JsonObject> getMlayerGeoQuery(JsonObject request);
+  Future<JsonObject> getMlayerGeoQuery(MlayerGeoQueryRequest request);
 
-  Future<JsonObject> getMlayerAllDatasets(JsonObject requestParam);
+  Future<JsonObject> getMlayerAllDatasets(Integer limit, Integer offset);
 
-  Future<JsonObject> getMlayerDataset(JsonObject requestData);
+  Future<JsonObject> getMlayerDataset(MlayerDatasetRequest requestData);
 
   Future<JsonObject> getMlayerPopularDatasets(String instance);
 

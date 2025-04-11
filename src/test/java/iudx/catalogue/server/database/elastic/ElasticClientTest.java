@@ -49,7 +49,7 @@ public class ElasticClientTest {
     docIndex = elasticConfig.getString(DOC_INDEX);
     ratingIndex = elasticConfig.getString(RATING_INDEX);
 
-    elasticClient = new ElasticClient(databaseIP, databasePort, docIndex, databaseUser, databasePassword);
+    elasticClient = new ElasticClient(databaseIP, databasePort, databaseUser, databasePassword);
     LOGGER.info("Read config file");
 
     testContext.completeNow();

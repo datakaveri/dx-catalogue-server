@@ -1,476 +1,533 @@
 package iudx.catalogue.server.apiserver.item.service;
 
-import static iudx.catalogue.server.common.util.ResponseBuilderUtil.*;
-import static iudx.catalogue.server.database.elastic.util.BoolOperator.*;
-import static iudx.catalogue.server.database.elastic.util.Constants.*;
-import static iudx.catalogue.server.util.Constants.*;
-import static iudx.catalogue.server.util.Constants.KEYWORD_KEY;
-import static iudx.catalogue.server.validator.util.Constants.CONTEXT;
+import static iudx.catalogue.server.apiserver.item.model.QueryModelUtil.checkQueryModel;
+import static iudx.catalogue.server.apiserver.item.model.QueryModelUtil.createGetItemQuery;
+import static iudx.catalogue.server.apiserver.item.model.QueryModelUtil.createItemExistenceQuery;
+import static iudx.catalogue.server.apiserver.item.model.QueryModelUtil.createVerifyInstanceQuery;
+import static iudx.catalogue.server.apiserver.stack.util.StackConstants.DOC_ID;
+import static iudx.catalogue.server.auditing.util.Constants.ID;
+import static iudx.catalogue.server.database.elastic.util.Constants.ERROR_DB_REQUEST;
+import static iudx.catalogue.server.database.elastic.util.Constants.GEOSUMMARY_KEY;
+import static iudx.catalogue.server.database.elastic.util.Constants.STATIC_DELAY_TIME;
+import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
+import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
+import static iudx.catalogue.server.util.Constants.DELETE;
+import static iudx.catalogue.server.util.Constants.DETAIL_ID_NOT_FOUND;
+import static iudx.catalogue.server.util.Constants.INSTANCE;
+import static iudx.catalogue.server.util.Constants.INSTANCE_VERIFICATION_FAILED;
+import static iudx.catalogue.server.util.Constants.REQUEST_DELETE;
+import static iudx.catalogue.server.util.Constants.REQUEST_GET;
+import static iudx.catalogue.server.util.Constants.REQUEST_POST;
+import static iudx.catalogue.server.util.Constants.REQUEST_PUT;
+import static iudx.catalogue.server.util.Constants.SOURCE;
+import static iudx.catalogue.server.util.Constants.TITLE_ITEM_NOT_FOUND;
+import static iudx.catalogue.server.util.Constants.TOTAL_HITS;
+import static iudx.catalogue.server.util.Constants.TYPE_INTERNAL_SERVER_ERROR;
+import static iudx.catalogue.server.util.Constants.UPDATE;
 
+import com.hazelcast.jet.datamodel.Tuple2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.item.exception.ItemNotFoundException;
 import iudx.catalogue.server.apiserver.item.model.Item;
-import iudx.catalogue.server.common.RespBuilder;
 import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.elastic.util.QueryType;
+import iudx.catalogue.server.database.elastic.util.ResponseFilter;
 import iudx.catalogue.server.database.util.Summarizer;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
+import iudx.catalogue.server.exceptions.DocNotFoundException;
+import iudx.catalogue.server.exceptions.InternalServerException;
+import iudx.catalogue.server.exceptions.InvalidSyntaxException;
+import iudx.catalogue.server.exceptions.DocAlreadyExistsException;
+import iudx.catalogue.server.exceptions.OperationNotAllowedException;
 import iudx.catalogue.server.geocoding.service.GeocodingService;
 import iudx.catalogue.server.nlpsearch.service.NLPSearchService;
-import java.util.*;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 public class ItemServiceImpl implements ItemService {
-  private static final Logger LOGGER = LogManager.getLogger(ItemServiceImpl.class);
-  protected final ElasticsearchService esService;
-  private final JsonObject config;
+  private static final Logger LOGGER = LogManager.getLogger(ItemService.class);
+  private final String index;
+  private final ElasticsearchService esService;
   private NLPSearchService nlpService;
   private GeocodingService geoService;
   private boolean nlpPluggedIn = false;
   private boolean geoPluggedIn = false;
 
-  public ItemServiceImpl(
-      ElasticsearchService esService,
-      GeocodingService geoService,
-      NLPSearchService nlpService,
-      JsonObject config) {
+  public ItemServiceImpl(String index, ElasticsearchService esService) {
+    this.index = index;
     this.esService = esService;
-    this.config = config;
+  }
+
+  public ItemServiceImpl(String index, ElasticsearchService esService, GeocodingService geoService,
+                         NLPSearchService nlpService) {
+    this.index = index;
+    this.esService = esService;
     this.geoService = geoService;
     this.nlpService = nlpService;
     nlpPluggedIn = true;
     geoPluggedIn = true;
   }
 
-  public ItemServiceImpl(ElasticsearchService esService, JsonObject config) {
-    this.esService = esService;
-    this.config = config;
-  }
-
-  private static QueryModel checkQueryModel(String id) {
-    Map<String, Object> idParams = Map.of(FIELD, ID_KEYWORD, VALUE, id);
-    Map<String, Object> resourceGroupParams = Map.of(FIELD, RESOURCE_GRP + KEYWORD_KEY, VALUE, id);
-    Map<String, Object> providerParams = Map.of(FIELD, PROVIDER + KEYWORD_KEY, VALUE, id);
-    Map<String, Object> resourceServerParams = Map.of(FIELD, RESOURCE_SVR + KEYWORD_KEY, VALUE, id);
-    Map<String, Object> cosParams = Map.of(FIELD, COS + KEYWORD_KEY, VALUE, id);
-
-    QueryModel idQuery = new QueryModel(QueryType.TERM, idParams);
-    QueryModel resourceGroupQuery = new QueryModel(QueryType.TERM, resourceGroupParams);
-    QueryModel providerQuery = new QueryModel(QueryType.TERM, providerParams);
-    QueryModel resourceServerQuery = new QueryModel(QueryType.TERM, resourceServerParams);
-    QueryModel cosQuery = new QueryModel(QueryType.TERM, cosParams);
-
-    List<QueryModel> shouldQueries =
-        List.of(idQuery, resourceGroupQuery, providerQuery, resourceServerQuery, cosQuery);
-
-    return new QueryModel(SHOULD, shouldQueries);
-  }
 
   @Override
-  public Future<JsonObject> createItem(Item item) {
-    Promise<JsonObject> promise = Promise.promise();
-
-    JsonObject doc = item.toJson();
-    String itemType = doc.getJsonArray(TYPE).getString(0);
-    if (!Objects.equals(itemType, ITEM_TYPE_INSTANCE)) {
-      doc.put(CONTEXT, config.getString(CONTEXT));
-    }
-    String id = doc.getString(ID);
+  public Future<DbResponseMessageBuilder> search(String id, List<String> includes) {
+    Promise<DbResponseMessageBuilder> promise = Promise.promise();
+    QueryModel queryModel = createGetItemQuery(id, includes);
+    search(queryModel, ResponseFilter.SOURCE_ONLY)
+        .onComplete(res -> {
+          if (res.failed()) {
+            promise.fail(res.cause());
+          } else {
+            if (res.result().getResponse().getInteger(TOTAL_HITS) == 0) {
+              promise.fail(new NoSuchElementException("Item not found"));
+            } else {
+              DbResponseMessageBuilder responseMsg = res.result();
+              responseMsg.setDetail("Success: Item fetched Successfully");
+              LOGGER.info("Success: Item retrieved;");
+              promise.complete(responseMsg);
+            }
+          }
+        });
+    return promise.future();
+  }
+  @Override
+  public Future<Item> create(Item item) {
+    String id = item.getId().toString();
+    String instance = item.toJson().getString(INSTANCE);
     if (id == null) {
       LOGGER.error("Fail: id not present in the request");
-      promise.fail(invalidSyntaxResponse(DETAIL_ID_NOT_FOUND));
-      return promise.future();
+      return Future.failedFuture(new InvalidSyntaxException(DETAIL_ID_NOT_FOUND));
     }
 
-    final String instanceId = doc.getString(INSTANCE);
-    Map<String, Object> termParams = new HashMap<>();
-    termParams.put(FIELD, ID_KEYWORD);
-    termParams.put(VALUE, id);
-    QueryModel checkItemQueryModel = new QueryModel();
-    checkItemQueryModel.setQueries(new QueryModel(QueryType.TERM, termParams));
-    checkItemQueryModel.setLimit(MAX_LIMIT);
-    checkItemQueryModel.setOffset(FILTER_PAGINATION_FROM);
+    return addVectorAndGeographicInfoToItem(item.toJson())
+        .onFailure(err -> LOGGER.error("Fail: Failed to process document - {}",
+            err.getMessage()))
+        .compose(updatedDoc -> {
+          if (updatedDoc.containsKey(SUMMARY_KEY)) {
+            LOGGER.debug("Info: Updating item summary; " + item.getSummary());
+            item.setSummary(updatedDoc.getString(SUMMARY_KEY));
+          }
+          if (updatedDoc.containsKey(GEOSUMMARY_KEY)) {
+            LOGGER.debug("Info: Updating item geo summary;");
+            item.setGeoSummary(updatedDoc.getJsonObject(GEOSUMMARY_KEY));
+          }
+          if (updatedDoc.containsKey(WORD_VECTOR_KEY)) {
+            LOGGER.debug("Info: Updating item word vector;");
+            item.setWordVector(updatedDoc.getJsonArray(WORD_VECTOR_KEY));
+          }
+          LOGGER.debug("Info: Inserting item " + item.toJson());
+          QueryModel query = createGetItemQuery(id, null);
+          return verifyInstance(instance)
+              .recover(err -> Future.failedFuture(new OperationNotAllowedException(id,
+                  INSTANCE_VERIFICATION_FAILED, err.getLocalizedMessage())))
+              .compose(
+                  instanceExists ->
+                      instanceExists
+                          ? createItem(item, query, id)
+                          : Future.failedFuture(new DatabaseFailureException(
+                          id, "Fail: Instance doesn't exist/registered")));
 
-    verifyInstance(instanceId)
-        .compose(
-            instanceExists -> {
-              if (!instanceExists) {
-                LOGGER.debug(INSTANCE_NOT_EXISTS);
-                return Future.failedFuture("Fail: Instance doesn't exist/registered");
-              }
-              return Future.succeededFuture(doc);
-            })
-        .compose(v -> checkItemExists(checkItemQueryModel))
-        .compose(
-            exists -> {
-              if (exists) {
-                // Early exit to avoid further processing
-                LOGGER.debug("Item already exists");
-                return Future.failedFuture("Item already exists");
-              }
-              return Future.succeededFuture(doc);
-            })
-        .compose(this::addVectorAndGeographicInfoToItem)
-        .onSuccess(
-            document ->
-                promise.complete(successfulItemOperationResp(document, "Success: Item created")))
-        .onFailure(
-            err -> {
-              if ("Item already exists".equals(err.getMessage())) {
-                LOGGER.error("Fail: Item exists; ID: " + id);
-                promise.fail(itemAlreadyExistsResponse(id, "Fail: Doc Exists"));
-              } else {
-                LOGGER.error("Fail: Item creation failed; " + err.getMessage());
-                promise.fail(
-                    operationNotAllowedResponse(
-                        doc.getString(ID), INSERT, err.getLocalizedMessage()));
-              }
-            });
+        })
+        .onSuccess(dbHandler -> LOGGER.info("Success: Item created"))
+        .recover(err -> {
+          if (err instanceof DocAlreadyExistsException existsException) {
+            LOGGER.error("Item already exists with id {}, skipping creation",
+                existsException.getItemId());
+            return Future.failedFuture(existsException);
+          } else if (err instanceof DatabaseFailureException dbException) {
+            LOGGER.error("Fail: Search operation failed - {}", dbException.getMessage());
+            return Future.failedFuture(dbException);
+          } else {
+            LOGGER.error("Fail: Item creation failed - {}", err.getMessage());
+            return Future.failedFuture(err);
+          }
+        });
+  }
+
+  @Override
+  public Future<Item> update(Item item) {
+    Promise<Item> promise = Promise.promise();
+
+    String id = item.getId().toString();
+    String type = item.getType().getFirst();
+    LOGGER.debug("Info: Updating item");
+
+    QueryModel query = createItemExistenceQuery(id, type);
+    updateItem(item, query)
+        .onComplete(dbHandler -> {
+          if (dbHandler.failed()) {
+            LOGGER.error("Fail: Item update failed; " + dbHandler.cause().getMessage());
+            if (dbHandler.cause() instanceof DocNotFoundException exception) {
+              promise.fail(new ItemNotFoundException(exception.getId(), UPDATE));
+            } else {
+              promise.fail(dbHandler.cause());
+            }
+          } else {
+            LOGGER.info("Success: Item updated;");
+            promise.complete(dbHandler.result());
+          }
+        });
 
     return promise.future();
   }
 
   @Override
-  public Future<JsonObject> updateItem(Item item) {
-    JsonObject doc = item.toJson();
-    doc.put(CONTEXT, config.getString(CONTEXT));
-    String id = doc.getString(ID);
-    String type = doc.getJsonArray(TYPE).getString(0);
-    String index = config.getString(DOC_INDEX);
+  public Future<String> delete(String id) {
+    Promise<String> promise = Promise.promise();
+    QueryModel query = checkQueryModel(id);
 
-    QueryModel queryModel = new QueryModel();
-    QueryModel idTermQuery = new QueryModel(QueryType.TERM, Map.of(FIELD, ID_KEYWORD, VALUE, id));
-    QueryModel typeMatchQuery =
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, TYPE_KEYWORD, VALUE, type));
-    QueryModel checkItemExistenceQuery = new QueryModel(MUST, List.of(idTermQuery, typeMatchQuery));
-    queryModel.setQueries(checkItemExistenceQuery);
-
-    // Set the source configuration to include specified fields
-    queryModel.setIncludeFields(List.of(ID));
-    Promise<JsonObject> promise = Promise.promise();
-    new Timer()
-        .schedule(
-            new TimerTask() {
-              public void run() {
-                esService
-                    .search(index, queryModel)
-                    .onComplete(
-                        checkRes -> {
-                          if (checkRes.failed()) {
-                            LOGGER.error("Fail: Check query fail;" + checkRes.cause());
-                            promise.fail(internalErrorResp());
-                            return;
-                          }
-                          if (checkRes.succeeded()) {
-                            if (checkRes.result().size() != 1) {
-                              LOGGER.error("Fail: Doc doesn't exist, can't update");
-                              promise.fail(
-                                  itemNotFoundResponse(
-                                      id, UPDATE, "Fail: Doc doesn't exist, can't update"));
-                              return;
-                            }
-                            String docId = checkRes.result().get(0).getDocId();
-                            esService
-                                .updateDocument(index, docId, doc)
-                                .onComplete(
-                                    dbHandler -> {
-                                      if (dbHandler.failed()) {
-                                        LOGGER.error(
-                                            "Fail: Item update failed; "
-                                                + dbHandler.cause().getMessage());
-                                        promise.fail(internalErrorResp());
-                                      } else {
-                                        LOGGER.info("Success: Item updated;");
-                                        promise.complete(
-                                            successfulItemOperationResp(
-                                                doc, "Success: Item updated successfully"));
-                                      }
-                                    });
-                          }
-                        });
-              }
-            },
-            STATIC_DELAY_TIME);
-    return promise.future();
-  }
-
-  @Override
-  public Future<JsonObject> deleteItem(String id) {
-    Promise<JsonObject> promise = Promise.promise();
-
-    new Timer()
-        .schedule(
-            new TimerTask() {
-              public void run() {
-                /* the check query checks if any type item is present more than once.
-                If it's present then the item cannot be deleted.  */
-                String index = config.getString(DOC_INDEX);
-
-                QueryModel queryResourceGrp = new QueryModel();
-                queryResourceGrp.setQueries(checkQueryModel(id));
-
-                esService
-                    .search(index, queryResourceGrp)
-                    .onComplete(
-                        checkRes -> {
-                          if (checkRes.failed()) {
-                            LOGGER.error("Fail: Check query fail;" + checkRes.cause().getMessage());
-                            promise.fail(internalErrorResp());
-                          } else {
-                            LOGGER.debug("Success: Check index for doc");
-                            if (checkRes.result().size() > 1) {
-                              LOGGER.error("Fail: Can't delete, doc has associated item;");
-                              promise.fail(
-                                  operationNotAllowedResponse(
-                                      id, "Fail: Can't delete, doc has associated item"));
-                              return;
-                            } else if (checkRes.result().isEmpty()) {
-                              LOGGER.error("Fail: Doc doesn't exist, can't delete;");
-                              promise.fail(
-                                  itemNotFoundResponse(
-                                      id, "Fail: Doc doesn't exist, can't delete"));
-                              return;
-                            }
-                            String docId = checkRes.result().get(0).getDocId();
-                            esService
-                                .deleteDocument(index, docId)
-                                .onComplete(
-                                    dbHandler -> {
-                                      if (dbHandler.succeeded()) {
-                                        JsonObject response = dbHandler.result();
-                                        LOGGER.info("Success: Item deleted;");
-                                        if (TITLE_SUCCESS.equals(response.getString(TITLE))) {
-                                          promise.complete(
-                                              successResp(
-                                                  id, "Success: Item deleted successfully"));
-                                        } else {
-                                          promise.fail(
-                                              new NoSuchElementException(
-                                                  "Fail: Doc doesn't exist, "
-                                                      + "can't perform operation"));
-                                        }
-                                      } else {
-                                        Throwable cause = dbHandler.cause();
-                                        LOGGER.error("Fail: Deletion failed;" + cause);
-                                        promise.fail(internalErrorResp());
-                                      }
-                                    });
-                          }
-                        });
-              }
-            },
-            STATIC_DELAY_TIME);
+    deleteItem(id, query)
+        .onComplete(dbHandler -> {
+          if (dbHandler.succeeded()) {
+            LOGGER.info("Success: Item deleted;");
+            promise.complete(dbHandler.result());
+          } else {
+            Throwable cause = dbHandler.cause();
+            if (cause instanceof DocNotFoundException exception) {
+              LOGGER.error("Fail: Item not found; " + cause.getMessage());
+              promise.fail(exception);
+            } else if (cause instanceof OperationNotAllowedException exception) {
+              LOGGER.debug("Operation not allowed");
+              promise.fail(exception);
+            } else {
+              LOGGER.error("Fail: Item deletion failed; " + cause.getMessage());
+              promise.fail(cause.getMessage());
+            }
+          }
+        });
 
     return promise.future();
   }
 
+
+  /**
+   * Searches for items in the Elasticsearch index based on the provided query model and response filter.
+   *
+   * @param queryModel The query model defining search criteria.
+   * @param filter The response filter determining the format of search results.
+   * @return A Future containing the search results wrapped in a DbResponseMessageBuilder.
+   */
   @Override
-  public Future<JsonObject> getItem(JsonObject requestBody) {
-
-    List<String> includeFields = null;
-    if (requestBody.containsKey(INCLUDE_FIELDS)) {
-      includeFields =
-          requestBody.getJsonArray(INCLUDE_FIELDS).stream()
-              .map(Object::toString)
-              .collect(Collectors.toList());
-    }
-    String id = requestBody.getString(ID);
-    Map<String, Object> termParams = new HashMap<>();
-    termParams.put(FIELD, ID_KEYWORD); // Field to match
-    termParams.put(VALUE, id); // The ID value to search for
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(new QueryModel(QueryType.TERM, termParams));
-    if (includeFields != null) {
-      queryModel.setIncludeFields(includeFields);
-    }
-    queryModel.setLimit(MAX_LIMIT);
-    queryModel.setOffset(FILTER_PAGINATION_FROM);
-
+  public Future<DbResponseMessageBuilder> search(QueryModel queryModel, ResponseFilter filter) {
     LOGGER.debug("Info: Retrieving item");
-    Promise<JsonObject> promise = Promise.promise();
-    String index = config.getString(DOC_INDEX);
-    esService
+    return esService
         .search(index, queryModel)
+        .compose(res -> processSearchResponse(res, filter))
+        .recover(
+            err -> {
+              LOGGER.error("Fail: Item retrieval failed; " + err.getMessage());
+              return Future.failedFuture(new InternalServerException(err.getMessage(),
+                  REQUEST_GET));
+            });
+  }
+  private Future<DbResponseMessageBuilder> processSearchResponse(
+      List<ElasticsearchResponse> response, ResponseFilter filter) {
+
+    DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder()
+        .statusSuccess().setTotalHits(response.size());
+
+    switch (filter) {
+      case SOURCE_ONLY -> response.forEach(res -> responseMsg.addResult(res.getSource()));
+      case DOC_ID_ONLY -> response.stream()
+          .map(elasticResponse -> new JsonObject().put("doc_id", elasticResponse.getDocId()))
+          .forEach(responseMsg::addResult);
+      case SOURCE_AND_DOC_ID -> response.stream()
+          .map(elasticResponse -> new JsonObject(elasticResponse.getSource().toString())
+              .put("doc_id", elasticResponse.getDocId()))
+          .forEach(responseMsg::addResult);
+      case SOURCE_AND__ID -> response.stream()
+          .map(elasticResponse -> new JsonObject()
+              .put(SOURCE, elasticResponse.getSource())
+              .put(DOC_ID, elasticResponse.getDocId()))
+          .forEach(responseMsg::addResult);
+      case SOURCE_WITHOUT_EMBEDDINGS -> response.stream()
+          .map(ElasticsearchResponse::getSource)
+          .peek(source -> {
+            source.remove(SUMMARY_KEY);
+            source.remove(WORD_VECTOR_KEY);
+          })
+          .forEach(responseMsg::addResult);
+      case IDS_ONLY -> {
+        List<String> ids = extractIds(response);
+        if (ids == null || ids.isEmpty()) {
+          LOGGER.debug("Info: No IDs found in the response");
+          responseMsg.addResult();
+        } else {
+          ids.forEach(responseMsg::addResult);
+        }
+      }
+    }
+
+    LOGGER.info("Success: Retrieved item");
+    return Future.succeededFuture(responseMsg);
+  }
+  private List<String> extractIds(List<ElasticsearchResponse> response) {
+    return response.stream()
+        .map(ElasticsearchResponse::getSource)
+        .filter(Objects::nonNull)
+        .map(d -> d.getString(ID))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Creates a new item in the Elasticsearch index after checking if it already exists.
+   *
+   * @param item The item to be created.
+   * @param checkItemExistenceQuery Query model to check if the item already exists.
+   * @param id The unique identifier for the item.
+   * @return A Future containing the created item.
+   * @throws DocAlreadyExistsException If the item already exists.
+   * @throws DatabaseFailureException If there is an issue with the database operation.
+   */
+  public Future<Item> createItem(Item item, QueryModel checkItemExistenceQuery, String id)
+      throws DocAlreadyExistsException, DatabaseFailureException {
+    JsonObject doc = item.toJson();
+    LOGGER.debug("item json: " + doc);
+    AtomicReference<String> itemId = new AtomicReference<>(id);
+
+    return checkItemExists(index, checkItemExistenceQuery)
+        .compose(result -> handleItemExistence(result, item))
+        .compose(savedDoc -> insertDocumentWithDelay(index, savedDoc))
+        .recover(
+            err -> {
+              LOGGER.error("Fail: Item creation failed; " + err.getMessage());
+              if (err instanceof DocAlreadyExistsException) {
+                LOGGER.debug("IAE exception");
+                return Future.failedFuture(new DocAlreadyExistsException(itemId.get()));
+              } else if (err.getMessage().contains(TYPE_INTERNAL_SERVER_ERROR)) {
+                return Future.failedFuture(new InternalServerException(itemId.get(),
+                    err.getMessage(), REQUEST_POST));
+              }
+              LOGGER.debug("DB exception");
+              return Future.failedFuture(
+                  new DatabaseFailureException(itemId.get(), err.getMessage()));
+            });
+  }
+  private Future<Item> handleItemExistence(Tuple2<Boolean, String> result,
+                                           Item item) {
+    boolean exists = Boolean.TRUE.equals(result.f0());
+    return exists ? Future.failedFuture(new DocAlreadyExistsException(result.f1()))
+        : Future.succeededFuture(item);
+  }
+  private Future<Item> insertDocumentWithDelay(String index, Item item) {
+    Promise<Item> promise = Promise.promise();
+    new Timer().schedule(new TimerTask() {
+      @Override
+      public void run() {
+        esService.createDocument(index, item.toJson())
+            .onSuccess(res -> {
+              LOGGER.info("Success: Item created; " + res);
+              promise.complete(item);
+            })
+            .onFailure(err -> {
+              LOGGER.error("Fail: Item creation failed; " + err.getMessage());
+              promise.fail(TYPE_INTERNAL_SERVER_ERROR);
+            });
+      }
+    }, STATIC_DELAY_TIME);
+    return promise.future();
+  }
+
+  /**
+   * Updates an existing item in the Elasticsearch index.
+   *
+   * @param item The item containing updated information.
+   * @param checkItemExistenceQuery Query model to verify if the item exists.
+   * @return A Future containing the updated item.
+   */
+  public Future<Item> updateItem(Item item, QueryModel checkItemExistenceQuery) {
+    JsonObject doc = item.toJson();
+    String id = doc.getString(ID);
+
+    return esService
+        .search(index, checkItemExistenceQuery)
+        .compose(this::handleExistenceCheck)
+        .compose(docId -> esService.updateDocument(index, docId, doc))
+        .map(v -> item)
+        .recover(
+            err -> {
+              if (err.getMessage().contains(TITLE_ITEM_NOT_FOUND)) {
+                return Future.failedFuture(new DocNotFoundException(id, err.getMessage(), REQUEST_POST));
+              }
+              LOGGER.error("Fail: Item update failed; " + err.getMessage());
+              return Future.failedFuture(new InternalServerException(err.getMessage(), REQUEST_PUT));
+            });
+  }
+  private Future<String> handleExistenceCheck(List<ElasticsearchResponse> checkRes) {
+    if (checkRes.isEmpty()) {
+      LOGGER.error("Fail: Doc doesn't exist, can't update");
+      return Future.failedFuture(TITLE_ITEM_NOT_FOUND);
+    }
+    return Future.succeededFuture(checkRes.getFirst().getDocId());
+  }
+
+
+  /**
+   * Deletes an item from the Elasticsearch index based on its ID.
+   *
+   * @param id The unique identifier of the item to be deleted.
+   * @param queryModel Query model to verify if the item exists.
+   * @return A Future containing the ID of the deleted item.
+   */
+  public Future<String> deleteItem(String id, QueryModel queryModel) {
+
+    return esService.search(index, queryModel)
+        .compose(checkRes -> {
+          if (checkRes.isEmpty()) {
+            return Future.failedFuture(new DocNotFoundException(id, "Fail: Doc doesn't exist, " +
+                "can't delete", DELETE));
+          }
+          if (checkRes.size() > 1) {
+            return Future.failedFuture(new OperationNotAllowedException(id,
+                "Fail: Can't delete, doc has associated item;"));
+          }
+
+          String docId = checkRes.getFirst().getDocId();
+          return esService.deleteDocument(index, docId)
+              .compose(deleteRes -> {
+                LOGGER.info("Success: Item deleted;");
+                return Future.succeededFuture(id);
+
+              })
+              .recover(err -> {
+                LOGGER.error("Fail: Deletion failed; " + err.getMessage());
+                return Future.failedFuture(
+                    new InternalServerException(err.getMessage(), REQUEST_DELETE));
+              });
+        })
+        .recover(err -> {
+          LOGGER.error("Fail: Check query fail;" + err.getMessage());
+          return Future.failedFuture(err);
+        });
+  }
+
+  /**
+   * Verifies whether a given instance exists in the Elasticsearch index.
+   *
+   * @param instanceId The ID of the instance to verify.
+   * @return A Future containing a boolean indicating whether the instance exists.
+   */
+  private Future<Boolean> verifyInstance(String instanceId) {
+    if (instanceId == null || instanceId.startsWith("\"") || instanceId.isBlank()) {
+      LOGGER.debug("Info: InstanceID null. Maybe provider item");
+      return Future.succeededFuture(true);
+    }
+
+    QueryModel checkInstanceQueryModel = createVerifyInstanceQuery(instanceId);
+    return checkItemExists(index, checkInstanceQueryModel)
+        .map(result -> {
+          boolean exists = Boolean.TRUE.equals(result.f0());
+          LOGGER.debug("Info: Instance " + (exists ? "exists." : "doesn't exist."));
+          return exists;
+        })
+        .otherwise(err -> {
+          LOGGER.error("Error verifying instance: " + err.getMessage());
+          return false;  // Return false in case of failure
+        });
+  }
+
+  /**
+   * Counts the number of items matching a given query model in the Elasticsearch index.
+   *
+   * @param queryModel The query model defining count criteria.
+   * @return A Future containing a JsonObject with the count result.
+   */
+  @Override
+  public Future<DbResponseMessageBuilder> count(QueryModel queryModel) {
+    Promise<DbResponseMessageBuilder> promise = Promise.promise();
+    LOGGER.debug("Info: Query constructed;" + queryModel.toString());
+    esService
+        .count(index, queryModel)
         .onComplete(
-            dbHandler -> {
-              if (dbHandler.succeeded()) {
-                List<ElasticsearchResponse> response = dbHandler.result();
-                if (response.isEmpty()) {
-                  LOGGER.error(new NoSuchElementException("Item not found"));
-                  promise.fail(
-                      new RespBuilder()
-                          .withType(TYPE_ITEM_NOT_FOUND)
-                          .withTitle(TITLE_ITEM_NOT_FOUND)
-                          .withDetail("Fail: Doc doesn't exist, can't perform operation")
-                          .getResponse());
-                } else {
-                  DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-                  responseMsg.statusSuccess().setTotalHits(response.size());
-                  response.stream()
-                      .map(ElasticsearchResponse::getSource)
-                      .forEach(responseMsg::addResult);
-                  responseMsg.setDetail("Success: Item fetched Successfully");
-                  LOGGER.info("Success: Retrieved item");
-                  promise.complete(responseMsg.getResponse());
-                }
+            searchRes -> {
+              if (searchRes.succeeded()) {
+                LOGGER.debug("Success: Successful DB request");
+                DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
+                responseMsg.statusSuccess().setTotalHits(searchRes.result());
+                promise.complete(responseMsg);
               } else {
-                LOGGER.error("Fail: Item retrieval failed; " + dbHandler.cause().getMessage());
-                promise.fail(
-                    new RespBuilder()
-                        .withType(TYPE_INTERNAL_SERVER_ERROR)
-                        .withTitle(TITLE_INTERNAL_SERVER_ERROR)
-                        .withDetail(DETAIL_INTERNAL_SERVER_ERROR)
-                        .getResponse());
+                LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());
+                promise.fail(new InternalServerException(searchRes.cause().getMessage(),
+                    REQUEST_GET));
               }
             });
     return promise.future();
   }
 
-  private Future<Boolean> checkItemExists(QueryModel queryModel) {
-    Promise<Boolean> promise = Promise.promise();
-
-    String index = config.getString(DOC_INDEX);
-    esService
-        .search(index, queryModel)
-        .onComplete(
-            dbHandler -> {
-              if (dbHandler.succeeded()) {
-                List<ElasticsearchResponse> response = dbHandler.result();
-                if (response.isEmpty()) {
-                  LOGGER.debug("Item doesn't exist");
-                  promise.complete(false);
-                } else {
-                  LOGGER.debug("Item exists");
-                  promise.complete(true);
-                }
-              } else {
-                LOGGER.error(ERROR_DB_REQUEST + dbHandler.cause().getMessage());
-                promise.fail(TYPE_INTERNAL_SERVER_ERROR);
-              }
-            });
+  /**
+   * Checks if an item exists in the Elasticsearch index based on a given query model.
+   *
+   * @param index The index to search in.
+   * @param queryModel The query model defining search criteria.
+   * @return A Future containing a Tuple2<Boolean, String> where the first value indicates existence
+   *         and the second value contains the item ID if found.
+   */
+  private Future<Tuple2<Boolean, String>> checkItemExists(String index, QueryModel queryModel) {
+    Promise<Tuple2<Boolean, String>> promise = Promise.promise();
+    esService.search(index, queryModel)
+        .onComplete(dbHandler -> {
+          if (dbHandler.succeeded()) {
+            List<ElasticsearchResponse> response = dbHandler.result();
+            if (response.isEmpty()) {
+              LOGGER.debug("Item doesn't exist");
+              promise.complete(Tuple2.tuple2(false, null));
+            } else {
+              LOGGER.debug("Item exists");
+              String id= dbHandler.result().getFirst().getSource().getString(ID);
+              promise.complete(Tuple2.tuple2(true, id));
+            }
+          } else {
+            LOGGER.error(ERROR_DB_REQUEST + dbHandler.cause().getMessage());
+            promise.fail(TYPE_INTERNAL_SERVER_ERROR);
+          }
+        });
     return promise.future();
   }
 
   private Future<JsonObject> addVectorAndGeographicInfoToItem(JsonObject doc) {
-    Promise<JsonObject> promise = Promise.promise();
     doc.put(SUMMARY_KEY, Summarizer.summarize(doc));
     String instanceId = doc.getString(INSTANCE);
 
-    /* If geo and nlp services are initialized */
-    if (geoPluggedIn
-        && nlpPluggedIn
-        && !(instanceId == null || instanceId.isBlank() || instanceId.isEmpty())) {
-      geoService
-          .geoSummarize(doc)
-          .onComplete(
-              geoHandler -> {
-                /* Not going to check if success or fail */
-                JsonObject geoResult;
-                try {
-                  geoResult = new JsonObject(geoHandler.result());
-                  LOGGER.debug("GeoHandler result: " + geoResult);
-                } catch (Exception e) {
-                  LOGGER.debug("no geocoding result generated");
-                  geoResult = new JsonObject();
-                }
-                doc.put(GEOSUMMARY_KEY, geoResult);
-                nlpService
-                    .getEmbedding(doc)
-                    .onComplete(
-                        ar -> {
-                          if (ar.succeeded()) {
-                            LOGGER.debug("Info: Document embeddings created");
-                            doc.put(WORD_VECTOR_KEY, ar.result().getJsonArray("result"));
-                            /* Insert document */
-                            new Timer()
-                                .schedule(
-                                    new TimerTask() {
-                                      public void run() {
-                                        esService
-                                            .createDocument(config.getString(DOC_INDEX), doc)
-                                            .onComplete(
-                                                dbHandler -> {
-                                                  if (dbHandler.failed()) {
-                                                    LOGGER.error(
-                                                        "Fail: Item creation failed; "
-                                                            + dbHandler.cause().getMessage());
-                                                    promise.fail(
-                                                        dbHandler.cause().getLocalizedMessage());
-                                                  } else {
-                                                    LOGGER.info("Success: Item created;");
-                                                    promise.complete(doc);
-                                                  }
-                                                });
-                                      }
-                                    },
-                                    STATIC_DELAY_TIME);
-                          } else {
-                            LOGGER.error("Error: Document embeddings not created");
-                          }
-                        });
-              });
+    /* Check if geo and nlp services are initialized */
+    if (geoPluggedIn && nlpPluggedIn &&
+        !(instanceId == null || instanceId.isBlank() || instanceId.isEmpty())) {
+      return geoService.geoSummarize(doc)
+          .recover(err -> {
+            LOGGER.debug("No geocoding result generated");
+            return Future.succeededFuture("{}"); // Return empty JSON string if failed
+          })
+          .map(JsonObject::new)
+          .compose(geoResult -> {
+            LOGGER.debug("GeoHandler result: " + geoResult);
+            doc.put(GEOSUMMARY_KEY, geoResult);
+            return nlpService.getEmbedding(doc);
+          })
+          .compose(embeddingRes -> {
+            LOGGER.debug("Info: Document embeddings created");
+            doc.put(WORD_VECTOR_KEY, embeddingRes.getJsonArray("result"));
+            return Future.succeededFuture(doc);
+          })
+          .otherwise(err -> {
+            LOGGER.error("Error: Document embeddings not created");
+            return doc;  // Return the document even if embeddings fail
+          });
     } else {
-      /* Insert document */
-      new Timer()
-          .schedule(
-              new TimerTask() {
-                public void run() {
-                  esService
-                      .createDocument(config.getString(DOC_INDEX), doc)
-                      .onComplete(
-                          dbHandler -> {
-                            if (dbHandler.failed()) {
-                              LOGGER.error(
-                                  "Fail: Item creation failed; " + dbHandler.cause().getMessage());
-                              promise.fail(dbHandler.cause().getLocalizedMessage());
-                            } else {
-                              LOGGER.info("Success: Item created;");
-                              promise.complete(doc);
-                            }
-                          });
-                }
-              },
-              STATIC_DELAY_TIME);
+      return Future.succeededFuture(doc);
     }
-    return promise.future();
   }
 
-  /* Verify the existence of an instance */
-  public Future<Boolean> verifyInstance(String instanceId) {
-    Promise<Boolean> promise = Promise.promise();
-
-    if (instanceId == null || instanceId.startsWith("\"") || instanceId.isBlank()) {
-      LOGGER.debug("Info: InstanceID null. Maybe provider item");
-      promise.complete(true);
-      return promise.future();
-    }
-    Map<String, Object> termParams = new HashMap<>();
-    termParams.put(FIELD, ID);
-    termParams.put(VALUE, instanceId);
-    QueryModel checkInstanceQueryModel = new QueryModel();
-    checkInstanceQueryModel.setQueries(new QueryModel(QueryType.MATCH, termParams));
-    checkInstanceQueryModel.setLimit(MAX_LIMIT);
-    checkInstanceQueryModel.setOffset(FILTER_PAGINATION_FROM);
-    checkItemExists(checkInstanceQueryModel)
-        .onSuccess(
-            isItemExists -> {
-              if (isItemExists) {
-                LOGGER.debug("Info: Instance exists.");
-                promise.complete(true);
-              } else {
-                LOGGER.debug("Info: Instance doesn't exist.");
-                promise.complete(false);
-              }
-            })
-        .onFailure(
-            checkRes -> {
-              promise.fail(checkRes.getLocalizedMessage());
-            });
-    return promise.future();
-  }
 }
+

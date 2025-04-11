@@ -1,12 +1,9 @@
 package iudx.catalogue.server.mlayer.vocabulary;
 
-import static iudx.catalogue.server.database.elastic.util.Constants.RESULT;
 import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
 import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
-import static iudx.catalogue.server.util.Constants.FIELD;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE_GROUP;
-import static iudx.catalogue.server.util.Constants.MAX_LIMIT;
-import static iudx.catalogue.server.util.Constants.VALUE;
+import static iudx.catalogue.server.mlayer.util.QueryModelUtil.getAllDatasetsByResourceGroupQuery;
+import static iudx.catalogue.server.util.Constants.RESULTS;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -20,7 +17,6 @@ import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.elastic.util.QueryType;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,19 +79,10 @@ public class DataModel {
    * @return Future containing JsonArray of search results.
    */
   private Future<JsonArray> getAllDatasetsByRsGrp() {
-    QueryModel shouldQuery = new QueryModel(QueryType.MATCH, Map.of(
-        FIELD, "type.keyword", VALUE, ITEM_TYPE_RESOURCE_GROUP
-    ));
-    QueryModel innerBoolQuery = new QueryModel(QueryType.BOOL);
-    innerBoolQuery.addShouldQuery(shouldQuery);
-    QueryModel outerBoolQuery = new QueryModel(QueryType.BOOL);
-    outerBoolQuery.addMustQuery(innerBoolQuery);
-    QueryModel finalQueryModel = new QueryModel();
-    finalQueryModel.setQueries(outerBoolQuery);
-    finalQueryModel.setLimit(MAX_LIMIT);
+    QueryModel query = getAllDatasetsByResourceGroupQuery();
 
     Promise<JsonArray> promise = Promise.promise();
-    esService.search(docIndex, finalQueryModel)
+    esService.search(docIndex, query)
         .onComplete(searchHandler -> {
           if (searchHandler.succeeded()) {
             LOGGER.debug("Successful Elastic request");
@@ -109,7 +96,7 @@ public class DataModel {
                   source.remove(WORD_VECTOR_KEY);
                 })
                 .forEach(responseMsg::addResult);
-            JsonArray results = responseMsg.getResponse().getJsonArray(RESULT);
+            JsonArray results = responseMsg.getResponse().getJsonArray(RESULTS);
             promise.complete(results);
           } else {
             LOGGER.error("Failed Elastic Request: {}", searchHandler.cause().getMessage());
@@ -144,7 +131,7 @@ public class DataModel {
       JsonArray typeArray = result.getJsonArray("type");
 
       if (typeArray == null || typeArray.size() < 2) {
-        LOGGER.error("Invalid type array in result: {}", result.encode());
+        LOGGER.debug("Invalid type array in result;");
         continue;
       }
 
@@ -179,16 +166,9 @@ public class DataModel {
       semaphore.acquire();
       webClient
           .getAbs(dmUrl)
-          .send(
-              dmAr -> {
-                handleDataModelResponse(
-                    dmAr,
-                    classId,
-                    idToClassIdMap,
-                    idToSubClassMap,
-                    pendingRequests,
-                    promise,
-                    dmUrl);
+          .send(dmAr -> {
+                handleDataModelResponse(dmAr, classId, idToClassIdMap, idToSubClassMap,
+                    pendingRequests, promise, dmUrl);
                 semaphore.release();
               });
     } catch (InterruptedException e) {
@@ -224,9 +204,9 @@ public class DataModel {
       Buffer dmBody = dmResponse.body();
 
       if (dmBody == null) {
-        LOGGER.error("No response body received for URL: {}", dmUrl);
+        LOGGER.debug("No response body received for URL: {}", dmUrl);
       } else if (!dmResponse.headers().get("content-type").contains("application/json")) {
-        LOGGER.error("Invalid content-type received for URL: {}", dmUrl);
+        LOGGER.debug("Invalid content-type received for URL: {}", dmUrl);
       } else {
         JsonObject dmJson;
         try {
@@ -241,8 +221,7 @@ public class DataModel {
 
           if (graph != null) {
             for (Object obj : graph) {
-              if (obj instanceof JsonObject) {
-                JsonObject graphItem = (JsonObject) obj;
+              if (obj instanceof JsonObject graphItem) {
                 if (("iudx:" + classId).equals(graphItem.getString("@id"))) {
                   JsonObject subClassOfObj = graphItem.getJsonObject("rdfs:subClassOf");
                   if (subClassOfObj != null) {
@@ -255,7 +234,8 @@ public class DataModel {
                         }
                       }
                     } else {
-                      LOGGER.error("Invalid @id in rdfs:subClassOf for class ID: {}", classId);
+                      LOGGER.error("Invalid @id in rdfs:subClassOf for class ID: {}",
+                          classId);
                     }
                   } else {
                     LOGGER.error("Missing rdfs:subClassOf for class ID: {}", classId);

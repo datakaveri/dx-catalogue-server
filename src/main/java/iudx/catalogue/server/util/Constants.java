@@ -214,6 +214,7 @@ public class Constants {
   public static final String TYPE_INTERNAL_SERVER_ERROR = "urn:dx:cat:InternalError";
   public static final String TYPE_OPERATION_NOT_ALLOWED = "urn:dx:cat:OperationNotAllowed";
   public static final String TYPE_LINK_VALIDATION_FAILED = "urn:dx:cat:LinkValidationFailed";
+  public static final String INSTANCE_VERIFICATION_FAILED = "urn:dx:cat:InstanceVerificationFailed";
   public static final String TYPE_DB_ERROR = "urn:dx:cat:DatabaseError";
   public static final String TYPE_CONFLICT = "urn:dx:cat:Conflicts";
 

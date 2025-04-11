@@ -1,10 +1,10 @@
 package iudx.catalogue.server.database.elastic.service;
 
-import static iudx.catalogue.server.common.util.ResponseBuilderUtil.successResp;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.successfulItemOperationResp;
 import static iudx.catalogue.server.util.Constants.AGGREGATIONS;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
+import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
@@ -15,12 +15,12 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
 import co.elastic.clients.elasticsearch.core.search.SourceConfig;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.JsonpMapperFeatures;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.database.elastic.ElasticClient;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
@@ -38,12 +38,10 @@ import org.apache.logging.log4j.Logger;
 public class ElasticsearchServiceImpl implements ElasticsearchService {
   private static final Logger LOGGER = LogManager.getLogger(ElasticsearchServiceImpl.class);
 
-  static ElasticClient client;
-  private static ElasticsearchAsyncClient asyncClient;
+  private final ElasticsearchAsyncClient asyncClient;
 
   public ElasticsearchServiceImpl(ElasticClient client) {
-    ElasticsearchServiceImpl.client = client;
-    asyncClient = client.getClient();
+    this.asyncClient = client.getClient();
   }
 
   @Override
@@ -147,8 +145,16 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         LOGGER.error("Create operation failed: {}", error.getMessage());
         promise.fail(error);
       } else {
-        promise.complete(successfulItemOperationResp(document,
-            "Success: Item created"));
+        // The response contains useful information from Elasticsearch, such as ID and version
+        JsonObject responseJson = new JsonObject()
+            .put("result", response.result().toString()); // 'result' shows the outcome
+             // (created, updated, etc.)
+
+        // Optionally, you can also include the original document or other details.
+        responseJson.put("document", document);
+
+        // Complete the promise with the response from Elasticsearch
+        promise.complete(responseJson);
       }
     });
 
@@ -180,22 +186,23 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
 
   @Override
-  public Future<JsonObject> patchDocument(String index, String id, JsonObject document) {
+  public Future<JsonObject> patchDocument(String index, String id, QueryModel queryModel) {
+    Script script = queryModel.toElasticsearchScript();
     UpdateRequest<JsonObject, JsonObject> patchRequest = UpdateRequest.of(u -> u
         .index(index)
         .id(id)
-        .withJson(new StringReader(document.toString()))
-    );
-    LOGGER.debug("Patch Request: " + patchRequest);
-    Promise<JsonObject> promise = Promise.promise();
+        .script(script));
+    LOGGER.debug("Patch Request: " + patchRequest.toString());
 
+    Promise<JsonObject> promise = Promise.promise();
     asyncClient.update(patchRequest, JsonObject.class).whenComplete((response, error) -> {
       if (error != null) {
         LOGGER.error("Patch operation failed: {}", error.getMessage());
         promise.fail(error);
       } else {
-        promise.complete(successfulItemOperationResp(document,
-            "Success: Item updated successfully"));
+        JsonObject responseJson = new JsonObject()
+            .put("result", response.result().toString());
+        promise.complete(responseJson);
       }
     });
 
@@ -215,8 +222,17 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
       if (error != null) {
         LOGGER.error("Delete operation failed: {}", error.getMessage());
         promise.fail(error);
-      } else {
-        promise.complete(successResp(id, "Success: Item deleted successfully"));
+      }  else {
+        // The response contains useful information from Elasticsearch, such as ID and version
+        JsonObject responseJson = new JsonObject()
+            .put("result", response.result().toString()); // 'result' shows the outcome
+        // (created, updated, etc.)
+
+        // Optionally, you can also include the original document or other details.
+        responseJson.put("id", id);
+
+        // Complete the promise with the response from Elasticsearch
+        promise.complete(responseJson);
       }
     });
 
@@ -226,7 +242,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private List<ElasticsearchResponse> convertToElasticSearchResponse(
       SearchResponse<ObjectNode> response) {
-    long totalHits = response.hits().total() != null ? response.hits().total().value() : 0;
+    long totalHits = response.hits().total() != null ? response.hits().total().value() : 0L;
     LOGGER.debug("Total Hits in Elasticsearch Response: " + totalHits);
 
     // Parse hits
@@ -241,8 +257,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
     // Parse aggregations if present
     if (response.aggregations() != null && !response.aggregations().isEmpty()) {
-      JsonpMapper mapper =
-          asyncClient._jsonpMapper().withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
+      JsonpMapper mapper = asyncClient._jsonpMapper().withAttribute(
+          JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
       StringWriter writer = new StringWriter();
       try (JsonGenerator generator = mapper.jsonProvider().createGenerator(writer)) {
         mapper.serialize(response, generator);
@@ -265,9 +281,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     Promise<SearchResponse<ObjectNode>> promise = Promise.promise();
     asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
       if (error != null) {
-        LOGGER.error("Search operation failed due to {}: {}", error.getClass().getSimpleName(),
-            error.getMessage(), error);
-
+        LOGGER.error("Search operation failed due to {}: {}",
+            error.getClass().getSimpleName(), error.getMessage(), error);
         promise.fail(error);
       } else {
         promise.complete(response);

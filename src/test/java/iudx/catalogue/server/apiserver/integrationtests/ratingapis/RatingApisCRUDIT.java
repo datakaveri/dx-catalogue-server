@@ -20,10 +20,10 @@ public class RatingApisCRUDIT {
     static {
         RestAssured.basePath = "";
     }
-    // Create Rating
+    // Create RatingRequest
     @Test
     @Order(1)
-    @DisplayName("Create Rating Success Response-201")
+    @DisplayName("Create RatingRequest Success Response-201")
     public void createRatingSuccessTest() {
         // Request Body
         JsonObject requestBody = new JsonObject()
@@ -105,7 +105,7 @@ public class RatingApisCRUDIT {
                 //.log().body();
     }
 
-    //Update Rating
+    //Update RatingRequest
 
     @Test
     @Order(5)
@@ -172,11 +172,11 @@ public class RatingApisCRUDIT {
 
     }
 
-    //Get Rating
+    //Get RatingRequest
 
     @Test
     @Order(8)
-    @DisplayName("Get Rating Success Test-200")
+    @DisplayName("Get RatingRequest Success Test-200")
     public void getRatingSuccessTest(){
         given()
                 .queryParam("id", itemId)
@@ -190,7 +190,7 @@ public class RatingApisCRUDIT {
     }
     @Test
     @Order(9)
-    @DisplayName("Get Rating With No Content Test-204")
+    @DisplayName("Get RatingRequest With No Content Test-204")
     public void getRatingWithNoContentTest(){
         given()
                 .queryParam("id","8054c01a-14dd-4214-9d4f-a45dde44e121")
@@ -217,7 +217,7 @@ public class RatingApisCRUDIT {
     }
     @Test
     @Order(11)
-    @DisplayName("Get Average Rating Success Test-200")
+    @DisplayName("Get Average RatingRequest Success Test-200")
     public void getAverageRatingSuccessTest(){
         given()
                 .queryParam("id","5b7556b5-0779-4c47-9cf2-3f209779aa22")
@@ -231,7 +231,7 @@ public class RatingApisCRUDIT {
     }
     @Test
     @Order(12)
-    @DisplayName("Get Average Rating With Invalid ID Test-400")
+    @DisplayName("Get Average RatingRequest With Invalid ID Test-400")
     public void getAverageRatingWithInvalidIdTest(){
         given()
                 .queryParam("id","5b7556b5-0779-4c47-9cf2-3f209779aa22\\")
@@ -246,7 +246,7 @@ public class RatingApisCRUDIT {
     }
     @Test
     @Order(13)
-    @DisplayName("Get Rating With Invalid Token Test-401")
+    @DisplayName("Get RatingRequest With Invalid Token Test-401")
     public void getRatingWithInvalidTokenTest(){
         given()
                 .queryParam("id",approvedItemId)
@@ -262,7 +262,7 @@ public class RatingApisCRUDIT {
     //Delete rating
     @Test
     @Order(14)
-    @DisplayName("Delete Rating Success Response Test-200")
+    @DisplayName("Delete RatingRequest Success Response Test-200")
     public void deleteRatingSuccessTest() {
         given()
                 .queryParam("id",itemId)
@@ -276,7 +276,7 @@ public class RatingApisCRUDIT {
                 .body("type", equalTo("urn:dx:cat:Success"));
     }
     @Test
-    @DisplayName("Delete Rating With Invalid Token Test-401")
+    @DisplayName("Delete RatingRequest With Invalid Token Test-401")
     public void deleteRatingWithInvalidTokenTest() {
         given()
                 .queryParam("id",itemId)

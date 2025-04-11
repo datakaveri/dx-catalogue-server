@@ -6,6 +6,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.rating.model.FilterRatingRequest;
+import iudx.catalogue.server.rating.model.RatingRequest;
 
 @ProxyGen
 @VertxGen
@@ -15,11 +17,11 @@ public interface RatingService {
     return new RatingServiceVertxEBProxy(vertx, address);
   }
 
-  Future<JsonObject> createRating(JsonObject request);
+  Future<JsonObject> createRating(RatingRequest ratingRequest);
 
-  Future<JsonObject> getRating(JsonObject request);
+  Future<JsonObject> getRating(FilterRatingRequest request);
 
-  Future<JsonObject> updateRating(JsonObject request);
+  Future<JsonObject> updateRating(RatingRequest request);
 
-  Future<JsonObject> deleteRating(JsonObject request);
+  Future<JsonObject> deleteRating(FilterRatingRequest request);
 }

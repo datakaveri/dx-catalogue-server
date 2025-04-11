@@ -1,65 +1,28 @@
 package iudx.catalogue.server.validator.service;
 
-import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
-import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
-import static iudx.catalogue.server.util.Constants.COS_ITEM;
-import static iudx.catalogue.server.util.Constants.FIELD;
-import static iudx.catalogue.server.util.Constants.HTTP_METHOD;
-import static iudx.catalogue.server.util.Constants.ID;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPES;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_COS;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_OWNER;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_PROVIDER;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE_GROUP;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE_SERVER;
-import static iudx.catalogue.server.util.Constants.NAME;
-import static iudx.catalogue.server.util.Constants.OWNER;
-import static iudx.catalogue.server.util.Constants.PROVIDER;
-import static iudx.catalogue.server.util.Constants.PROVIDER_USER_ID;
-import static iudx.catalogue.server.util.Constants.REQUEST_POST;
-import static iudx.catalogue.server.util.Constants.RESOURCE_GRP;
-import static iudx.catalogue.server.util.Constants.RESOURCE_SERVER_URL;
-import static iudx.catalogue.server.util.Constants.RESOURCE_SVR;
-import static iudx.catalogue.server.util.Constants.RESULTS;
-import static iudx.catalogue.server.util.Constants.STATUS;
-import static iudx.catalogue.server.util.Constants.SUCCESS;
-import static iudx.catalogue.server.util.Constants.TITLE_INVALID_UUID;
-import static iudx.catalogue.server.util.Constants.TOTAL_HITS;
-import static iudx.catalogue.server.util.Constants.TYPE;
-import static iudx.catalogue.server.util.Constants.TYPE_INVALID_UUID;
-import static iudx.catalogue.server.util.Constants.UUID_PATTERN;
-import static iudx.catalogue.server.util.Constants.VALUE;
-import static iudx.catalogue.server.validator.util.Constants.ACTIVE;
-import static iudx.catalogue.server.validator.util.Constants.CONTEXT;
-import static iudx.catalogue.server.validator.util.Constants.ID_KEYWORD;
-import static iudx.catalogue.server.validator.util.Constants.ITEM_CREATED_AT;
-import static iudx.catalogue.server.validator.util.Constants.ITEM_STATUS;
-import static iudx.catalogue.server.validator.util.Constants.VALIDATION_FAILURE_MSG;
+import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.validator.util.Constants.*;
+import static iudx.catalogue.server.validator.util.QueryModelUtil.*;
 
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
-import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
-import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.elastic.util.QueryType;
+import iudx.catalogue.server.database.elastic.util.ResponseFilter;
 import iudx.catalogue.server.validator.Validator;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,11 +40,7 @@ import org.apache.logging.log4j.Logger;
 public class ValidatorServiceImpl implements ValidatorService {
 
   private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
-
-  /** ES client. */
-  static ElasticsearchService esService;
-
-  private final String docIndex;
+  private final ItemService itemService;
   private final boolean isUacInstance;
   private final String vocContext;
   private Future<String> isValidSchema;
@@ -102,15 +61,13 @@ public class ValidatorServiceImpl implements ValidatorService {
   /**
    * Constructs a new ValidatorServiceImpl object with the specified OldElasticClient and docIndex.
    *
-   * @param esService the ElasticsearchService object to use for interacting with the Elasticsearch
+   * @param itemService the itemService object to use for interacting with the Elasticsearch
+   *                       service
    *     instance
-   * @param docIndex the index name to use for storing documents in Elasticsearch
    */
-  public ValidatorServiceImpl(
-      ElasticsearchService esService, String docIndex, boolean isUacInstance, String vocContext) {
-
-    ValidatorServiceImpl.esService = esService;
-    this.docIndex = docIndex;
+  public ValidatorServiceImpl(ItemService itemService, boolean isUacInstance,
+                              String vocContext) {
+    this.itemService = itemService;
     this.isUacInstance = isUacInstance;
     this.vocContext = vocContext;
     try {
@@ -174,7 +131,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     return result.getJsonArray(RESULTS).stream()
         .map(JsonObject.class::cast)
         .map(r -> r.getString(TYPE))
-        .collect(Collectors.toList())
+        .toList()
         .toString();
   }
 
@@ -313,45 +270,16 @@ public class ValidatorServiceImpl implements ValidatorService {
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String provider = request.getString(PROVIDER);
 
-    QueryModel boolIdQuery = new QueryModel(QueryType.BOOL);
-    boolIdQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, provider)));
-    QueryModel boolRsQuery = new QueryModel(QueryType.BOOL);
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, "type.keyword", VALUE, ITEM_TYPE_RESOURCE_GROUP)));
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, NAME + ".keyword", VALUE, request.getString(NAME))));
-    QueryModel finalQuery = new QueryModel(QueryType.BOOL);
-    finalQuery.setShouldQueries(List.of(boolIdQuery, boolRsQuery));
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(finalQuery);
-    queryModel.setIncludeFields(List.of("type"));
-    LOGGER.debug(queryModel.toJson());
-
     Promise<JsonObject> promise = Promise.promise();
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForResourceGroup(request.getString(NAME), provider);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
             res -> {
               if (res.failed()) {
                 LOGGER.debug("Fail: DB Error");
                 promise.fail(VALIDATION_FAILURE_MSG);
               }
-              List<ElasticsearchResponse> responseList = res.result();
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess();
-              responseMsg.setTotalHits(responseList.size());
-              responseMsg.addResult();
-              responseList.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
+              DbResponseMessageBuilder responseMsg = res.result();
               String returnType = getReturnTypeForValidation(responseMsg.getResponse());
               LOGGER.debug(returnType);
               if (responseMsg.getResponse().getInteger(TOTAL_HITS) < 1
@@ -376,33 +304,15 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
-
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String resourceServer = request.getString(RESOURCE_SVR);
     String ownerUserId = request.getString(PROVIDER_USER_ID);
     String resourceServerUrl = request.getString(RESOURCE_SERVER_URL);
 
-    QueryModel boolIdQuery = new QueryModel(QueryType.BOOL);
-    boolIdQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, resourceServer)));
-    QueryModel boolRsQuery = new QueryModel(QueryType.BOOL);
-    boolRsQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, "ownerUserId.keyword", VALUE, ownerUserId)));
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH,
-            Map.of(FIELD, "resourceServerRegURL.keyword", VALUE, resourceServerUrl)));
-    QueryModel finalQuery = new QueryModel(QueryType.BOOL);
-    finalQuery.setShouldQueries(List.of(boolIdQuery, boolRsQuery));
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(finalQuery);
-    queryModel.setIncludeFields(List.of("type"));
-
     Promise<JsonObject> promise = Promise.promise();
-
-    LOGGER.debug("query provider exists " + queryModel.toJson());
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForProvider(resourceServer, ownerUserId,
+        resourceServerUrl);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
             res -> {
               if (res.failed()) {
@@ -410,19 +320,7 @@ public class ValidatorServiceImpl implements ValidatorService {
                 promise.fail(VALIDATION_FAILURE_MSG);
                 return;
               }
-              List<ElasticsearchResponse> responseList = res.result();
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess();
-              responseMsg.setTotalHits(responseList.size());
-              responseMsg.addResult();
-              responseList.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
+              DbResponseMessageBuilder responseMsg = res.result();
               String returnType = getReturnTypeForValidation(responseMsg.getResponse());
               LOGGER.debug(returnType);
 
@@ -447,31 +345,13 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
-
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String cos = request.getString(COS_ITEM);
     String resourceServerUrl = request.getString(RESOURCE_SERVER_URL);
-    QueryModel boolIdQuery = new QueryModel(QueryType.BOOL);
-    boolIdQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, cos)));
-    QueryModel boolRsQuery = new QueryModel(QueryType.BOOL);
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, "type.keyword", VALUE, ITEM_TYPE_RESOURCE_SERVER)));
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH,
-            Map.of(FIELD, RESOURCE_SERVER_URL + ".keyword", VALUE, resourceServerUrl)));
-    QueryModel finalQuery = new QueryModel(QueryType.BOOL);
-    finalQuery.setShouldQueries(List.of(boolIdQuery, boolRsQuery));
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(finalQuery);
-    queryModel.setIncludeFields(List.of("type"));
-    LOGGER.debug(queryModel.toJson());
 
     Promise<JsonObject> promise = Promise.promise();
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForResourceServer(cos, resourceServerUrl);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
             res -> {
               if (res.failed()) {
@@ -479,19 +359,7 @@ public class ValidatorServiceImpl implements ValidatorService {
                 promise.fail(VALIDATION_FAILURE_MSG);
                 return;
               }
-              List<ElasticsearchResponse> responseList = res.result();
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess();
-              responseMsg.setTotalHits(responseList.size());
-              responseMsg.addResult();
-              responseList.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
+              DbResponseMessageBuilder responseMsg = res.result();
               String returnType = getReturnTypeForValidation(responseMsg.getResponse());
               LOGGER.debug(returnType);
 
@@ -519,34 +387,15 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put("id", uuid.toString());
     }
-
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-
-    QueryModel mustQuery = new QueryModel(QueryType.BOOL);
-    mustQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, "type.keyword", VALUE, "iudx:Resource")));
-    mustQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, "name.keyword", VALUE, request.getString(NAME))));
-    QueryModel finalQuery = new QueryModel(QueryType.BOOL);
     String resourceServer = request.getString(RESOURCE_SVR);
-    finalQuery.addShouldQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, resourceServer)));
     String provider = request.getString(PROVIDER);
-    finalQuery.addShouldQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, provider)));
     String resourceGroup = request.getString(RESOURCE_GRP);
-    finalQuery.addShouldQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, resourceGroup)));
-    finalQuery.addShouldQuery(mustQuery);
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(finalQuery);
-    queryModel.setIncludeFields(List.of("type"));
-    LOGGER.debug(queryModel.toJson());
 
     Promise<JsonObject> promise = Promise.promise();
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForResource(request.getString(NAME), resourceServer,
+        provider, resourceGroup);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
             res -> {
               if (res.failed()) {
@@ -554,19 +403,7 @@ public class ValidatorServiceImpl implements ValidatorService {
                 promise.fail(VALIDATION_FAILURE_MSG);
                 return;
               }
-              List<ElasticsearchResponse> responseList = res.result();
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess();
-              responseMsg.setTotalHits(responseList.size());
-              responseMsg.addResult();
-              responseList.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
+              DbResponseMessageBuilder responseMsg = res.result();
               String returnType = getReturnTypeForValidation(responseMsg.getResponse());
               LOGGER.debug(returnType);
 
@@ -600,28 +437,11 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-
     String owner = request.getString(OWNER);
 
-    QueryModel boolIdQuery = new QueryModel(QueryType.BOOL);
-    boolIdQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, ID_KEYWORD, VALUE, owner)));
-    QueryModel boolRsQuery = new QueryModel(QueryType.BOOL);
-    boolRsQuery.addMustQuery(
-        new QueryModel(QueryType.MATCH, Map.of(FIELD, "type.keyword", VALUE, ITEM_TYPE_COS)));
-    boolRsQuery.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, NAME + ".keyword", VALUE, request.getString(NAME))));
-    QueryModel finalQuery = new QueryModel(QueryType.BOOL);
-    finalQuery.setShouldQueries(List.of(boolIdQuery, boolRsQuery));
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(finalQuery);
-    queryModel.setIncludeFields(List.of("type"));
-    LOGGER.debug(queryModel.toJson());
-
     Promise<JsonObject> promise = Promise.promise();
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForCos(request.getString(NAME), owner);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
             res -> {
               if (res.failed()) {
@@ -629,19 +449,7 @@ public class ValidatorServiceImpl implements ValidatorService {
                 promise.fail(VALIDATION_FAILURE_MSG);
                 return;
               }
-              List<ElasticsearchResponse> responseList = res.result();
-              DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-              responseMsg.statusSuccess();
-              responseMsg.setTotalHits(responseList.size());
-              responseMsg.addResult();
-              responseList.stream()
-                  .map(ElasticsearchResponse::getSource)
-                  .peek(
-                      source -> {
-                        source.remove(SUMMARY_KEY);
-                        source.remove(WORD_VECTOR_KEY);
-                      })
-                  .forEach(responseMsg::addResult);
+              DbResponseMessageBuilder responseMsg = res.result();
               String returnType = getReturnTypeForValidation(responseMsg.getResponse());
               LOGGER.debug(returnType);
               if (responseMsg.getResponse().getInteger(TOTAL_HITS) < 1
@@ -666,18 +474,10 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    QueryModel query = new QueryModel(QueryType.BOOL);
-    query.addMustQuery(new QueryModel(QueryType.MATCH, Map.of(FIELD, "type", VALUE, "iudx:Owner")));
-    query.addMustQuery(
-        new QueryModel(
-            QueryType.MATCH, Map.of(FIELD, "name.keyword", VALUE, request.getString(NAME))));
-
-    QueryModel queryModel = new QueryModel();
-    queryModel.setQueries(query);
 
     Promise<JsonObject> promise = Promise.promise();
-    esService
-        .search(docIndex, queryModel)
+    QueryModel queryModel = getValidateQueryForOwner(request.getString(NAME));
+    itemService.search(queryModel, ResponseFilter.SOURCE_ONLY)
         .onComplete(
             res -> {
               if (res.failed()) {
@@ -685,7 +485,8 @@ public class ValidatorServiceImpl implements ValidatorService {
                 promise.fail(VALIDATION_FAILURE_MSG);
                 return;
               }
-              if (method.equalsIgnoreCase(REQUEST_POST) && !res.result().isEmpty()) {
+              if (method.equalsIgnoreCase(REQUEST_POST) &&
+                  res.result().getResponse().getInteger(TOTAL_HITS) != 0) {
                 LOGGER.debug("Owner item already exists");
                 promise.fail("Fail: Owner item already exists");
               } else {

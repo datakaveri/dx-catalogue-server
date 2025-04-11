@@ -9,18 +9,20 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
+import iudx.catalogue.server.database.cache.service.CacheService;
+import iudx.catalogue.server.database.cache.service.CacheServiceImpl;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.postgres.service.PostgresService;
 import iudx.catalogue.server.databroker.service.RabbitMQService;
 import iudx.catalogue.server.rating.service.RatingService;
 import iudx.catalogue.server.rating.service.RatingServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.common.database.postgres.service.PostgresService;
 
 /**
- * <h1>Rating Verticle</h1>
+ * <h1>RatingRequest Verticle</h1>
  *
- * <p>The Rating Verticle implementation in the IUDX Catalogue Server exposes the {@link
+ * <p>The RatingRequest Verticle implementation in the IUDX Catalogue Server exposes the {@link
  * RatingService} over the Vert.x Event Bus
  *
  * @version 1.0
@@ -40,6 +42,7 @@ public class RatingVerticle extends AbstractVerticle {
   private ServiceBinder binder;
   private MessageConsumer<JsonObject> consumer;
   private RatingService rating;
+  private CacheService cacheService;
 
   /**
    * This method is used to start the Verticle. It deploys a verticle in a cluster, registers the
@@ -60,13 +63,13 @@ public class RatingVerticle extends AbstractVerticle {
     elasticsearchService = ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
     rmqService = RabbitMQService.createProxy(vertx, RMQ_SERVICE_ADDRESS);
     postgresService = PostgresService.createProxy(vertx, PG_SERVICE_ADDRESS);
-
+    cacheService = new CacheServiceImpl(postgresService);
     binder = new ServiceBinder(vertx);
     rating = new RatingServiceImpl(ratingExchangeName,
         rsauditingtable, minReadNumber, ratingIndex, elasticsearchService, docIndex,
-        rmqService, postgresService);
+        rmqService, cacheService);
     consumer = binder.setAddress(RATING_SERVICE_ADDRESS).register(RatingService.class, rating);
-    LOGGER.info("Rating Service Started");
+    LOGGER.info("RatingRequest Service Started");
   }
 
   @Override

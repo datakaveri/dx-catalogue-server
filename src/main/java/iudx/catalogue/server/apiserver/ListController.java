@@ -11,8 +11,6 @@ package iudx.catalogue.server.apiserver;
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.common.util.ResponseBuilderUtil.internalErrorResp;
 import static iudx.catalogue.server.database.elastic.util.Constants.KEY;
-import static iudx.catalogue.server.database.elastic.util.Constants.SUMMARY_KEY;
-import static iudx.catalogue.server.database.elastic.util.Constants.WORD_VECTOR_KEY;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.AsyncResult;
@@ -25,14 +23,15 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.apiserver.item.service.ItemService;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.common.util.DbResponseMessageBuilder;
 import iudx.catalogue.server.database.elastic.model.ElasticsearchResponse;
 import iudx.catalogue.server.database.elastic.model.QueryModel;
-import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
 import iudx.catalogue.server.database.elastic.util.QueryDecoder;
-import java.util.List;
+import iudx.catalogue.server.database.elastic.util.ResponseFilter;
+import iudx.catalogue.server.exceptions.InternalServerException;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,13 +39,11 @@ import org.apache.logging.log4j.Logger;
 public final class ListController {
 
   private static final Logger LOGGER = LogManager.getLogger(ListController.class);
-  private final ElasticsearchService esService;
-  private final String docIndex;
+  private final ItemService itemService;
   private final QueryDecoder queryDecoder = new QueryDecoder();
 
-  public ListController(ElasticsearchService esService, String docIndex) {
-    this.esService = esService;
-    this.docIndex = docIndex;
+  public ListController(ItemService itemService) {
+    this.itemService = itemService;
   }
 
   //  Routes for list
@@ -54,7 +51,10 @@ public final class ListController {
   /* list the item from database using itemId */
   public Router init(Router router) {
     /* list the item from database using itemId */
-    router.get(ROUTE_LIST_ITEMS).produces(MIME_APPLICATION_JSON).handler(this::listItemsHandler);
+    router
+        .get(ROUTE_LIST_ITEMS)
+        .produces(MIME_APPLICATION_JSON)
+        .handler(this::listItemsHandler);
     return router;
   }
 
@@ -133,17 +133,15 @@ public final class ListController {
               .onComplete(
                   dbHandler -> {
                     if (dbHandler.succeeded()) {
-                      handleResponseFromDatabase(response, itemType, dbHandler);
+                      handleResponseFromDatabase(routingContext, response, itemType, dbHandler);
                     }
                   });
         } else {
 
           /* Request database service with requestBody for listing items */
           listItems(requestBody)
-              .onComplete(
-                  dbhandler -> {
-                    handleResponseFromDatabase(response, itemType, dbhandler);
-                  });
+              .onComplete(dbHandler -> handleResponseFromDatabase(routingContext, response,
+                  itemType, dbHandler));
         }
       } else {
         LOGGER.error("Fail: Search/Count; Invalid request query parameters");
@@ -171,33 +169,19 @@ public final class ListController {
 
   public Future<JsonObject> listOwnerOrCos(JsonObject request) {
     Promise<JsonObject> promise = Promise.promise();
-    QueryModel elasticQuery = queryDecoder.listItemQueryModel(request);
+    LOGGER.debug("Info: Listing items;");
 
-    LOGGER.debug("Info: Listing items;" + elasticQuery.toJson());
-
-    esService
-        .search(docIndex, elasticQuery)
+    QueryModel queryModel = queryDecoder.listItemQueryModel(request);
+    itemService.search(queryModel, ResponseFilter.SOURCE_WITHOUT_EMBEDDINGS)
         .onComplete(
-            dbHandler -> {
-              if (dbHandler.succeeded()) {
-                LOGGER.debug("Success: Successful DB request");
-                List<ElasticsearchResponse> responseList = dbHandler.result();
-                DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-                responseMsg.statusSuccess();
-                responseMsg.setTotalHits(responseList.size());
-                responseList.stream()
-                    .map(ElasticsearchResponse::getSource)
-                    .peek(
-                        source -> {
-                          source.remove(SUMMARY_KEY);
-                          source.remove(WORD_VECTOR_KEY);
-                        })
-                    .forEach(responseMsg::addResult);
-                promise.complete(responseMsg.getResponse());
+            res -> {
+              if (res.failed()) {
+                LOGGER.error("Fail: DB request has failed;" + res.cause());
+                promise.fail(res.cause());
               } else {
-                LOGGER.error("Fail: DB request has failed;" + dbHandler.cause());
-                /* Handle request error */
-                promise.fail(internalErrorResp());
+                DbResponseMessageBuilder responseMsg = res.result();
+                LOGGER.debug("Success: Successful DB Request");
+                promise.complete(responseMsg.getResponse());
               }
             });
     return promise.future();
@@ -205,16 +189,13 @@ public final class ListController {
 
   public Future<JsonObject> listItems(JsonObject request) {
     Promise<JsonObject> promise = Promise.promise();
+    LOGGER.debug("Info: Listing items;");
+    QueryModel queryModel = queryDecoder.listItemQueryModel(request);
 
-    QueryModel elasticQuery = queryDecoder.listItemQueryModel(request);
-
-    LOGGER.debug("Info: Listing items;" + elasticQuery.toJson());
-
-    esService
-        .search(docIndex, elasticQuery)
+    itemService.search(queryModel, ResponseFilter.SOURCE_ONLY)
         .onComplete(
-            dbHandler -> {
-              if (dbHandler.succeeded()) {
+            res -> {
+              if (res.succeeded()) {
                 LOGGER.debug("Success: Successful DB request");
                 DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
                 try {
@@ -243,20 +224,23 @@ public final class ListController {
                   promise.fail(internalErrorResp());
                 }
               } else {
-                LOGGER.error("Fail: DB request has failed;" + dbHandler.cause());
+                LOGGER.error("Fail: DB request has failed;" + res.cause());
                 /* Handle request error */
-                promise.fail(internalErrorResp());
+                promise.fail(res.cause());
               }
             });
     return promise.future();
   }
 
-  void handleResponseFromDatabase(
+  void handleResponseFromDatabase(RoutingContext routingContext,
       HttpServerResponse response, String itemType, AsyncResult<JsonObject> dbhandler) {
     if (dbhandler.succeeded()) {
       LOGGER.info("Success: Item listing");
       response.setStatusCode(200).end(dbhandler.result().toString());
     } else if (dbhandler.failed()) {
+      if (dbhandler.cause() instanceof InternalServerException exception) {
+        routingContext.fail(exception);
+      }
       LOGGER.error("Fail: Issue in listing " + itemType + ": " + dbhandler.cause().getMessage());
       response
           .setStatusCode(400)

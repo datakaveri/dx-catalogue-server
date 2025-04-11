@@ -5,6 +5,7 @@ import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.item.util.ItemCategory;
 import iudx.catalogue.server.common.RespBuilder;
 
 public class ResponseBuilderUtil {
@@ -46,6 +47,28 @@ public class ResponseBuilderUtil {
         .getResponse();
   }
 
+  public static String itemNotFoundResponse(String id, String method, ItemCategory mode) {
+    String detail = "Fail: Doc doesn't exist, can't update";
+    if (mode == ItemCategory.MLAYER_INSTANCE) {
+      return new RespBuilder()
+          .withType(TYPE_ITEM_NOT_FOUND)
+          .withTitle(TITLE_ITEM_NOT_FOUND)
+          .withResult(id, "Fail : Instance doesn't exist, can't update")
+          .getResponse();
+    } else if (mode == ItemCategory.MLAYER_DOMAIN)  {
+      return new RespBuilder()
+          .withType(TYPE_ITEM_NOT_FOUND)
+          .withTitle(TITLE_ITEM_NOT_FOUND)
+          .withResult(id, "Fail: Domain doesn't exist, can't update")
+          .withDetail("Fail: Domain doesn't exist, can't update")
+          .getResponse();
+    } else {
+      return createResponseBuilder(TYPE_ITEM_NOT_FOUND, TITLE_ITEM_NOT_FOUND, detail)
+          .withResult(id, method, FAILED, detail)
+          .getResponse();
+    }
+  }
+
   public static JsonObject itemNotFoundJsonResp(String detail) {
     return createResponseBuilder(TYPE_ITEM_NOT_FOUND, TITLE_ITEM_NOT_FOUND, detail)
         .getJsonResponse();
@@ -60,6 +83,17 @@ public class ResponseBuilderUtil {
             TYPE_INTERNAL_SERVER_ERROR, TITLE_INTERNAL_SERVER_ERROR, DETAIL_INTERNAL_SERVER_ERROR)
         .getResponse();
   }
+  public static String StacDelFailure(String stacId){
+    return new RespBuilder()
+        .withType(FAILED)
+        .withResult(stacId, REQUEST_DELETE, FAILED)
+        .withDetail(DATABASE_ERROR)
+        .getResponse();
+  }
+  public static String wrongInstanceNameResp(){
+    return createResponseBuilder(
+        TYPE_FAIL, TITLE_WRONG_INSTANCE_NAME, WRONG_INSTANCE_NAME).getResponse();
+  }
 
   public static String itemAlreadyExistsResponse(String id, String detail) {
     return createResponseBuilder(TYPE_ALREADY_EXISTS, TITLE_ALREADY_EXISTS, detail)
@@ -71,12 +105,6 @@ public class ResponseBuilderUtil {
     return createResponseBuilder(FAILED, "Insertion Failed", "Insertion Failed")
         .withResult(id, INSERT, FAILED)
         .getResponse();
-  }
-
-  public static JsonObject successResp(String id, String detail) {
-    return createResponseBuilder(TYPE_SUCCESS, TITLE_SUCCESS, detail)
-        .withResult(id)
-        .getJsonResponse();
   }
 
   public static JsonObject successResponse(JsonArray result) {
@@ -111,6 +139,39 @@ public class ResponseBuilderUtil {
         .withResult(doc)
         .getJsonResponse();
   }
+  public static JsonObject DxPostOperationRespSuccess(JsonObject doc) {
+    return createResponseBuilder(TYPE_SUCCESS, TITLE_SUCCESS, "Success: Item created")
+        .withResult(doc)
+        .getJsonResponse();
+  }
+  public static JsonObject DxPutRespSuccess(JsonObject document) {
+    return new RespBuilder()
+        .withType(TYPE_SUCCESS)
+        .withTitle(TITLE_SUCCESS)
+        .withDetail("Success: Item updated successfully")
+        .withResult(document)
+        .getJsonResponse();
+  }
+  public static JsonObject DxItemDelRespSuccess(String id, String detail) {
+    return createResponseBuilder(TYPE_SUCCESS, TITLE_SUCCESS, detail)
+        .withResult(id)
+        .getJsonResponse();
+  }
+  public static JsonObject StacDelRespSuccess (String id) {
+    return new RespBuilder()
+        .withType(SUCCESS)
+        .withResult(id)
+        .withDetail(STAC_DELETION_SUCCESS)
+        .getJsonResponse();
+  }
+  public static JsonObject StacPostRespSuccess(String stacId) {
+    return new RespBuilder()
+        .withType(SUCCESS)
+        .withResult(stacId, INSERT, SUCCESS)
+        .withDetail(STAC_CREATION_SUCCESS)
+        .getJsonResponse();
+  }
+
 
   public static String operationNotAllowedResponse(String id, String method, String cause) {
     return createResponseBuilder(TYPE_OPERATION_NOT_ALLOWED, TITLE_OPERATION_NOT_ALLOWED, cause)

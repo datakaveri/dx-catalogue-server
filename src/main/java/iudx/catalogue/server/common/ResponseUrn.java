@@ -2,13 +2,13 @@ package iudx.catalogue.server.common;
 
 import static iudx.catalogue.server.util.Constants.*;
 
-import java.util.stream.Stream;
-
 public enum ResponseUrn {
   BAD_REQUEST_URN("urn:dx:cat:badRequest", "bad request parameter"),
   INTERNAL_SERVER_ERROR("urn:dx:cat:internalServerError", "Internal Server Error"),
-  INVALID_TOKEN_URN(TYPE_TOKEN_INVALID, "Token is invalid");
-
+  INVALID_TOKEN_URN(TYPE_TOKEN_INVALID, "Token is invalid"),
+  ITEM_ALREADY_EXISTS(TYPE_ALREADY_EXISTS, TITLE_ALREADY_EXISTS),
+  CONFLICT(TYPE_CONFLICT, DETAIL_CONFLICT),
+  INVALID_SCHEMA_URN(TYPE_INVALID_SCHEMA, TITLE_INVALID_SCHEMA);
 
   private final String urn;
   private final String message;

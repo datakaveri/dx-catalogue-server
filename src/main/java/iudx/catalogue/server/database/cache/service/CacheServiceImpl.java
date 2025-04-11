@@ -8,8 +8,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.common.RespBuilder;
-import iudx.catalogue.server.database.postgres.refactor.PGService;
-import iudx.catalogue.server.database.postgres.models.*;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -17,13 +15,19 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.common.database.postgres.models.Filter;
+import org.cdpg.dx.common.database.postgres.models.GroupBy;
+import org.cdpg.dx.common.database.postgres.models.Limit;
+import org.cdpg.dx.common.database.postgres.models.OrderBy;
+import org.cdpg.dx.common.database.postgres.models.SelectQuery;
+import org.cdpg.dx.common.database.postgres.service.PostgresService;
 
 public class CacheServiceImpl implements CacheService {
   private static final Logger LOGGER = LogManager.getLogger(CacheServiceImpl.class);
-  private final PGService pgService;
+  private final PostgresService postgresService;
 
-  public CacheServiceImpl(PGService pgService) {
-    this.pgService = pgService;
+  public CacheServiceImpl(PostgresService postgresService) {
+    this.postgresService = postgresService;
   }
 
   @Override
@@ -32,7 +36,8 @@ public class CacheServiceImpl implements CacheService {
 
     // Build SQL query using query model
     List<String> columns = List.of("resource_group", "COUNT(id) AS totalhits");
-    List<Filter> filters = List.of(new Filter("resource_group", "IS NOT", new JsonArray("NULL")));
+    List<Filter> filters = List.of(new Filter("resource_group", "IS NOT",
+        new JsonArray().add("NULL")));
     GroupBy groupBy = new GroupBy(List.of("resource_group"));
     OrderBy orderBy = new OrderBy("totalhits", "DESC");
     Limit limit = new Limit(6);
@@ -40,9 +45,9 @@ public class CacheServiceImpl implements CacheService {
     SelectQuery selectQuery = new SelectQuery(tableName, columns, filters, List.of(), groupBy,
         orderBy, limit);
 
-    // Execute query using PGService
-    LOGGER.debug("Sending SelectQuery to PGService: {}", selectQuery.toJson());
-    pgService.search(selectQuery).onComplete(dbHandler -> {
+    // Execute query using PostgresService
+    LOGGER.debug("Sending SelectQuery to PostgresService: {}", selectQuery.toJson());
+    postgresService.search(selectQuery).onComplete(dbHandler -> {
       if (dbHandler.succeeded()) {
         List<JsonObject> result = dbHandler.result().getRows();
         RespBuilder respBuilder =
@@ -68,7 +73,7 @@ public class CacheServiceImpl implements CacheService {
 
     LOGGER.debug("Executing SelectQuery: {}", selectQuery.toJson());
     LOGGER.debug("Executing Query: {}", selectQuery.toSQL());
-    pgService.search(selectQuery).onComplete(dbHandler -> {
+    postgresService.search(selectQuery).onComplete(dbHandler -> {
       if (dbHandler.succeeded()) {
         List<JsonObject> result = dbHandler.result().getRows();
         RespBuilder respBuilder =
@@ -107,9 +112,8 @@ public class CacheServiceImpl implements CacheService {
     SelectQuery selectQuery = new SelectQuery(databaseTable, columns, filters, List.of(), null,
         null, null);
 
-    LOGGER.debug("Sending SelectQuery to PGService: {}", selectQuery.toJson());
-    LOGGER.debug("Sending SelectQuery: {}", selectQuery.toSQL());
-    pgService.search(selectQuery).onComplete(dbHandler -> {
+    LOGGER.debug("Sending SelectQuery to PostgresService: {}", selectQuery.toJson());
+    postgresService.search(selectQuery).onComplete(dbHandler -> {
       if (dbHandler.succeeded()) {
         List<JsonObject> result = dbHandler.result().getRows();
         RespBuilder respBuilder =
@@ -135,7 +139,7 @@ public class CacheServiceImpl implements CacheService {
     SelectQuery auditQuery = new SelectQuery(tableName, List.of("COUNT(*)"), filters,
         List.of(), null, null, null);
 
-    pgService.count(auditQuery)
+    postgresService.count(auditQuery)
         .onSuccess(count -> {
           LOGGER.info("Audit count retrieved: {}", count);
           promise.complete(count);

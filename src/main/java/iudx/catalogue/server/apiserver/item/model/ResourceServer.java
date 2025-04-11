@@ -1,5 +1,6 @@
 package iudx.catalogue.server.apiserver.item.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
@@ -27,11 +28,30 @@ public class ResourceServer implements Item {
   private String name;
   private String description;
   private List<String> tags;
+
+  @JsonProperty("@context")
   private String context;
+
+  @JsonProperty("_summary")
+  private String summary;
+
+  @JsonProperty("_geosummary")
+  private JsonObject geoSummary;
+
+  @JsonProperty("_word_vector")
+  private JsonArray wordVector;
 
   public ResourceServer(JsonObject json) {
     this.requestJson = json.copy(); // Store a copy of the input JSON
     this.context = json.getString("@context");
+    if (json.containsKey("id")
+        && !json.getString("id").isEmpty()
+        && !json.getString("id").matches(UUID_REGEX)) { // Check regex first
+      throw new IllegalArgumentException(
+          String.format(
+              "[ECMA 262 regex \"%s\" does not match input string \"%s\"]",
+              UUID_REGEX, json.getString("id")));
+    }
     this.id = UUID.fromString(json.getString("id", UUID.randomUUID().toString()));
     this.type = json.getJsonArray("type").getList();
     this.name = json.getString("name");
@@ -216,6 +236,36 @@ public class ResourceServer implements Item {
     this.itemCreatedAt = itemCreatedAt;
   }
 
+  @Override
+  public String getSummary() {
+    return summary;
+  }
+
+  @Override
+  public void setSummary(String summary) {
+    this.summary = summary;
+  }
+
+  @Override
+  public JsonObject getGeoSummary() {
+    return geoSummary;
+  }
+
+  @Override
+  public void setGeoSummary(JsonObject geoSummary) {
+    this.geoSummary = geoSummary;
+  }
+
+  @Override
+  public JsonArray getWordVector() {
+    return wordVector;
+  }
+
+  @Override
+  public void setWordVector(JsonArray wordVector) {
+    this.wordVector = wordVector;
+  }
+
   public UUID getCos() {
     return cos;
   }
@@ -281,6 +331,9 @@ public class ResourceServer implements Item {
     json.put("itemStatus", itemStatus);
     json.put("itemCreatedAt", itemCreatedAt);
     json.put("resourceServerRegURL", resourceServerRegURL);
+    if (summary != null) json.put("_summary", summary);
+    if (geoSummary != null) json.put("_geosummary", geoSummary);
+    if (wordVector != null) json.put("_word_vector", wordVector);
 
     if (resourceServerOrg != null) {
       json.put("resourceServerOrg", resourceServerOrg.toJson());

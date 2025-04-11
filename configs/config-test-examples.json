@@ -147,7 +147,7 @@
       "excluded_ids": []
     },
     {
-      "id": "iudx.catalogue.server.database.postgres.PostgresVerticle",
+      "id": "org.cdpg.dx.common.database.postgres.PostgresVerticle",
       "isWorkerVerticle": false,
       "verticleInstances": 1,
       "databaseIP": "",

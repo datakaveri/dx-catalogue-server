@@ -6,17 +6,21 @@ import static iudx.catalogue.server.auditing.util.Constants.IID;
 import static iudx.catalogue.server.auditing.util.Constants.IUDX_ID;
 import static iudx.catalogue.server.auditing.util.Constants.USER_ID;
 import static iudx.catalogue.server.auditing.util.Constants.USER_ROLE;
+import static iudx.catalogue.server.common.util.ResponseBuilderUtil.StacDelRespSuccess;
+import static iudx.catalogue.server.common.util.ResponseBuilderUtil.StacPostRespSuccess;
 import static iudx.catalogue.server.util.Constants.*;
-import static iudx.catalogue.server.validator.util.Constants.INVALID_SCHEMA_MSG;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import iudx.catalogue.server.apiserver.stack.exceptions.StacDatabaseFailureException;
+import iudx.catalogue.server.apiserver.stack.exceptions.StacAlreadyExistsException;
+import iudx.catalogue.server.apiserver.stack.exceptions.StacNotFoundException;
+import iudx.catalogue.server.apiserver.stack.model.StacCatalog;
+import iudx.catalogue.server.apiserver.stack.model.StacLink;
 import iudx.catalogue.server.apiserver.stack.service.StacService;
 import iudx.catalogue.server.apiserver.stack.service.StacServiceImpl;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
@@ -27,16 +31,19 @@ import iudx.catalogue.server.authenticator.model.JwtAuthenticationInfo;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.common.RoutingContextHelper;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
+import iudx.catalogue.server.exceptions.DatabaseFailureException;
+import iudx.catalogue.server.exceptions.DocNotFoundException;
 import iudx.catalogue.server.exceptions.FailureHandler;
+import iudx.catalogue.server.exceptions.DocAlreadyExistsException;
+import iudx.catalogue.server.exceptions.OperationNotAllowedException;
 import iudx.catalogue.server.util.Api;
-import iudx.catalogue.server.validator.service.ValidatorService;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class StacController {
   private static final Logger LOGGER = LogManager.getLogger(StacController.class);
-  private final ValidatorService validatorService;
   private final AuditHandler auditHandler;
   private final AuthHandler authHandler;
   private final AuthValidationHandler validateToken;
@@ -47,19 +54,17 @@ public class StacController {
 
   public StacController(
       Api api,
-      JsonObject config,
-      ValidatorService validatorService,
+      String docIndex,
       AuditHandler auditHandler,
       ElasticsearchService esService,
       AuthHandler authHandler, AuthValidationHandler validateToken,
       FailureHandler failureHandler) {
     this.api = api;
-    this.validatorService = validatorService;
     this.auditHandler = auditHandler;
     this.authHandler = authHandler;
     this.validateToken = validateToken;
     this.failureHandler = failureHandler;
-    stacService = new StacServiceImpl(esService, config.getString(DOC_INDEX));
+    stacService = new StacServiceImpl(esService, docIndex);
   }
 
   public Router init(Router router) {
@@ -112,16 +117,27 @@ public class StacController {
     String stacId = routingContext.queryParams().get(ID);
     LOGGER.debug("stackId:: {}", stacId);
     if (validateId(stacId)) {
-      stacService.get(stacId)
-          .onComplete(stackHandler -> {
-            if (stackHandler.succeeded()) {
-              JsonObject resultJson = stackHandler.result();
-              handleSuccessResponse(response, resultJson.toString());
-            } else {
-              LOGGER.error("Fail: Stack not found;" + stackHandler.cause().getMessage());
-              processBackendResponse(response, stackHandler.cause().getMessage());
-            }
-          });
+      stacService
+          .get(stacId)
+          .onComplete(
+              stackHandler -> {
+                if (stackHandler.succeeded()) {
+                  JsonObject resultJson = stackHandler.result();
+                  handleSuccessResponse(response, resultJson.toString());
+                } else {
+                  LOGGER.error("Fail: Stack not found;" + stackHandler.cause().getMessage());
+                  if (stackHandler.cause() instanceof NoSuchElementException) {
+                    routingContext.fail(new StacNotFoundException(stacId,
+                        stackHandler.cause().getMessage(), REQUEST_GET));
+                  } else if (stackHandler.cause() instanceof DatabaseFailureException exception) {
+                    routingContext.fail(
+                        new StacDatabaseFailureException(
+                            exception.getId(), exception.getMessage(), REQUEST_GET));
+                  } else {
+                    processBackendResponse(response, stackHandler.cause().getMessage());
+                  }
+                }
+              });
     } else {
       respBuilder = new RespBuilder()
           .withType(TYPE_INVALID_UUID)
@@ -136,7 +152,6 @@ public class StacController {
     LOGGER.debug("method validateSchema() started");
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
-    HttpServerRequest request = routingContext.request();
     JsonObject validationJson;
     if (!Objects.equals(method, REQUEST_DELETE)) {
       JsonObject requestBody = routingContext.body().asJsonObject();
@@ -159,8 +174,11 @@ public class StacController {
     }
 
     if (!method.equals(REQUEST_DELETE)) {
-
-      Future<JsonObject> validateSchemaFuture = validatorService.validateSchema(validationJson);
+      if (method.equals(REQUEST_POST)) {
+        StacCatalog stacCatalog = new StacCatalog(validationJson); //Validates the schema
+      } else if (method.equals(REQUEST_PUT)) {
+        StacLink stacLink = new StacLink(validationJson); //Validates the schema
+      }
       String token = RoutingContextHelper.getToken(routingContext);
       JwtAuthenticationInfo jwtAuthenticationInfo = new JwtAuthenticationInfo.Builder()
           .setToken(token)
@@ -169,16 +187,9 @@ public class StacController {
           .build();
       RoutingContextHelper.setJwtAuthInfo(routingContext, jwtAuthenticationInfo);
 
-      validateSchemaFuture.onSuccess(validationSuccessHandler -> {
-        RoutingContextHelper.setValidatedRequest(routingContext, validationJson);
-        routingContext.next();
-      }).onFailure(validateFailure -> {
-        respBuilder = new RespBuilder()
-            .withType(TYPE_INVALID_SCHEMA)
-            .withTitle(INVALID_SCHEMA_MSG)
-            .withDetail(DETAIL_INVALID_SCHEMA);
-        processBackendResponse(response, respBuilder.getResponse());
-      });
+      RoutingContextHelper.setValidatedRequest(routingContext, validationJson);
+      routingContext.next();
+
     } else {
       String stacId = routingContext.queryParams().get(ID);
       LOGGER.debug("stackId:: {}", stacId);
@@ -206,7 +217,8 @@ public class StacController {
     HttpServerResponse response = routingContext.response();
     JsonObject validatedRequestBody = RoutingContextHelper.getValidatedRequest(routingContext);
     String path = routingContext.normalizedPath();
-    Future<JsonObject> createStackFuture = stacService.create(validatedRequestBody);
+    StacCatalog stacCatalog = new StacCatalog(validatedRequestBody);
+    Future<StacCatalog> createStackFuture = stacService.create(stacCatalog);
 
     JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
@@ -216,19 +228,33 @@ public class StacController {
         .put(USER_ID, jwtDecodedInfo.getSub())
         .put(IID, jwtDecodedInfo.getIid());
     createStackFuture
-        .onSuccess(stacServiceResult -> {
-          LOGGER.debug("stacServiceResult : " + stacServiceResult);
-          JsonArray results = stacServiceResult.getJsonArray("results");
-          String stackId = results.getJsonObject(0).getString(ID);
-          authInfo.put(IUDX_ID, stackId);
-          authInfo.put(API, path);
-          authInfo.put(HTTP_METHOD, REQUEST_POST);
-          Future.future(fu -> auditHandler.updateAuditTable(authInfo));
-          response.setStatusCode(201).end(stacServiceResult.toString());
-        }).onFailure(
+        .onSuccess(
+            stacServiceResult -> {
+              LOGGER.debug("stacServiceResult : " + stacServiceResult);
+              String stackId = stacServiceResult.getId().toString();
+              authInfo.put(IUDX_ID, stackId);
+              authInfo.put(API, path);
+              authInfo.put(HTTP_METHOD, REQUEST_POST);
+              Future.future(fu -> auditHandler.updateAuditTable(authInfo));
+              JsonObject responseMsg = StacPostRespSuccess(stackId);
+              response.setStatusCode(201).end(responseMsg.encodePrettily());
+            })
+        .recover(
             stacServiceFailure -> {
-              LOGGER.error("Fail: DB request has failed;" + stacServiceFailure.getMessage());
+              if (stacServiceFailure instanceof DocAlreadyExistsException existsException) {
+                LOGGER.error("STAC already exists, skipping creation; " + existsException.getMessage());
+                routingContext.fail(new StacAlreadyExistsException(existsException.getItemId(),
+                    "STAC already exists, creation skipped"));
+                return Future.failedFuture(existsException);
+              } else if (stacServiceFailure instanceof DatabaseFailureException dbException) {
+                LOGGER.error("Fail: DB request has failed; " + dbException.getMessage());
+                routingContext.fail(
+                    new StacDatabaseFailureException(dbException.getId(), dbException.getMessage(),
+                        REQUEST_POST));
+              }
+              LOGGER.error("Fail: DB request has failed; " + stacServiceFailure.getMessage());
               processBackendResponse(response, stacServiceFailure.getMessage());
+              return Future.failedFuture(stacServiceFailure.getMessage());
             });
   }
 
@@ -239,8 +265,9 @@ public class StacController {
 
     JsonObject validatedRequestBody = RoutingContextHelper.getValidatedRequest(routingContext);
     String stacId = validatedRequestBody.getString(ID);
+    StacLink stacLink = new StacLink(validatedRequestBody);
 
-    Future<JsonObject> updateStackFuture = stacService.update(validatedRequestBody);
+    Future<String> updateStackFuture = stacService.update(stacLink);
 
     JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
@@ -252,15 +279,37 @@ public class StacController {
         .put(IUDX_ID, stacId)
         .put(API, path)
         .put(HTTP_METHOD, REQUEST_PATCH);
-    updateStackFuture.onSuccess(
-        stacServiceResult -> {
-          LOGGER.debug("stacServiceResult : " + stacServiceResult);
-          Future.future(fu -> auditHandler.updateAuditTable(authInfo));
-          response.setStatusCode(201).end(stacServiceResult.toString());
-        }).onFailure(
+    updateStackFuture
+        .onSuccess(
+            stacServiceResult -> {
+              LOGGER.debug("stacServiceResult : " + stacServiceResult);
+              Future.future(fu -> auditHandler.updateAuditTable(authInfo));
+              LOGGER.debug("stacId: " + stacId);
+              String responseMsg =
+                  new RespBuilder()
+                      .withType(TYPE_SUCCESS)
+                      .withTitle(TITLE_SUCCESS)
+                      .withResult(stacId)
+                      .withDetail("Success: Item updated successfully")
+                      .getResponse();
+              response.setStatusCode(201).end(responseMsg);
+            })
+        .onFailure(
             stacServiceFailure -> {
-              LOGGER.error("Fail: DB request has failed;" + stacServiceFailure.getMessage());
-              processBackendResponse(response, stacServiceFailure.getMessage());
+              if (stacServiceFailure instanceof NoSuchElementException exception) {
+                routingContext.fail(
+                    new StacNotFoundException(
+                        stacId, stacServiceFailure.getMessage(), REQUEST_GET));
+              } else if (stacServiceFailure instanceof DatabaseFailureException exception) {
+                routingContext.fail(new StacDatabaseFailureException(
+                    exception.getId(), exception.getMessage(), REQUEST_GET));
+              } else if (stacServiceFailure.getMessage().contains(TITLE_ALREADY_EXISTS)) {
+                routingContext.fail(new StacAlreadyExistsException(stacId,
+                    "Patch operations not allowed for duplicate child"));
+              } else {
+                LOGGER.error("Fail: DB request has failed;" + stacServiceFailure.getMessage());
+                processBackendResponse(response, stacServiceFailure.getMessage());
+              }
             });
   }
 
@@ -269,7 +318,7 @@ public class StacController {
     HttpServerResponse response = routingContext.response();
 
     String stacId = routingContext.queryParams().get(ID);
-    Future<JsonObject> deleteStackFuture = stacService.delete(stacId);
+    Future<String> deleteStackFuture = stacService.delete(stacId);
 
     JwtData jwtDecodedInfo = RoutingContextHelper.getJwtData(routingContext);
     JsonObject authInfo = new JsonObject();
@@ -282,14 +331,25 @@ public class StacController {
         .put(API, routingContext.normalizedPath())
         .put(HTTP_METHOD, REQUEST_DELETE);;
     deleteStackFuture
-        .onSuccess(stacServiceResult -> {
-          LOGGER.debug("stacServiceResult : " + stacServiceResult);
-          Future.future(fu -> auditHandler.updateAuditTable(authInfo));
-          handleSuccessResponse(response, stacServiceResult.toString());
-        }).onFailure(
+        .onSuccess(
+            stacServiceResult -> {
+              LOGGER.debug("stacServiceResult : " + stacServiceResult);
+              Future.future(fu -> auditHandler.updateAuditTable(authInfo));
+              JsonObject responseMsg = StacDelRespSuccess(stacId);
+              handleSuccessResponse(response, responseMsg.toString());
+            })
+        .onFailure(
             stacServiceFailure -> {
-              LOGGER.error("Fail: DB request has failed;" + stacServiceFailure.getMessage());
-              processBackendResponse(response, stacServiceFailure.getMessage());
+              if (stacServiceFailure instanceof DocNotFoundException exception) {
+                routingContext.fail(
+                    new StacNotFoundException(exception.getId(),
+                        exception.getMessage(), exception.getMethod()));
+              } else if (stacServiceFailure instanceof OperationNotAllowedException exception) {
+                routingContext.fail(exception);
+              } else {
+                LOGGER.error("Fail: DB request has failed;" + stacServiceFailure.getMessage());
+                processBackendResponse(response, stacServiceFailure.getMessage());
+              }
             });
   }
 

@@ -12,11 +12,11 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 import iudx.catalogue.server.database.elastic.service.ElasticsearchService;
-import iudx.catalogue.server.database.postgres.service.PostgresService;
 import iudx.catalogue.server.mlayer.service.MlayerService;
 import iudx.catalogue.server.mlayer.service.MlayerServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cdpg.dx.common.database.postgres.service.PostgresService;
 
 public class MlayerVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LogManager.getLogger(MlayerVerticle.class);

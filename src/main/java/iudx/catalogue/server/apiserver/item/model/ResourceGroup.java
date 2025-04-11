@@ -2,6 +2,7 @@ package iudx.catalogue.server.apiserver.item.model;
 
 import static iudx.catalogue.server.util.Constants.UUID_PATTERN;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -21,13 +22,27 @@ public class ResourceGroup implements Item {
   private List<String> tags;
   private String ownerUserId;
   private String cos;
+  @JsonProperty("@context")
   private String context;
   private String itemStatus;
   private String itemCreatedAt;
+  @JsonProperty("_summary")
+  private String summary;
+  @JsonProperty("_geosummary")
+  private JsonObject geoSummary;
+  @JsonProperty("_word_vector")
+  private JsonArray wordVector;
 
   public ResourceGroup(JsonObject json) {
     this.requestJson = json.copy(); // Store a copy of the input JSON
     this.context = json.getString("@context");
+    if (json.containsKey("id") && !json.getString("id").isEmpty() &&
+        !json.getString("id").matches(PROVIDER_REGEX)) {  //Check regex first
+      throw new IllegalArgumentException(
+          String.format(
+              "[ECMA 262 regex \"%s\" does not match input string \"%s\"]",
+              PROVIDER_REGEX, json.getString("id")));
+    }
     this.id = UUID.fromString(json.getString("id", UUID.randomUUID().toString()));
     this.type = json.getJsonArray("type").getList();
     this.name = json.getString("name");
@@ -112,6 +127,30 @@ public class ResourceGroup implements Item {
   public void setDescription(String description) {
     this.description = description;
   }
+  @Override
+  public String getSummary() {
+    return summary;
+  }
+  @Override
+  public void setSummary(String summary) {
+    this.summary = summary;
+  }
+  @Override
+  public JsonObject getGeoSummary() {
+    return geoSummary;
+  }
+  @Override
+  public void setGeoSummary(JsonObject geoSummary) {
+    this.geoSummary = geoSummary;
+  }
+  @Override
+  public JsonArray getWordVector() {
+    return wordVector;
+  }
+  @Override
+  public void setWordVector(JsonArray wordVector) {
+    this.wordVector = wordVector;
+  }
 
   public List<String> getTags() {
     return tags;
@@ -192,6 +231,9 @@ public class ResourceGroup implements Item {
     json.put("cos", cos);
     json.put("itemStatus", itemStatus);
     json.put("itemCreatedAt", itemCreatedAt);
+    if (summary != null) json.put("_summary", summary);
+    if (geoSummary != null) json.put("_geosummary", geoSummary);
+    if (wordVector != null) json.put("_word_vector", wordVector);
     // Add additional fields from the original JSON request
     JsonObject requestJson = getRequestJson();
     for (String key : requestJson.fieldNames()) {
