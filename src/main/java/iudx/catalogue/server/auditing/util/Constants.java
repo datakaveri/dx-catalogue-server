@@ -38,18 +38,23 @@ public class Constants {
   public static final StringBuilder _USERROLE_COLUMN_NAME = new StringBuilder("userrole)");
 
   /* Auditing Service Constants*/
-  public static final String USER_ROLE = "userRole";
+  public static final String USER_ROLE = "user_role";
   public static final String USER_ID = "userID";
   public static final String IID = "iid";
   public static final String API = "api";
-  public static final String METHOD = "httpMethod";
+  public static final String METHOD = "http_method";
   public static final String DATABASE_TABLE_NAME = "databaseTableName";
   public static final String IUDX_ID = "iudxID";
   public static final String EXCHANGE_NAME = "auditing";
+  public static final String ASSET_NAME = "asset_name";
+  public static final String ASSET_TYPE = "asset_type";
+  public static final String OPERATION = "operation";
+  public static final String ASSET_ID = "asset_id";
   public static final String ROUTING_KEY = "#";
-  public static final String PRIMARY_KEY = "primaryKey";
+  public static final String PRIMARY_KEY = "primary_key";
   public static final String ORIGIN = "origin";
-  public static final String ORIGIN_SERVER = "cat-server";
+  public static final String ORIGIN_SERVER = "origin_system";
+  public static final String CAT_SERVER = "Catalogue";
   public static final String WRITE_QUERY =
           "INSERT INTO $0 (id, userRole, userId, iid, api, method, time, iudxID) VALUES"
                   + " ('$1','$2','$3','$4','$5','$6',$7,'$8')";

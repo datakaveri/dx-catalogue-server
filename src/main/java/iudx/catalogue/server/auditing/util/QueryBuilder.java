@@ -22,7 +22,7 @@ public class QueryBuilder {
    */
   public JsonObject buildMessageForRmq(JsonObject request) {
     String primaryKey = UUID.randomUUID().toString().replace("-", "");
-    request.put(PRIMARY_KEY, primaryKey).put(ORIGIN, ORIGIN_SERVER);
+    request.put(PRIMARY_KEY, primaryKey).put(ORIGIN_SERVER, CAT_SERVER);
 
     LOGGER.debug("request " + request);
     return request;

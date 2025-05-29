@@ -28,6 +28,7 @@ public class Constants {
   public static final String HEADER_HOST = "Host";
   public static final String HEADER_INSTANCE = "instance";
   public static final String HEADER_ORIGIN = "Origin";
+  public static final String HEADER_AUTHORIZATION = "Authorization";
   public static final String HEADER_REFERER = "Referer";
   public static final String HEADER_CORS = "Access-Control-Allow-Origin";
   public static final Set<String> ALLOWED_HEADERS =
@@ -40,6 +41,7 @@ public class Constants {
               HEADER_HOST,
               HEADER_INSTANCE,
               HEADER_ORIGIN,
+              HEADER_AUTHORIZATION,
               HEADER_REFERER,
               HEADER_CORS));
 
@@ -75,7 +77,7 @@ public class Constants {
   public static final String PROVIDER_ORG = "prvdrOrg";
   public static final String PROVIDER_ITEM = "pvdrItem";
   public static final String DATA_DES_ITEM = "dataDesItem";
-  public static final String USERID = "userid";
+  public static final String USERID = "user_id";
 
   public static final String ROUTE_GET_ITEM = "/items";
   public static final String ROUTE_COUNT = "/count";
