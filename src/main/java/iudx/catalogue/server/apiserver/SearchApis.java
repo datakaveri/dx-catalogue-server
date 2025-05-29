@@ -226,7 +226,7 @@ public final class SearchApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     JsonObject requestBody = routingContext.body().asJsonObject();
-    String token = request.getHeader(HEADER_TOKEN);
+    String token = routingContext.get(HEADER_TOKEN);
 
     /* HTTP request instance/host details */
     String instanceId = request.getHeader(HEADER_INSTANCE);

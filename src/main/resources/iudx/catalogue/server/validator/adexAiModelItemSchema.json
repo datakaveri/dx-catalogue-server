@@ -11,7 +11,6 @@
         "adex:AiModel"
       ],
       "name": "ai-model-crop",
-      "provider": "337545aa-1fa5-4ca0-bf3d-072144dec5b6",
       "tags": [
         "ai", "ml", "model", "aimodel", "mlmodel",
         "ai-model", "ml-model", "machine", "learning",
@@ -22,7 +21,9 @@
       "shortDescription": "Detects diseases in crop leaves using image classification.",
       "description": "An test AI model for detecting crop disease with the help of infected leaf images.",
       "organizationType": "Private",
+      "organizationId": "{{UUID}}",
       "department": "Agriculture and Co-operation",
+      "resourceType": "MODEL",
       "modelType": "ImageClassifier",
       "fileFormat": "ipynb",
       "industry": "Agriculture",
@@ -39,6 +40,7 @@
     "description",
     "tags",
     "accessPolicy",
+    "resourceType",
     "organizationType",
     "organizationId",
     "department",
@@ -115,8 +117,7 @@
       "type": "string",
       "title": "The access policy schema",
       "default": "",
-      "examples": ["SECURE", "pii"],
-      "pattern": "^(RESTRICTED|OPEN|PII|PRIVATE|restricted|open|pii|private)$"
+      "pattern": "^(RESTRICTED|OPEN|PRIVATE)$"
     },
     "label": {
       "$id": "#/properties/label",
@@ -143,7 +144,7 @@
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
-      "examples": ["Private", "Public", "Academic Institution"]
+      "enum": ["Private", "Public", "Academic Institution", "NGO/Non-profit"]
     },"organizationId": {
       "$id": "#/properties/organizationId",
       "type": "string",
@@ -160,6 +161,10 @@
       "type": "string",
       "title": "The department schema",
       "description": "Department name"
+    },
+    "resourceType": {
+      "type": "string",
+      "title": "The resourceType schema"
     },
     "modelType": {
       "type": "string",

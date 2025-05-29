@@ -23,7 +23,7 @@
       "shortDescription": "A test potential application item for detecting crop disease",
       "uploadedBy": "cdpg@datakaveri.org",
       "fileFormat": "xlsx",
-      "accessPolicy": "Public",
+      "accessPolicy": "OPEN",
       "canBeUsedFor": {
         "cropMonitoring": "Detect and classify diseases in crops using image input",
         "yieldOptimization": "Improve crop yield by early detection of diseases"
@@ -146,12 +146,19 @@
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
-      "examples": ["Private", "Public"]
+      "enum": ["Private", "Public", "Academic Institution", "NGO/Non-profit"]
     },
     "department": {
       "type": "string",
       "title": "The department schema",
       "description": "Department name"
+    },
+    "accessPolicy": {
+      "$id": "#/properties/accessPolicy",
+      "type": "string",
+      "title": "The access policy schema",
+      "default": "",
+      "pattern": "^(RESTRICTED|OPEN|PRIVATE)$"
     },
     "canBeUsedFor": {
       "type": "object",

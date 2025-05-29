@@ -149,7 +149,7 @@ public final class CrudApis {
 
             // populating jwt authentication info ->
             jwtAuthenticationInfo
-                .put(TOKEN, request.getHeader(HEADER_TOKEN))
+                .put(TOKEN, routingContext.get(HEADER_TOKEN))
                 .put(METHOD, REQUEST_POST)
                 .put(API_ENDPOINT, api.getRouteItems())
                 .put(ITEM_TYPE, itemType);
@@ -354,7 +354,7 @@ public final class CrudApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     String itemId = routingContext.queryParams().get(ID);
-    String token = routingContext.request().getHeader(HEADER_TOKEN);
+    String token = routingContext.get(HEADER_TOKEN);
 
     LOGGER.debug("Info: Getting item; id=" + itemId);
 
@@ -463,7 +463,7 @@ public final class CrudApis {
     //  populating JWT authentication info ->
     HttpServerRequest request = routingContext.request();
     jwtAuthenticationInfo
-        .put(TOKEN, request.getHeader(HEADER_TOKEN))
+        .put(TOKEN, routingContext.get(HEADER_TOKEN))
         .put(METHOD, REQUEST_DELETE)
         .put(API_ENDPOINT, api.getRouteItems());
     if (validateId(itemId)) {
@@ -649,7 +649,7 @@ public final class CrudApis {
 
     // Json schema validate item
     authenticationInfo.put(TOKEN,
-                            request.getHeader(HEADER_TOKEN))
+                            routingContext.get(HEADER_TOKEN))
                             .put(METHOD, REQUEST_POST)
                             .put(API_ENDPOINT, api.getRouteInstance())
                             .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
@@ -711,7 +711,7 @@ public final class CrudApis {
 
 
     // Json schema validate item
-    authenticationInfo.put(TOKEN, request.getHeader(HEADER_TOKEN))
+    authenticationInfo.put(TOKEN, routingContext.get(HEADER_TOKEN))
                       .put(METHOD, REQUEST_DELETE)
                       .put(API_ENDPOINT, api.getRouteInstance())
                       .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
@@ -777,25 +777,23 @@ public final class CrudApis {
     long epochTime = getEpochTime(zst);
 
     JsonObject auditInfo = new JsonObject()
-        .put(IUDX_ID, metadata.itemId)
+        .put(ASSET_ID, metadata.itemId)
         .put(API, metadata.apiEndpoint)
-        .put(HTTP_METHOD, metadata.httpMethod)
-        .put(ITEM_TYPE, metadata.itemType)
-        .put(ITEM_NAME, metadata.itemName)
+        .put(METHOD, metadata.httpMethod)
+        .put(ASSET_TYPE, metadata.itemType)
+        .put(ASSET_NAME, metadata.itemName)
         .put(EPOCH_TIME, epochTime)
         .put(USERID, jwtDecodedInfo.getString(USER_ID));
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
 
-    //TODO: Yet to integrate with finalize the schema and send to audit server
-
-//    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
-//      if (auditHandler.succeeded()) {
-//        LOGGER.info("message published in RMQ.");
-//      } else {
-//        LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
-//      }
-//    });
+    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
+      if (auditHandler.succeeded()) {
+        LOGGER.info("message published in RMQ.");
+      } else {
+        LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
+      }
+    });
   }
 
   private long getEpochTime(ZonedDateTime zst) {

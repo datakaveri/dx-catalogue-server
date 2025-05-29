@@ -254,7 +254,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .handler(
             routingContext -> {
               /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 crudApis.createItemHandler(routingContext);
               } else {
                 LOGGER.warn("Fail: Unathorized CRUD operation");
@@ -268,6 +273,11 @@ public class ApiServerVerticle extends AbstractVerticle {
         .produces(MIME_APPLICATION_JSON)
         .handler(
             routingContext -> {
+              String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+              if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring("Bearer ".length()).trim();
+                routingContext.put(HEADER_TOKEN, token);
+              }
               crudApis.getItemHandler(routingContext);
             });
 
@@ -279,7 +289,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .handler(
             routingContext -> {
               /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 // Update params checked in createItemHandler
                 crudApis.createItemHandler(routingContext);
               } else {
@@ -295,8 +310,13 @@ public class ApiServerVerticle extends AbstractVerticle {
         .handler(
             routingContext -> {
               /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)
                   && routingContext.queryParams().contains(ID)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 // Update params checked in createItemHandler
                 crudApis.deleteItemHandler(routingContext);
               } else {
@@ -312,7 +332,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .handler(
             routingContext -> {
               /* checking auhthentication info in requests */
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 crudApis.createInstanceHandler(routingContext, catAdmin);
               } else {
                 LOGGER.warn("Fail: Unathorized CRUD operation");
@@ -328,7 +353,12 @@ public class ApiServerVerticle extends AbstractVerticle {
             routingContext -> {
               /* checking auhthentication info in requests */
               LOGGER.debug("Info: HIT instance");
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 crudApis.deleteInstanceHandler(routingContext, catAdmin);
               } else {
                 LOGGER.warn("Fail: Unathorized CRUD operation");
@@ -353,6 +383,11 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
+              String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+              if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring("Bearer ".length()).trim();
+                routingContext.put(HEADER_TOKEN, token);
+              }
               searchApis.postSearchHandler(routingContext);
             });
 
@@ -389,6 +424,11 @@ public class ApiServerVerticle extends AbstractVerticle {
         .produces(MIME_APPLICATION_JSON)
         .handler(
             routingContext -> {
+              String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+              if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring("Bearer ".length()).trim();
+                routingContext.put(HEADER_TOKEN, token);
+              }
               listApis.listItemsPostHandler(routingContext);
             });
 
@@ -436,7 +476,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 ratingApis.createRatingHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -454,7 +499,12 @@ public class ApiServerVerticle extends AbstractVerticle {
               if (routingContext.request().params().contains("type")) {
                 ratingApis.getRatingHandler(routingContext);
               } else {
-                if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+                if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                  String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                   ratingApis.getRatingHandler(routingContext);
                 } else {
                   LOGGER.error("Unauthorized Operation");
@@ -471,7 +521,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 ratingApis.updateRatingHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -486,7 +541,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 ratingApis.deleteRatingHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -504,7 +564,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.createMlayerInstanceHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -529,7 +594,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.deleteMlayerInstanceHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -545,7 +615,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.updateMlayerInstanceHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -563,7 +638,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.createMlayerDomainHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -589,7 +669,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.updateMlayerDomainHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");
@@ -604,7 +689,12 @@ public class ApiServerVerticle extends AbstractVerticle {
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              if (routingContext.request().headers().contains(HEADER_TOKEN)) {
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
                 mlayerApis.deleteMlayerDomainHandler(routingContext);
               } else {
                 LOGGER.error("Unauthorized Operation");

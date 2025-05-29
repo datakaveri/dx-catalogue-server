@@ -209,7 +209,7 @@ public final class ListApis {
     }
     requestBody.put(HEADER_INSTANCE, instanceId);
 
-    String token = request.getHeader(HEADER_TOKEN);
+    String token = routingContext.get(HEADER_TOKEN);
 
     if (token != null && !token.isEmpty()) {
       JsonObject jwtAuthenticationInfo = new JsonObject()
