@@ -787,15 +787,13 @@ public final class CrudApis {
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
 
-    //TODO: Yet to integrate with finalize the schema and send to audit server
-
-//    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
-//      if (auditHandler.succeeded()) {
-//        LOGGER.info("message published in RMQ.");
-//      } else {
-//        LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
-//      }
-//    });
+    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
+      if (auditHandler.succeeded()) {
+        LOGGER.info("message published in RMQ.");
+      } else {
+        LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
+      }
+    });
   }
 
   private long getEpochTime(ZonedDateTime zst) {
