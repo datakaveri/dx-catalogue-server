@@ -410,7 +410,6 @@ paths:
               - department
               - organizationType
               - fileFormat
-              - dataReadiness
               - aiModel
               - dataBank
               - apps
@@ -2213,10 +2212,10 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', 'Academic Institution' ]
+          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit" ]
         department:
           type: string
         modelType:
@@ -2337,27 +2336,6 @@ components:
           type: string
         resourceType:
           type: string
-          enum:
-            - MESSAGESTREAM
-            - STATIC
-            - API
-        adexResourceAPIs:
-          type: array
-          items:
-            type: string
-        iudxResourceAPIs:
-          type: array
-          items:
-            type: string
-        location:
-          type: object
-          additionalProperties: true
-        dataDescriptor:
-          type: object
-          additionalProperties: true
-        dataSample:
-          type: object
-          additionalProperties: true
       required:
         - type
         - name
@@ -2369,14 +2347,8 @@ components:
         - accessPolicy
         - organizationType
         - fileFormat
-        - dataReadiness
         - department
         - resourceType
-        - adexResourceAPIs
-        - iudxResourceAPIs
-        - location
-        - dataDescriptor
-        - dataSample
         - industry
         - uploadedBy
         - geoCoverage
@@ -2400,8 +2372,7 @@ components:
         organizationId: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
         accessPolicy: RESTRICTED
         organizationType: Private
-        fileFormat: .xlsx
-        dataReadiness: 80
+        fileFormat: .xl
         industry: Climate Research
         uploadedBy: 'john.doe@datakaveri.org'
         geoCoverage: Pan India
@@ -2410,22 +2381,7 @@ components:
         uploadFrequency: Weekly
         license: CC-BY 4.0
         department: Department of IT, Electronics and Communication
-        resourceType: MESSAGESTREAM
-        adexResourceAPIs:
-          - TEMPORAL
-          - ATTR
-        iudxResourceAPIs:
-          - TEMPORAL
-          - LOCATION
-        location:
-          latitude: 12.9716
-          longitude: 77.5946
-        dataDescriptor:
-          schema: Custom schema here
-        dataSample:
-          temperature: 24
-          rainfall: 5
-          observationDateTime: '2023-02-03T08:30:00+05:30'
+        resourceType: DATASET
     exampleEntityWIdAdexApps:
       type: object
       title: ADeX App entity
@@ -2460,7 +2416,7 @@ components:
           maxLength: 4000
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', 'Academic Institution' ]
+          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit" ]
         department:
           type: string
         canBeUsedFor:
@@ -3331,7 +3287,7 @@ components:
               description: Tags associated with the AI Model item
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$"
+              pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
               description: Access policy for the model
             label:
               type: string
@@ -3402,7 +3358,6 @@ components:
             - machine learning
             - training
             - algorithm
-          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
           accessPolicy: 'RESTRICTED'
           organizationType: 'Private'
           department: 'Agriculture and Co-operation'
@@ -3453,10 +3408,6 @@ components:
               items:
                 type: string
               description: Tags associated with the Data Bank Resource item.
-            provider:
-              type: string
-              description: Provider id of the Data Bank Resource item.
-              format: uuid
             itemStatus:
               type: string
               description: Status of the Data Bank Resource item.
@@ -3476,20 +3427,11 @@ components:
             - shortDescription
             - description
             - tags
-            - provider
-            - resourceGroup
-            - resourceServer
             - accessPolicy
             - organizationType
             - fileFormat
-            - dataReadiness
             - department
             - resourceType
-            - adexResourceAPIs
-            - iudxResourceAPIs
-            - location
-            - dataDescriptor
-            - dataSample
             - industry
             - uploadedBy
             - geoCoverage
@@ -3516,21 +3458,11 @@ components:
             - weather
             - rainfall
             - temperature
-          provider: '{{UUID}}'
-          resourceGroup: '{{UUID}}'
-          resourceServer: '{{UUID}}'
           accessPolicy: 'RESTRICTED'
           organizationType: 'Private'
           fileFormat: 'xlsx'
-          dataReadiness: 85
           department: 'Department of IT, Electronics and Communication'
-          resourceType: 'MESSAGESTREAM'
-          adexResourceAPIs:
-            - 'TEMPORAL'
-            - 'ATTR'
-          iudxResourceAPIs:
-            - 'TEMPORAL'
-            - 'ATTR'
+          resourceType: 'DATASET'
           industry: 'Climate Research'
           uploadedBy: 'john.doe@datakaveri.org'
           geoCoverage: 'Karnataka'
@@ -3538,42 +3470,6 @@ components:
           verifiedBy: 'Ministry of Earth Sciences'
           uploadFrequency: 'Weekly'
           license: 'CC-BY 4.0'
-          location:
-            type: 'Place'
-            address: 'Subdistrict HQ, Karnataka'
-            geometry:
-              type: 'Polygon'
-              coordinates:
-                - - [ 77.5946, 12.9716 ]
-                  - [ 77.5956, 12.9726 ]
-                  - [ 77.5966, 12.9736 ]
-                  - [ 77.5946, 12.9716 ]
-          dataDescriptor:
-            '@context': 'https://voc.iudx.org.in/'
-            type: [ 'adex:DataDescriptor' ]
-            dataDescriptorLabel: 'Subdistrict weather structure'
-            description: 'Structure defining data attributes for weather observations'
-            precipitation:
-              type: [ 'adex:Precipitation' ]
-              description: 'Rainfall in mm'
-              unitCode: 'MMT'
-              unitText: 'Millimeter'
-              dataSchema: 'float'
-            observationDateTime:
-              type: [ 'iudx:ObservationDateTime' ]
-              description: 'Datetime of weather observation'
-              dataSchema: 'datetime'
-          dataSample:
-            districtCode: 'KA-01'
-            subDistrictCode: 'KA-01-001'
-            precipitation: 5.2
-            airTemperature:
-              maxOverTime: 33.5
-              minOverTime: 22.1
-            relativeHumidity:
-              maxOverTime: 90.2
-              minOverTime: 45.3
-            observationDateTime: '2023-02-03T08:30:00+05:30'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForCreatePotentialAppsEntity:
@@ -3993,15 +3889,12 @@ components:
               type: array
               items:
                 type: string
-            provider:
-              type: string
-              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
             accessPolicy:
               type: string
-              pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
+              pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
             organizationType:
               type: string
-              enum: [ 'Private', 'Public', 'Academic Institution' ]
+              enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit" ]
             department:
               type: string
             modelType:
@@ -4023,7 +3916,6 @@ components:
             - shortDescription
             - description
             - tags
-            - provider
             - accessPolicy
             - organizationType
             - department
@@ -4059,7 +3951,7 @@ components:
             - machine learning
             - training
             - algorithm
-          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          resourceType: 'MODEL'
           accessPolicy: 'RESTRICTED'
           organizationType: 'Private'
           department: 'Agriculture and Co-operation'
@@ -4124,10 +4016,6 @@ components:
               type: string
             fileFormat:
               type: string
-            dataReadiness:
-              type: integer
-              minimum: 0
-              maximum: 100
             industry:
               type: string
             uploadedBy:
@@ -4146,27 +4034,6 @@ components:
               type: string
             resourceType:
               type: string
-              enum:
-                - MESSAGESTREAM
-                - STATIC
-                - API
-            adexResourceAPIs:
-              type: array
-              items:
-                type: string
-            iudxResourceAPIs:
-              type: array
-              items:
-                type: string
-            location:
-              type: object
-              additionalProperties: true
-            dataDescriptor:
-              type: object
-              additionalProperties: true
-            dataSample:
-              type: object
-              additionalProperties: true
           required:
             - type
             - name
@@ -4174,20 +4041,11 @@ components:
             - description
             - shortDescription
             - tags
-            - provider
-            - resourceGroup
-            - resourceServer
             - accessPolicy
             - organizationType
             - fileFormat
-            - dataReadiness
             - department
             - resourceType
-            - adexResourceAPIs
-            - iudxResourceAPIs
-            - location
-            - dataDescriptor
-            - dataSample
             - industry
             - uploadedBy
             - geoCoverage
@@ -4211,14 +4069,11 @@ components:
             - weather
             - rainfall
             - temperature
-          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
-          resourceGroup: '96bc97bf-504e-4306-bb49-99d77896cf1d'
-          resourceServer: '85bc97bf-904f-2306-gb49-89d77896cf2e'
+          organizationId: '85bc97bf-904f-2306-gb49-89d77896cf2e'
           ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
           accessPolicy: RESTRICTED
           organizationType: Private
-          fileFormat: .xlsx
-          dataReadiness: 80
+          fileFormat: .xls
           industry: Climate Research
           uploadedBy: 'john.doe@datakaveri.org'
           geoCoverage: Pan India
@@ -4227,22 +4082,7 @@ components:
           uploadFrequency: Weekly
           license: CC-BY 4.0
           department: Department of IT, Electronics and Communication
-          resourceType: MESSAGESTREAM
-          adexResourceAPIs:
-            - TEMPORAL
-            - ATTR
-          iudxResourceAPIs:
-            - TEMPORAL
-            - LOCATION
-          location:
-            latitude: 12.9716
-            longitude: 77.5946
-          dataDescriptor:
-            schema: Custom schema here
-          dataSample:
-            temperature: 24
-            rainfall: 5
-            observationDateTime: '2023-02-03T08:30:00+05:30'
+          resourceType: DATASET
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
     successResponseForUpdateAdexAppsEntity:
@@ -4292,7 +4132,7 @@ components:
               maxLength: 4000
             organizationType:
               type: string
-              enum: [ 'Private', 'Public', "Academic Institution" ]
+              enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit" ]
             department:
               type: string
             canBeUsedFor:
@@ -4705,7 +4545,7 @@ components:
               description: Tags describing the model
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$"
+              pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
               description: Access policy for the model
             label:
               type: string
@@ -4816,13 +4656,7 @@ components:
           fileFormat: 'xlsx'
           dataReadiness: 85
           department: 'Department of IT, Electronics and Communication'
-          resourceType: 'MESSAGESTREAM'
-          adexResourceAPIs:
-            - 'TEMPORAL'
-            - 'ATTR'
-          iudxResourceAPIs:
-            - 'TEMPORAL'
-            - 'ATTR'
+          resourceType: 'DATASET'
           industry: 'Climate Research'
           uploadedBy: 'john.doe@datakaveri.org'
           geoCoverage: 'Karnataka'
@@ -4830,42 +4664,6 @@ components:
           verifiedBy: 'Ministry of Earth Sciences'
           uploadFrequency: 'Weekly'
           license: 'CC-BY 4.0'
-          location:
-            type: 'Place'
-            address: 'Subdistrict HQ, Karnataka'
-            geometry:
-              type: 'Polygon'
-              coordinates:
-                - - [ 77.5946, 12.9716 ]
-                  - [ 77.5956, 12.9726 ]
-                  - [ 77.5966, 12.9736 ]
-                  - [ 77.5946, 12.9716 ]
-          dataDescriptor:
-            '@context': 'https://voc.iudx.org.in/'
-            type: [ 'adex:DataDescriptor' ]
-            dataDescriptorLabel: 'Subdistrict weather structure'
-            description: 'Structure defining data attributes for weather observations'
-            precipitation:
-              type: [ 'adex:Precipitation' ]
-              description: 'Rainfall in mm'
-              unitCode: 'MMT'
-              unitText: 'Millimeter'
-              dataSchema: 'float'
-            observationDateTime:
-              type: [ 'iudx:ObservationDateTime' ]
-              description: 'Datetime of weather observation'
-              dataSchema: 'datetime'
-          dataSample:
-            districtCode: 'KA-01'
-            subDistrictCode: 'KA-01-001'
-            precipitation: 5.2
-            airTemperature:
-              maxOverTime: 33.5
-              minOverTime: 22.1
-            relativeHumidity:
-              maxOverTime: 90.2
-              minOverTime: 45.3
-            observationDateTime: '2023-02-03T08:30:00+05:30'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
         detail: "Success: Item fetched Successfully"
@@ -6264,15 +6062,11 @@ components:
                 type: string
                 format: date-time
                 description: Item creation timestamp in ISO 8601 format
-              dataReadiness:
-                type: integer
-                description: Data readiness level
             required:
               - type
               - id
               - department
               - itemCreatedAt
-              - dataReadiness
       required:
         - type
         - title
@@ -6288,7 +6082,6 @@ components:
             id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             department: "Environment Forests Science and Technology"
             itemCreatedAt: "2025-04-15T10:30:00Z"
-            dataReadiness: 80
     successResponseForRangeSearch:
       type: object
       title: Range search
@@ -6314,13 +6107,9 @@ components:
                 type: array
                 items: string
                 description: List of tags associated with the resource
-              dataReadiness:
-                type: integer
-                description: Data readiness level
             required:
               - id
               - tags
-              - dataReadiness
       required:
         - type
         - title
@@ -6335,23 +6124,19 @@ components:
             tags:
               - "Satellite"
               - "Geospatial"
-            dataReadiness: 80
           - id: "861bc29a-fca7-45b5-b4c8-5b07dc88a594"
             tags:
               - "Transport"
               - "Network"
-            dataReadiness: 80
           - id: "d09a4b85-3899-4bfc-93f4-430bba8aefb4"
             tags:
               - "Maternal Health"
               - "Healthcare"
               - "Community Health"
-            dataReadiness: 80
           - id: "28653cd7-9715-47d5-b12b-9d725ecfcad0"
             tags:
               - "Transport"
               - "Railway"
-            dataReadiness: 80
           - id: "9c0737d6-17df-484f-a7f8-aa472002eae5"
             tags:
               - "Corporate"
@@ -7147,10 +6932,10 @@ components:
             type: string
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE)$'
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', "Academic Institution" ]
+          enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit" ]
         organizationId:
           type: string
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
@@ -7259,20 +7044,6 @@ components:
           type: string
         resourceType:
           type: string
-        adexResourceAPIs:
-          type: array
-          items:
-            type: string
-        iudxResourceAPIs:
-          type: array
-          items:
-            type: string
-        location:
-          type: object
-        dataDescriptor:
-          type: object
-        dataSample:
-          type: object
         industry:
           type: string
         uploadedBy:
@@ -7298,14 +7069,8 @@ components:
         - accessPolicy
         - organizationType
         - fileFormat
-        - dataReadiness
         - department
         - resourceType
-        - adexResourceAPIs
-        - iudxResourceAPIs
-        - location
-        - dataDescriptor
-        - dataSample
         - industry
         - uploadedBy
         - geoCoverage
@@ -7331,13 +7096,7 @@ components:
         fileFormat: 'xlsx'
         dataReadiness: 85
         department: 'Department of IT, Electronics and Communication'
-        resourceType: 'MESSAGESTREAM'
-        adexResourceAPIs:
-          - 'TEMPORAL'
-          - 'ATTR'
-        iudxResourceAPIs:
-          - 'TEMPORAL'
-          - 'ATTR'
+        resourceType: 'DATASET'
         industry: 'Climate Research'
         uploadedBy: 'john.doe@datakaveri.org'
         geoCoverage: 'Karnataka'
@@ -7345,42 +7104,6 @@ components:
         verifiedBy: 'Ministry of Earth Sciences'
         uploadFrequency: 'Weekly'
         license: 'CC-BY 4.0'
-        location:
-          type: 'Place'
-          address: 'Subdistrict HQ, Karnataka'
-          geometry:
-            type: 'Polygon'
-            coordinates:
-              - - [ 77.5946, 12.9716 ]
-                - [ 77.5956, 12.9726 ]
-                - [ 77.5966, 12.9736 ]
-                - [ 77.5946, 12.9716 ]
-        dataDescriptor:
-          '@context': 'https://voc.iudx.org.in/'
-          type: [ 'adex:DataDescriptor' ]
-          dataDescriptorLabel: 'Subdistrict weather structure'
-          description: 'Structure defining data attributes for weather observations'
-          precipitation:
-            type: [ 'adex:Precipitation' ]
-            description: 'Rainfall in mm'
-            unitCode: 'MMT'
-            unitText: 'Millimeter'
-            dataSchema: 'float'
-          observationDateTime:
-            type: [ 'iudx:ObservationDateTime' ]
-            description: 'Datetime of weather observation'
-            dataSchema: 'datetime'
-        dataSample:
-          districtCode: 'KA-01'
-          subDistrictCode: 'KA-01-001'
-          precipitation: 5.2
-          airTemperature:
-            maxOverTime: 33.5
-            minOverTime: 22.1
-          relativeHumidity:
-            maxOverTime: 90.2
-            minOverTime: 45.3
-          observationDateTime: '2023-02-03T08:30:00+05:30'
     exampleEntityPotentialApps:
       type: object
       title: ADeX Apps entity
@@ -7415,7 +7138,7 @@ components:
             type: string
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', 'Academic Institution' ]
+          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit" ]
         department:
           type: string
         uploadedBy:
@@ -8625,81 +8348,7 @@ components:
                 actual_trip_start_time: "2020-09-16T13:30:00+05:30"
                 observationDateTime: "2020-09-16T13:30:00+05:30"
                 speed: 28
-              dataDescriptor:
-                trip_direction:
-                  dataSchema: "iudx:Text"
-                  description: "The direction in which the vehicle is travelling. ENUM[UP,DN]."
-                  type: [ "ValueDescriptor" ]
-                trip_id:
-                  dataSchema: "iudx:Text"
-                  description: "Trip ID/Trip name allotted to the bus corresponding to this observation."
-                  type: [ "ValueDescriptor" ]
-                route_id:
-                  dataSchema: "iudx:Text"
-                  description: "Route ID assigned to the route on which the bus corresponding to this observation is plying on."
-                  type: [ "ValueDescriptor" ]
-                dataDescriptorLabel: "Surat ITMS realtime bus ETA tracking."
-                description: "Data descriptor for live bus ETA and live vehicle position of the public transit buses in Surat city."
-                trip_delay:
-                  dataSchema: "iudx:Number"
-                  unitCode: "SEC"
-                  description: "This can be positive and negative in seconds and shows how much the vehicle deviates from the planned one."
-                  type: [ "ValueDescriptor" ]
-                  unitText: "second"
-                last_stop_arrival_time:
-                  dataSchema: "iudx:DateTime"
-                  description: "Specifies the arrival time at the previous stop for a specific trip on a route. Times must be eight digits in HH:MM:SS format (H:MM:SS is also accepted, if the hour begins with 0). Note: Trips that span multiple dates will have stop times greater than 24:00:00. For example, if a trip begins at 10:30:00 p.m. and ends at 2:15:00 a.m. on the following day, the stop times would be 22:30:00 and 26:15:00."
-                  type: [ "ValueDescriptor" ]
-                vehicle_label:
-                  dataSchema: "iudx:Text"
-                  description: "User-visible label, i.e., something that must be shown to the passenger to help identify the correct vehicle."
-                  type: [ "ValueDescriptor" ]
-                actual_trip_start_time:
-                  dataSchema: "iudx:DateTime"
-                  description: "This field specifies the time at which bus service actually began for the trip corresponding to this observation."
-                  type: [ "ValueDescriptor" ]
-                type:
-                  - "iudx:DataDescriptor"
-                  - "iudx:TransitManagement"
-                observationDateTime:
-                  dataSchema: "iudx:DateTime"
-                  description: "The time at which the vehicle was last tracked."
-                  type: [ "ValueDescriptor" ]
-                  '@context': "https://voc.iudx.org.in/"
-                  speed:
-                    dataSchema: "iudx:Number"
-                    unitCode: "KMH"
-                    description: "The Speed of the bus observed at the last tracked coordinates."
-                    type: [ "ValueDescriptor" ]
-                    unitText: "kilometre per hour"
-                  license_plate:
-                    dataSchema: "iudx:Text"
-                    description: "Vehicle registration number/license plate number of the bus corresponding to this observation."
-                    type: [ "ValueDescriptor" ]
-                  last_stop_id:
-                    dataSchema: "iudx:Text"
-                    description: "Stop ID/Stop name of the previous bus stop corresponding to the bus in this observation."
-                    type: [ "ValueDescriptor" ]
-                  location:
-                    dataSchema: "iudx:Point"
-                    description: "The coordinates for the current position of the bus corresponding to this observation."
-                    type: [ "ValueDescriptor" ]
-              resourceType: "MESSAGESTREAM"
-              location:
-                address: "Surat, Gujarat"
-                geometry:
-                  coordinates:
-                    - [ 72.941762, 21.259964 ]
-                    - [ 72.896444, 21.166506 ]
-                    - [ 72.822981, 21.068548 ]
-                    - [ 72.713804, 21.136772 ]
-                    - [ 72.746763, 21.200163 ]
-                    - [ 72.831564, 21.269925 ]
-                    - [ 72.941762, 21.259964 ]
-                  type: "Polygon"
-                type: "Place"
-              cosURL: "iudx.io"
-              resourceServerRegURL: "rs.iudx.io"
+              resourceType: "DATASET"
               provider:
                 id: "bbeacb12-5e54-339d-92e0-d8e063b551a8"
                 description: "Administrator of the IUDX platform"
@@ -8876,72 +8525,6 @@ components:
               PII: 0
               SECURE: 1
               OPEN: 1
-    successResponseForGettingDatasetResources:
-      type: object
-      title: Response for getting dataset based on the dataset_id and its resources.
-      description: Example success response for getting datasets based on dataset_id and its resources
-      properties:
-        type:
-          type: string
-          description: |
-            URN type of the response indicating if the query was successful or if any errors have
-            been triggered.
-        title:
-          description: A human readable title to the message response.
-        results:
-          type: array
-          description: Results which matched the query. This is an array of objects.
-          items:
-            type: object
-      required:
-        - type
-      example:
-        type: 'urn:dx:cat:Success'
-        title: Success
-        results:
-          - dataset:
-              provider:
-                id: datakaveri.org/b8bd3e3f39615c8ec96722131ae95056b5938f2f
-                description: UI Test Provider-other
-              id: datakaveri.org/b8bd3e3f39615c8ec96722131ae95056b5938f2f/rs.iudx.io/pune-env-aqm
-              label: Environment
-              description: 'Publishes realtime information of air pollutants from AQM sensors/ devices deployed in Pune city. It gives average values of air pollutant measures  like carbon monoxide, nitrogen dioxide, ozone, particulate matter etc., and also the associated environmental factors like temperature, humidity, illuminance over an time interval of 15 minutes. More details on the type of pollutant measured and units of measurement can be seen in the Data Descriptor.'
-              accessPolicy: OPEN
-              instance: pune
-              dataSample:
-                uv:
-                  avgOverTime: 0.81
-              dataSampleFile:
-                - relationType: REL_FILE
-                  hasObject: 'https://fs-sample-file-bucket.s3.ap-south-1.amazonaws.com/public-access/pune/pune-env-aqm.json'
-                  name: Pune air quality monitoring data sample
-                  description: Sample file for Air quality monitoring devices/sensors in Pune city
-              dataQualityFile:
-                - relationType: REL_FILE
-                  hasObject: 'https://fs-sample-file-bucket.s3.ap-south-1.amazonaws.com/public-access/pune/DataQuality/puneAQM_Jan22Feb22_DQReport.pdf'
-                  name: Pune AQM Data Quality Report Jan-Feb2022
-                  description: Data quality report file for Air quality monitoring devices/sensors in Pune city for the time range between Jan-Feb2022.
-              dataDescriptor:
-                uv:
-                  description: Describes instantaneous and/or aggregated values for Ultraviolet (UV) radiation.
-                  type:
-                    - TimeSeriesAggregation
-                  avgOverTime:
-                    dataSchema: 'iudx:Number'
-                    unitCode: C62
-                    description: Average value of UV radiation for the last 15 minutes
-                    type:
-                      - ValueDescriptor
-                schema: 'https://voc.iudx.org.in/EnvAQM'
-                totalResources: 1
-                instance_icon: 'https://iudx-catalogue-assets.s3.ap-south-1.amazonaws.com/instances/icons/pune.jpg'
-              resource:
-                - resourceId: datakaveri.org/b8bd3e3f39615c8ec96722131ae95056b5938f2f/rs.iudx.io/pune-env-aqm/c37c6979-6802-4a1c-c852-609b7706f5ba
-                  label: Environment
-                  description: Air quality monitoring devices (Bosch-Climo) in Pune city.
-                  dataSample: null
-                  dataDescriptor: null
-                  resourceType: null
     errorResponseForObjectNotFound:
       type: object
       title: Response for bad request
