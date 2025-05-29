@@ -1527,7 +1527,7 @@ components:
                 cosURL: "api.example.cos.iudx.org.in"
                 cosUI: "https://example.cat.iudx.org.in"
                 id: "35d8e0a3-3a33-3a11-908f-f06bd1f678db"
-                '@context': "https://voc.iudx.org.in/"
+                '@context': "https://agrijson.org"
                 itemStatus: "ACTIVE"
                 itemCreatedAt: "2023-09-26T11:29:00+0530"
     listResourceGroup:
@@ -2614,7 +2614,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:Owner"
           name: "iudxOwnerPM"
@@ -2693,7 +2693,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:COS"
           name: "IudxCOSItemPM32"
@@ -2855,7 +2855,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:ResourceServer"
           name: "IudxResourceServerPM32"
@@ -3002,7 +3002,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:Provider"
           name: "IudxProviderPM30"
@@ -3102,7 +3102,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:ResourceGroup"
             - "iudx:IssueReporting"
@@ -3216,7 +3216,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:Resource"
             - "iudx:PointOfInterest"
@@ -3444,7 +3444,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "adex:DataBank"
           id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
@@ -3553,7 +3553,7 @@ components:
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
           type:
             - 'adex:Apps'
@@ -3617,7 +3617,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:Owner"
           name: "iudxOwnerPM"
@@ -3646,7 +3646,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:COS"
           name: "IudxCOSItemPM32"
@@ -3678,7 +3678,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:ResourceServer"
           name: "IudxResourceServerPM32"
@@ -3740,7 +3740,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:Provider"
           name: "IudxProviderPM30"
@@ -3784,7 +3784,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:ResourceGroup"
             - "iudx:IssueReporting"
@@ -3822,7 +3822,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:Resource"
             - "iudx:PointOfInterest"
@@ -4206,7 +4206,7 @@ components:
         title: 'Success'
         detail: 'Success: Item updated successfully'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type: [ "adex:Apps" ]
           id: "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
           name: 'crop-disease-app'
@@ -4269,7 +4269,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "iudx:Owner"
           name: "iudxOwnerPM"
@@ -4298,7 +4298,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:COS"
           name: "IudxCOSItemPM32"
@@ -4330,7 +4330,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:ResourceServer"
           name: "IudxResourceServerPM32"
@@ -4392,7 +4392,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:Provider"
           name: "IudxProviderPM30"
@@ -4436,7 +4436,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:ResourceGroup"
             - "iudx:IssueReporting"
@@ -4474,7 +4474,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          "@context": "https://agrijson.org"
           type:
             - "iudx:Resource"
             - "iudx:PointOfInterest"
@@ -4636,7 +4636,7 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           type:
             - "adex:DataBank"
           id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
@@ -4691,7 +4691,7 @@ components:
         title: 'Success'
         detail: 'Success: Item fetched Successfully'
         results:
-          '@context': "https://voc.iudx.org.in/"
+          '@context': "https://agrijson.org"
           id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
           type:
             - 'adex:Apps'
@@ -4845,7 +4845,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             deviceInfo:
               deviceSimNumber: "7030924255"
               deviceID: "FWR055"
@@ -5030,7 +5030,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             deviceInfo:
               deviceSimNumber: "7030924255"
               deviceID: "FWR055"
@@ -5215,7 +5215,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             deviceInfo:
               deviceSimNumber: "7030924255"
               deviceID: "FWR055"
@@ -5401,7 +5401,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             deviceInfo:
               deviceSimNumber: "7030924255"
               deviceID: "FWR055"
@@ -5586,7 +5586,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             deviceInfo:
               deviceSimNumber: "7030924255"
               deviceID: "FWR055"
@@ -5839,7 +5839,7 @@ components:
             type:
               - "iudx:ResourceGroup"
               - "iudx:PointOfInterest"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             providerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
             tags:
               - "camera"
@@ -6011,7 +6011,7 @@ components:
             type:
               - "iudx:Resource"
               - "iudx:EnvFlood"
-            "@context": "https://voc.iudx.org.in/"
+            "@context": "https://agrijson.org"
             providerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
             tags:
               - "flooding"
@@ -6301,7 +6301,7 @@ components:
             cos: "637e32b6-9a6c-396f-914c-9db5d1a222b0"
             description: "Administrator of the IUDX platform"
             type: [ "iudx:Provider" ]
-            '@context': "https://voc.iudx.org.in/"
+            '@context': "https://agrijson.org"
             providerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
             tags: [ "IUDX, Admin, Platform" ]
             itemCreatedAt: "2023-08-30T12:13:40+0530"
@@ -6358,7 +6358,7 @@ components:
             description: "provider id for uuid test"
             type:
               - "iudx:Provider"
-            '@context': "https://voc.iudx.org.in/"
+            '@context': "https://agrijson.org"
             providerUserId: "d8e46706-b9db-44e1-a9aa-e40839396b01"
             itemCreatedAt: "2023-08-22T02:36:33+0530"
             resourceServer: "f3061e6c-9639-321d-a532-829c7bb870aa"
@@ -6538,7 +6538,7 @@ components:
         - name
         - description
       example:
-        '@context': "https://voc.iudx.org.in/"
+        '@context': "https://agrijson.org"
         type:
           - "iudx:Owner"
         name: "iudxOwnerPM"
@@ -8359,7 +8359,7 @@ components:
                 apdURL: "authdev.iudx.io"
                 description: "TEST ITEM FOR APD verify. authdev.iudx.io is a dummy APD"
                 label: "TEST ITEM FOR APD /verify TESTS"
-                '@context': "https://voc.iudx.org.in/"
+                '@context': "https://agrijson.org"
                 resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
                 location:
                   address: "Surat"
@@ -8373,7 +8373,7 @@ components:
                 instance: "surat"
                 description: "Realtime bus position information from Surat city public transit buses."
                 label: "Surat Transit Realtime Position-UUID"
-                '@context': "https://voc.iudx.org.in/"
+                '@context': "https://agrijson.org"
                 location:
                   address: "Surat"
                   type: "Place"
