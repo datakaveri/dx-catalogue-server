@@ -45,6 +45,7 @@
     "geoCoverage",
     "yearRange",
     "verifiedBy",
+    "mediaURL",
     "uploadFrequency",
     "license"
   ],

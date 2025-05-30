@@ -43,6 +43,7 @@
     "organizationId",
     "department",
     "modelType",
+    "mediaURL",
     "fileFormat",
     "industry",
     "uploadedBy",
