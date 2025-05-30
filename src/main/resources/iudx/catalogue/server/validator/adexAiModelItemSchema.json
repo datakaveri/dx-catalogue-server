@@ -23,7 +23,6 @@
       "organizationType": "Private",
       "organizationId": "{{UUID}}",
       "department": "Agriculture and Co-operation",
-      "resourceType": "MODEL",
       "modelType": "ImageClassifier",
       "fileFormat": "ipynb",
       "industry": "Agriculture",
@@ -40,7 +39,6 @@
     "description",
     "tags",
     "accessPolicy",
-    "resourceType",
     "organizationType",
     "organizationId",
     "department",
@@ -161,10 +159,6 @@
       "type": "string",
       "title": "The department schema",
       "description": "Department name"
-    },
-    "resourceType": {
-      "type": "string",
-      "title": "The resourceType schema"
     },
     "modelType": {
       "type": "string",

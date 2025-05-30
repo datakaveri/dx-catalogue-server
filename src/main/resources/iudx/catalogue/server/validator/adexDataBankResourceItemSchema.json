@@ -25,8 +25,7 @@
       "verifiedBy": "Ministry of Earth Sciences",
       "uploadFrequency": "Weekly",
       "license": "CC-BY 4.0",
-      "department": "Department of IT, Electronics and Communication",
-      "resourceType": "DATASET"
+      "department": "Department of IT, Electronics and Communication"
     }
   ],
   "required": [
@@ -41,7 +40,6 @@
     "organizationId",
     "fileFormat",
     "department",
-    "resourceType",
     "industry",
     "uploadedBy",
     "geoCoverage",
@@ -186,10 +184,6 @@
     "department": {
       "type": "string",
       "title": "The department schema"
-    },
-    "resourceType": {
-      "type": "string",
-      "title": "The resourceType schema"
     },
     "itemStatus": {
       "type": "string",
