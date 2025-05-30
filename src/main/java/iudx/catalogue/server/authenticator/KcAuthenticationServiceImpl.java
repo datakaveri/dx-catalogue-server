@@ -27,8 +27,6 @@ import iudx.catalogue.server.authenticator.authorization.JwtAuthorization;
 import iudx.catalogue.server.authenticator.authorization.Method;
 import iudx.catalogue.server.authenticator.model.JwtData;
 import iudx.catalogue.server.util.Api;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -152,6 +150,7 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
 
           } else {
             JsonObject accessInfo = new JsonObject()
+                .put(USER_ROLE, result.jwtData.getRoles().get(0))
                 .put(USER_ID, result.jwtData.getSub());
             JsonObject jwtJson = result.jwtData.toJson();
             jwtJson.mergeIn(accessInfo);
@@ -182,10 +181,10 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
     Promise<Boolean> promise = Promise.promise();
 
     if (endpoint.equals(api.getRouteItems()) || endpoint.equals(api.getRouteInstance())
-            || endpoint.equals(api.getRouteMlayerInstance())
-            || endpoint.equals(api.getRouteMlayerDomains())
-            || endpoint.equals(api.getRouteSearch())
-            || endpoint.equals(api.getRouteListMulItems())) {
+        || endpoint.equals(api.getRouteMlayerInstance())
+        || endpoint.equals(api.getRouteMlayerDomains())
+        || endpoint.equals(api.getRouteSearch())
+        || endpoint.equals(api.getRouteListMulItems())) {
       promise.complete(true);
     } else {
       LOGGER.error("Unauthorized access to endpoint {}", endpoint);

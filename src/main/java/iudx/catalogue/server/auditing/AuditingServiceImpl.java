@@ -71,7 +71,6 @@ public class AuditingServiceImpl implements AuditingService {
   @Override
   public AuditingService insertAuditngValuesInRmq(
       JsonObject request, Handler<AsyncResult<JsonObject>> handler) {
-    request.put(DATABASE_TABLE_NAME, databaseTableName);
     JsonObject rmqMessage = new JsonObject();
 
     rmqMessage = queryBuilder.buildMessageForRmq(request);

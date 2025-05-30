@@ -7,6 +7,8 @@ package iudx.catalogue.server.apiserver;
 
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.auditing.util.Constants.*;
+import static iudx.catalogue.server.auditing.util.Constants.OPERATION;
+import static iudx.catalogue.server.auditing.util.Constants.ROLE;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
 import static iudx.catalogue.server.util.Constants.*;
@@ -30,6 +32,7 @@ import iudx.catalogue.server.authenticator.AuthenticationService;
 import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.util.Api;
 import iudx.catalogue.server.validator.ValidatorService;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -773,8 +776,7 @@ public final class CrudApis {
   private void updateAuditTable(JsonObject jwtDecodedInfo, AuditMetadata metadata) {
     LOGGER.info("Updating audit table on successful transaction");
 
-    ZonedDateTime zst = ZonedDateTime.now();
-    long epochTime = getEpochTime(zst);
+    String createdAt = LocalDateTime.now().toString();
 
     JsonObject auditInfo = new JsonObject()
         .put(ASSET_ID, metadata.itemId)
@@ -782,8 +784,11 @@ public final class CrudApis {
         .put(METHOD, metadata.httpMethod)
         .put(ASSET_TYPE, metadata.itemType)
         .put(ASSET_NAME, metadata.itemName)
-        .put(EPOCH_TIME, epochTime)
-        .put(USERID, jwtDecodedInfo.getString(USER_ID));
+        .put(CREATED_AT, createdAt)
+        .put(USERID, jwtDecodedInfo.getString(USER_ID))
+        .put(ROLE, CONSUMER)
+        .put(OPERATION, VIEWED)
+        .put(MYACTIVITY_ENABLED, true);
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
 
@@ -794,9 +799,5 @@ public final class CrudApis {
         LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
       }
     });
-  }
-
-  private long getEpochTime(ZonedDateTime zst) {
-    return zst.toInstant().toEpochMilli();
   }
 }
