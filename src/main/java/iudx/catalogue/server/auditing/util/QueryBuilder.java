@@ -21,8 +21,8 @@ public class QueryBuilder {
    *
    */
   public JsonObject buildMessageForRmq(JsonObject request) {
-    String primaryKey = UUID.randomUUID().toString().replace("-", "");
-    request.put(PRIMARY_KEY, primaryKey).put(ORIGIN_SERVER, CAT_SERVER);
+    String primaryKey = UUID.randomUUID().toString();
+    request.put(ID, primaryKey).put(ORIGIN_SERVER, CAT_SERVER);
 
     LOGGER.debug("request " + request);
     return request;
