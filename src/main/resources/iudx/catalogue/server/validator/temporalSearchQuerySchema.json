@@ -6,7 +6,7 @@
   "properties": {
     "field": {
       "type": "string",
-      "enum": ["observationDateTime", "itemCreatedAt", "itemModifiedAt", "itemUpdatedAt"]
+      "enum": ["observationDateTime", "itemCreatedAt", "itemModifiedAt", "itemUpdatedAt", "lastUpdated"]
     },
     "searchType": {
       "enum": ["betweenTemporal", "beforeTemporal", "afterTemporal"]

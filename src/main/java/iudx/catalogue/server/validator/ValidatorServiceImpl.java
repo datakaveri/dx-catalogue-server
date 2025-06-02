@@ -123,6 +123,12 @@ public class ValidatorServiceImpl implements ValidatorService {
    * Generates timestamp with timezone +05:30.
    */
   public static String getUtcDatetimeAsString() {
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
+    df.setTimeZone(TimeZone.getTimeZone("IST"));
+    return df.format(new Date());
+  }
+
+  public static String getPrettyLastUpdatedForUI() {
     DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
     DateTimeFormatter outputFormatter = DateTimeFormatter
         .ofPattern("dd MMMM, yyyy - hh:mm a", Locale.ENGLISH);
@@ -278,7 +284,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
         .replace("$1", ITEM_TYPE_APPS).replace("$2", request.getString(NAME));
     LOGGER.debug(checkQuery);
@@ -308,8 +315,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
-    String organization = request.getString(ORGANIZATION_ID);
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
         .replace("$1", ITEM_TYPE_AI_MODEL).replace("$2", request.getString(NAME));
@@ -343,7 +350,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
         .replace("$1", ITEM_TYPE_DATA_BANK).replace("$2", request.getString(NAME));
@@ -377,7 +385,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String provider = request.getString(PROVIDER);
     String checkQuery =
         ITEM_EXISTS_QUERY
@@ -418,7 +427,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String resourceServer = request.getString(RESOURCE_SVR);
     String ownerUserId = request.getString(PROVIDER_USER_ID);
     String resourceServerUrl = request.getString(RESOURCE_SERVER_URL);
@@ -464,7 +474,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String cos = request.getString(COS_ITEM);
     String resourceServerUrl = request.getString(RESOURCE_SERVER_URL);
     String checkQuery =
@@ -511,7 +522,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String provider = request.getString(PROVIDER);
     String resourceGroup = request.getString(RESOURCE_GRP);
     String resourceServer = request.getString(RESOURCE_SVR);
@@ -568,7 +580,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
 
     String owner = request.getString(OWNER);
     String checkQuery =
@@ -608,7 +621,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getUtcDatetimeAsString());
+    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+        .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String checkQuery = OWNER_ITEM_EXISTS_QUERY.replace("$1", request.getString(NAME));
     LOGGER.debug(checkQuery);
     client.searchGetId(
