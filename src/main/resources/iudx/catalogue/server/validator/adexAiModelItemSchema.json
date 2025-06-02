@@ -143,7 +143,7 @@
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
-      "enum": ["Private", "Public", "Academic Institution", "NGO/Non-profit", "Other"]
+      "enum": ["Private", "Public", "Academic Institution", "NGO/Non-profit", "Other", "NA", ""]
     },"organizationId": {
       "$id": "#/properties/organizationId",
       "type": "string",
