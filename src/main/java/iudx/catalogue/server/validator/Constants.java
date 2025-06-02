@@ -10,6 +10,7 @@ public class Constants {
 
   public static final String ITEM_STATUS = "itemStatus";
   public static final String ACTIVE = "ACTIVE";
+  public static final String ITEM_CREATED_AT = "itemCreatedAt";
   public static final String LAST_UPDATED = "lastUpdated";
   public static final String CONTEXT = "@context";
 
