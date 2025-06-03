@@ -33,7 +33,6 @@ import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.util.Api;
 import iudx.catalogue.server.validator.ValidatorService;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -304,9 +303,10 @@ public final class CrudApis {
                     String itemName =
                         dbhandler.result().getJsonObject(RESULTS).getString(NAME);
                     if (hasAuditService) {
-                      updateAuditTable(authHandler.result(),
-                          new AuditMetadata(valhandler.result().getString(ID), api.getRouteItems(),
-                              REQUEST_POST, itemType, itemName));
+                      updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                          api.getRouteItems(), REQUEST_POST, itemType, itemName,
+                          authHandler.result().getString(USER_ID),
+                          authHandler.result().getString(USER_ROLE)));
                     }
                   }
                 });
@@ -323,9 +323,10 @@ public final class CrudApis {
                         dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
                     String itemName = dbhandler.result().getJsonObject(RESULTS).getString(NAME);
                     if (hasAuditService) {
-                      updateAuditTable(authHandler.result(),
-                          new AuditMetadata(valhandler.result().getString(ID), api.getRouteItems(),
-                              REQUEST_PUT, itemType, itemName));
+                      updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                          api.getRouteItems(), REQUEST_PUT, itemType, itemName,
+                          authHandler.result().getString(USER_ID),
+                          authHandler.result().getString(USER_ROLE)));
                     }
                   } else if (dbhandler.failed()) {
                     LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
@@ -403,9 +404,9 @@ public final class CrudApis {
                 String itemName =
                     dbhandler.result().getJsonArray(RESULTS).getJsonObject(0).getString(NAME);
                 if (hasAuditService) {
-                  updateAuditTable(authHandler.result(),
-                      new AuditMetadata(itemId, api.getRouteItems(), REQUEST_GET, itemType,
-                          itemName));
+                  updateAuditTable(new AuditMetadata(itemId, api.getRouteItems(),
+                      REQUEST_GET, itemType, itemName, authHandler.result().getString(USER_ID),
+                      authHandler.result().getString(USER_ROLE)));
                 }
               }
             } else {
@@ -577,9 +578,9 @@ public final class CrudApis {
                   String itemType = jwtAuthenticationInfo.getString(ITEM_TYPE);
                   String itemName = jwtAuthenticationInfo.getString(NAME);
                   if (hasAuditService) {
-                    updateAuditTable(authHandler.result(),
-                        new AuditMetadata(itemId, api.getRouteItems(),
-                            REQUEST_DELETE, itemType, itemName));
+                    updateAuditTable(new AuditMetadata(itemId, api.getRouteItems(),
+                        REQUEST_DELETE, itemType, itemName, authHandler.result().getString(USER_ID),
+                        authHandler.result().getString(USER_ROLE)));
                   }
                 } else {
                   response.setStatusCode(404)
@@ -762,18 +763,23 @@ public final class CrudApis {
   }
 
   /**
-   * Handles publishing audit information to the auditing service.
+   * Publishes audit information to the auditing service.
    *
-   * <p>This method constructs a structured audit log using metadata extracted
-   * from the authenticated user's JWT and additional API interaction details.
-   * The information is then published to the RabbitMQ-based audit service.
+   * <p>This method builds a structured audit log from the provided {@link AuditMetadata} instance,
+   * which contains details about the API request and user information. It determines the operation
+   * type and user role based on the HTTP method and user role embedded within the metadata. The audit
+   * record is then asynchronously published to a RabbitMQ-based auditing service.
    *
-   * @param jwtDecodedInfo A JsonObject containing decoded JWT claims such as
-   *                       user ID, and IID (infrastructure ID).
-   * @param metadata       An instance of {@link AuditMetadata} containing the item ID,
-   *                       API endpoint, HTTP method, item type, and item name.
+   * @param metadata An instance of {@link AuditMetadata} containing information such as:
+   *                 <ul>
+   *                   <li>Item ID</li>
+   *                   <li>API endpoint</li>
+   *                   <li>HTTP method</li>
+   *                   <li>Item type and name</li>
+   *                   <li>User ID and user role</li>
+   *                 </ul>
    */
-  private void updateAuditTable(JsonObject jwtDecodedInfo, AuditMetadata metadata) {
+  private void updateAuditTable(AuditMetadata metadata) {
     LOGGER.info("Updating audit table on successful transaction");
 
     String createdAt = LocalDateTime.now().toString();
@@ -785,9 +791,9 @@ public final class CrudApis {
         .put(ASSET_TYPE, metadata.itemType)
         .put(ASSET_NAME, metadata.itemName)
         .put(CREATED_AT, createdAt)
-        .put(USERID, jwtDecodedInfo.getString(USER_ID))
-        .put(ROLE, CONSUMER)
-        .put(OPERATION, VIEWED)
+        .put(USERID, metadata.userId)
+        .put(ROLE, metadata.getRole())
+        .put(OPERATION, metadata.getOperation())
         .put(MYACTIVITY_ENABLED, true);
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
@@ -800,4 +806,5 @@ public final class CrudApis {
       }
     });
   }
+
 }

@@ -23,6 +23,7 @@ import org.mockito.stubbing.Answer;
 
 import static iudx.catalogue.server.auditing.util.Constants.*;
 import static iudx.catalogue.server.authenticator.Constants.*;
+import static iudx.catalogue.server.authenticator.Constants.OPERATION;
 import static iudx.catalogue.server.util.Constants.PROVIDER;
 import static junit.framework.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
