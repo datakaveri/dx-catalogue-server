@@ -47,10 +47,10 @@ public class Constants {
 
   public static final String CONSUMER = "consumer";
 
-  public static final String VIEW = "VIEW";
-  public static final String CREATE = "CREATE";
-  public static final String UPDATE = "UPDATE";
-  public static final String DELETE = "DELETE";
+  public static final String VIEW = "View";
+  public static final String CREATE = "Create";
+  public static final String UPDATE = "Update";
+  public static final String DELETE = "Delete";
   public static final String IID = "iid";
   public static final String API = "api";
   public static final String METHOD = "http_method";
