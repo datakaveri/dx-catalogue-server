@@ -74,7 +74,7 @@
       "default": "",
       "examples": ["SomePlace"],
       "maxLength": 512,
-      "pattern": "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+      "pattern": "^[a-zA-Z0-9]([\\w- ]*[a-zA-Z0-9 ])?$"
     },
     "id": {
       "$id": "#/properties/id",

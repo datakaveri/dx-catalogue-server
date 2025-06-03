@@ -147,8 +147,6 @@ public final class CrudApis {
 
             JsonObject jwtAuthenticationInfo = new JsonObject();
 
-            HttpServerRequest request = routingContext.request();
-
             // populating jwt authentication info ->
             jwtAuthenticationInfo
                 .put(TOKEN, routingContext.get(HEADER_TOKEN))
@@ -465,7 +463,6 @@ public final class CrudApis {
     //    if (validateId(itemId) == true) {
 
     //  populating JWT authentication info ->
-    HttpServerRequest request = routingContext.request();
     jwtAuthenticationInfo
         .put(TOKEN, routingContext.get(HEADER_TOKEN))
         .put(METHOD, REQUEST_DELETE)
@@ -638,7 +635,6 @@ public final class CrudApis {
     LOGGER.debug("Info: Creating new instance");
 
     HttpServerResponse response = routingContext.response();
-    HttpServerRequest request = routingContext.request();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
 
@@ -703,7 +699,6 @@ public final class CrudApis {
     LOGGER.debug("Info: Deleting instance");
 
     HttpServerResponse response = routingContext.response();
-    HttpServerRequest request = routingContext.request();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     JsonObject authenticationInfo = new JsonObject();
