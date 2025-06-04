@@ -62,6 +62,7 @@ public class Constants {
   public static final String ASSET_NAME = "asset_name";
   public static final String ASSET_TYPE = "asset_type";
   public static final String OPERATION = "operation";
+  public static final String SHORT_DESCRIPTION = "short_description";
   public static final String ASSET_ID = "asset_id";
   public static final String ROUTING_KEY = "##";
   public static final String PRIMARY_KEY = "primary_key";

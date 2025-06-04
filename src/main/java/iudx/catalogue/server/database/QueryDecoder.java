@@ -67,7 +67,7 @@ public final class QueryDecoder {
                   .replace(
                       "$2",
                       "\"type\",\"provider\",\"ownerUserId\","
-                          + "\"resourceGroup\",\"name\",\"organizationId\","
+                          + "\"resourceGroup\",\"name\",\"organizationId\", \"shortDescription\","
                           + "\"resourceServer\","
                           + "\"resourceServerRegURL\", \"cos\", \"cos_admin\""));
       return elasticQuery;

@@ -20,7 +20,6 @@ import static iudx.catalogue.server.util.Constants.STATUS;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -302,6 +301,7 @@ public final class CrudApis {
                         dbhandler.result().getJsonObject(RESULTS).getString(NAME);
                     if (hasAuditService) {
                       updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                          valhandler.result().getString(SHORTDESCRIPTION),
                           api.getRouteItems(), REQUEST_POST, itemType, itemName,
                           authHandler.result().getString(USER_ID),
                           authHandler.result().getString(USER_ROLE)));
@@ -322,6 +322,7 @@ public final class CrudApis {
                     String itemName = dbhandler.result().getJsonObject(RESULTS).getString(NAME);
                     if (hasAuditService) {
                       updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                          valhandler.result().getString(SHORTDESCRIPTION),
                           api.getRouteItems(), REQUEST_PUT, itemType, itemName,
                           authHandler.result().getString(USER_ID),
                           authHandler.result().getString(USER_ROLE)));
@@ -401,8 +402,11 @@ public final class CrudApis {
                     .getJsonArray(TYPE).getString(0);
                 String itemName =
                     dbhandler.result().getJsonArray(RESULTS).getJsonObject(0).getString(NAME);
+                String shortDescription =
+                    dbhandler.result().getJsonArray(RESULTS).getJsonObject(0)
+                        .getString(SHORTDESCRIPTION);
                 if (hasAuditService) {
-                  updateAuditTable(new AuditMetadata(itemId, api.getRouteItems(),
+                  updateAuditTable(new AuditMetadata(itemId, shortDescription, api.getRouteItems(),
                       REQUEST_GET, itemType, itemName, authHandler.result().getString(USER_ID),
                       authHandler.result().getString(USER_ROLE)));
                 }
@@ -476,6 +480,8 @@ public final class CrudApis {
               String organizationId = itemTypeHandler.result().getString(ORGANIZATION_ID);
               jwtAuthenticationInfo.put(ORGANIZATION_ID, organizationId);
               jwtAuthenticationInfo.put(NAME, itemTypeHandler.result().getString(NAME));
+              jwtAuthenticationInfo.put(SHORTDESCRIPTION, itemTypeHandler.result()
+                  .getString(SHORTDESCRIPTION));
               jwtAuthenticationInfo.put(PROVIDER_USER_ID,
                   itemTypeHandler.result().getString(PROVIDER_USER_ID));
               Set<String> types =
@@ -574,8 +580,9 @@ public final class CrudApis {
                   response.setStatusCode(200).end(dbHandler.result().toString());
                   String itemType = jwtAuthenticationInfo.getString(ITEM_TYPE);
                   String itemName = jwtAuthenticationInfo.getString(NAME);
+                  String shortDescription = jwtAuthenticationInfo.getString(SHORTDESCRIPTION);
                   if (hasAuditService) {
-                    updateAuditTable(new AuditMetadata(itemId, api.getRouteItems(),
+                    updateAuditTable(new AuditMetadata(itemId, shortDescription, api.getRouteItems(),
                         REQUEST_DELETE, itemType, itemName, authHandler.result().getString(USER_ID),
                         authHandler.result().getString(USER_ROLE)));
                   }
@@ -789,6 +796,7 @@ public final class CrudApis {
         .put(USERID, metadata.userId)
         .put(ROLE, metadata.getRole())
         .put(OPERATION, metadata.getOperation())
+        .put(SHORT_DESCRIPTION, metadata.shortDescription)
         .put(MYACTIVITY_ENABLED, true);
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());

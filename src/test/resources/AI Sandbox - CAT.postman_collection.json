@@ -237,8 +237,8 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{cos_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
 										"type": "text"
 									},
 									{
@@ -256,7 +256,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"type\": [\"adex:Apps\"],\r\n  \"name\": \"AiSandBoxAppsPM\",\r\n  \"tags\": [\r\n    \"ai\", \"ml\", \"agriculture\", \"planthealth\", \"diseasedetection\",\r\n    \"deep-learning\", \"cnn\", \"image-classification\", \"leaf-analysis\"\r\n  ],\r\n  \"label\": \"Crop Disease Detection using AI\",\r\n  \"description\": \"An AI-based application that detects diseases in crops by analyzing images of leaves. It uses deep learning models to identify symptoms and suggest treatments.\",\r\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\r\n  \"organizationType\": \"Private\",\r\n  \"department\": \"Agriculture and Co-operation\",\r\n  \"uploadedBy\": \"user@example.com\",\r\n  \"fileFormat\": \"csv\",\r\n  \"accessPolicy\": \"Public\",\r\n  \"canBeUsedFor\": {\r\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\r\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\r\n  },\r\n  \"dataInputsAndAiTechniques\": {\r\n    \"Input Data Banks\": [\"Leaf image datasets\"],\r\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\r\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\r\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\r\n  }\r\n}\r\n",
+									"raw": "{\r\n  \"type\": [\"adex:Apps\"],\r\n  \"name\": \"AiSandBoxAppsPM\",\r\n  \"tags\": [\r\n    \"ai\", \"ml\", \"agriculture\", \"planthealth\", \"diseasedetection\",\r\n    \"deep-learning\", \"cnn\", \"image-classification\", \"leaf-analysis\"\r\n  ],\r\n  \"label\": \"Crop Disease Detection using AI\",\r\n  \"description\": \"An AI-based application that detects diseases in crops by analyzing images of leaves. It uses deep learning models to identify symptoms and suggest treatments.\",\r\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\r\n  \"organizationType\": \"Private\",\r\n  \"department\": \"Agriculture and Co-operation\",\r\n  \"uploadedBy\": \"user@example.com\",\r\n  \"fileFormat\": \"csv\",\r\n  \"accessPolicy\": \"OPEN\",\r\n  \"canBeUsedFor\": {\r\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\r\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\r\n  },\r\n  \"dataInputsAndAiTechniques\": {\r\n    \"Input Data Banks\": [\"Leaf image datasets\"],\r\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\r\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\r\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\r\n  }\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -312,13 +312,13 @@
 										"value": "application/json"
 									},
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}"
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPrivate\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"PRIVATE\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPrivate\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"PRIVATE\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\",\n  \"mediaURL\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -370,8 +370,8 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									},
 									{
@@ -383,7 +383,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\r\n  \"organizationType\": \"Government\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"dataReadiness\": 80,\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\",\r\n  \"resourceType\": \"MESSAGESTREAM\",\r\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\r\n  \"iudxResourceAPIs\": [\"ATTR\"],\r\n  \"location\": {\r\n    \"type\": \"Place\",\r\n    \"address\": \"Subdistrict Office, Karnataka, India\",\r\n    \"geometry\": {\r\n      \"type\": \"Polygon\",\r\n      \"coordinates\": [\r\n        [\r\n          [76.895, 12.914],\r\n          [76.896, 12.914],\r\n          [76.896, 12.915],\r\n          [76.895, 12.915],\r\n          [76.895, 12.914]\r\n        ]\r\n      ]\r\n    }\r\n  },\r\n  \"dataDescriptor\": {\r\n    \"@context\": \"https://example.com/context/weather\",\r\n    \"type\": [\"DataDescriptor\"],\r\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\r\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\r\n    \"districtCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the district\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"subDistrictCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the subdistrict\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"precipitation\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Amount of rainfall\",\r\n      \"unitCode\": \"MMT\",\r\n      \"unitText\": \"Millimetres\",\r\n      \"dataSchema\": \"number\"\r\n    },\r\n    \"airTemperature\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Ambient temperature readings\",\r\n      \"maxOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Maximum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      },\r\n      \"minOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Minimum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      }\r\n    }\r\n  },\r\n  \"dataSample\": {\r\n    \"districtCode\": \"KA-12\",\r\n    \"subDistrictCode\": \"KA-12-SD-05\",\r\n    \"precipitation\": 34.5,\r\n    \"airTemperature\": {\r\n      \"maxOverTime\": 32.4,\r\n      \"minOverTime\": 21.1\r\n    },\r\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\r\n  }\r\n}\r\n",
+									"raw": "{\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -425,7 +425,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -433,8 +434,8 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									},
 									{
@@ -446,7 +447,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"agra-swachhata-app\",\r\n    \"description\": \"Civic Issues like open defecation, garbage dumping, etc., reported in Agra city via Swachhata app. Publishes all the complaints/issues lodged on the current day, on a daily basis.\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"reporting\",\r\n        \"issue\",\r\n        \"garbage dump\",\r\n        \"debris removal\",\r\n        \"open defecation\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ]\r\n    \"provider\": \"83995e8c-fa80-4241-93c0\"\r\n}",
+									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"agra-swachhata-app\",\r\n    \"description\": \"Civic Issues like open defecation, garbage dumping, etc., reported in Agra city via Swachhata app. Publishes all the complaints/issues lodged on the current day, on a daily basis.\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"reporting\",\r\n        \"issue\",\r\n        \"garbage dump\",\r\n        \"debris removal\",\r\n        \"open defecation\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ]\r\n    \"organizationId\": \"83995e8c-fa80-4241-93c0\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -488,7 +489,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -496,14 +498,14 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Provider\"\r\n    ],\r\n    \"name\": \"uuid-test\",\r\n    \"description\": \"provider id for uuid test\",\r\n    \"providerOrg\": {\r\n        \"name\": \"Datakaveri\",\r\n        \"additionalInfoURL\": \"https://datakaveri.org\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IIsc\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    75.92,\r\n                    14.5\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"_summary\": \"uuid-test provider id for uuid test \",\r\n    \"id\": \"2ed6f05f-2f35-3f70-a472-79763fc81\",\r\n    \"ownerUserId\": \"d8e46706-b9db-44e1-a9aa-e40839396b01\"\r\n}",
+									"raw": "{\r\n  \"id\": \"9beed-53e1-4f81-a863-9aa07bd98b1d\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -545,7 +547,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -553,8 +556,8 @@
 								"method": "POST",
 								"header": [
 									{
-										"key": "token",
-										"value": "abc",
+										"key": "Authorization",
+										"value": "Bearer abc",
 										"type": "text"
 									},
 									{
@@ -566,7 +569,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:COS\"\r\n    ],\r\n    \"name\": \"cos.cop.iudx.org.in\",\r\n    \"owner\": \"{{owner_id}}\",\r\n    \"description\": \"COS Smart Kalyan-Dombivli Development Corporation Limited\",\r\n    \"cosURL\": \"kdmc.cop-nec.iudx.org.in\",\r\n    \"cosUI\": \"https://catalogue.kdmc.cop-nec.iudx.org.in/\"\r\n}",
+									"raw": "{\r\n  \"type\": [\"adex:Apps\"],\r\n  \"name\": \"AiSandBoxAppsPM\",\r\n  \"tags\": [\r\n    \"ai\", \"ml\", \"agriculture\", \"planthealth\", \"diseasedetection\",\r\n    \"deep-learning\", \"cnn\", \"image-classification\", \"leaf-analysis\"\r\n  ],\r\n  \"label\": \"Crop Disease Detection using AI\",\r\n  \"description\": \"An AI-based application that detects diseases in crops by analyzing images of leaves. It uses deep learning models to identify symptoms and suggest treatments.\",\r\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\r\n  \"organizationType\": \"Private\",\r\n  \"department\": \"Agriculture and Co-operation\",\r\n  \"uploadedBy\": \"user@example.com\",\r\n  \"fileFormat\": \"csv\",\r\n  \"accessPolicy\": \"OPEN\",\r\n  \"canBeUsedFor\": {\r\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\r\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\r\n  },\r\n  \"dataInputsAndAiTechniques\": {\r\n    \"Input Data Banks\": [\"Leaf image datasets\"],\r\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\r\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\r\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\r\n  }\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -622,13 +625,13 @@
 								"method": "GET",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"url": {
-									"raw": "{{host}}{{base}}/item?id={{ai_model_id}}",
+									"raw": "{{host}}{{base}}/item?id={{data_bank_id}}",
 									"host": [
 										"{{host}}{{base}}"
 									],
@@ -638,7 +641,7 @@
 									"query": [
 										{
 											"key": "id",
-											"value": "{{ai_model_id}}"
+											"value": "{{data_bank_id}}"
 										}
 									]
 								}
@@ -741,106 +744,6 @@
 								}
 							},
 							"response": []
-						},
-						{
-							"name": "200 (type of item) - List Type (Data Model) given Resource Id",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\",\"urn:dx:cat:Success\");\r",
-											"    pm.expect(body).to.have.property(\"title\", \"Success\");\r",
-											"    pm.expect(body).to.have.property(\"totalHits\", 1);\r",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/relationship?id={{resource_item_id}}&rel=type",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"relationship"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{resource_item_id}}"
-										},
-										{
-											"key": "rel",
-											"value": "type"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (type of item) - List Type (Data Model) given ResourceGroup id",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/relationship?id={{resource_group_id}}&rel=type",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"relationship"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{resource_group_id}}"
-										},
-										{
-											"key": "rel",
-											"value": "type"
-										}
-									]
-								}
-							},
-							"response": []
 						}
 					]
 				},
@@ -877,14 +780,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{cos_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"id\": \"{{adex_apps_id}}\",\n  \"type\": [\n    \"adex:Apps\"\n  ],\n  \"name\": \"AiSandBoxAppsPM\",\n  \"label\": \"Updated - Crop Disease Detection using AI\",\n  \"description\": \"Updated description: This application helps farmers detect crop diseases early using AI and deep learning on mobile-captured leaf images.\",\n  \"tags\": [\n    \"ai\", \"ml\", \"crop-health\", \"updated\", \"smart-farming\"\n  ],\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"uploadedBy\": \"user@example.com\",\n  \"fileFormat\": \"csv\",\n  \"accessPolicy\": \"Public\",\n  \"canBeUsedFor\": {\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\n  },\n  \"dataInputsAndAiTechniques\": {\n    \"Input Data Banks\": [\"Leaf image datasets\"],\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\n  }\n}\n",
+									"raw": "{\n  \"id\": \"{{adex_apps_id}}\",\n  \"type\": [\n    \"adex:Apps\"\n  ],\n  \"name\": \"AiSandBoxAppsPMjjjj\",\n  \"label\": \"Updated - Crop Disease Detection using AI\",\n  \"description\": \"Updated description: This application helps farmers detect crop diseases early using AI and deep learning on mobile-captured leaf images.\",\n  \"tags\": [\n    \"ai\", \"ml\", \"crop-health\", \"updated\", \"smart-farming\"\n  ],\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"uploadedBy\": \"user@example.com\",\n  \"fileFormat\": \"csv\",\n  \"accessPolicy\": \"OPEN\",\n  \"canBeUsedFor\": {\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\n  },\n  \"dataInputsAndAiTechniques\": {\n    \"Input Data Banks\": [\"Leaf image datasets\"],\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\n  }\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -934,14 +837,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"id\": \"{{ai_model_id}}\",\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
+									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"id\": \"{{ai_model_id}}\",\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"mediaUrl\": \"url\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -991,14 +894,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"id\": \"{{data_bank_id}}\",\n  \"name\": \"AiSandBoxDataBankPM\",\n  \"type\": [\"adex:DataBank\"],\n  \"label\": \"Subdistrict Weather Information\",\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\n  \"uploadedBy\": \"Forecast department\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Government\",\n  \"fileFormat\": \"xlsx\",\n  \"dataReadiness\": 80,\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"industry\": \"Environmental Monitoring\",\n  \"geoCoverage\": \"Karnataka, India\",\n  \"yearRange\": \"2021-2024\",\n  \"uploadFrequency\": \"Daily\",\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\n  \"license\": \"CC-BY 4.0\",\n  \"resourceType\": \"MESSAGESTREAM\",\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\n  \"iudxResourceAPIs\": [\"ATTR\"],\n  \"location\": {\n    \"type\": \"Place\",\n    \"address\": \"Subdistrict Office, Karnataka, India\",\n    \"geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\": [\n        [\n          [76.895, 12.914],\n          [76.896, 12.914],\n          [76.896, 12.915],\n          [76.895, 12.915],\n          [76.895, 12.914]\n        ]\n      ]\n    }\n  },\n  \"dataDescriptor\": {\n    \"@context\": \"https://example.com/context/weather\",\n    \"type\": [\"DataDescriptor\"],\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\n    \"districtCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the district\",\n      \"dataSchema\": \"string\"\n    },\n    \"subDistrictCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the subdistrict\",\n      \"dataSchema\": \"string\"\n    },\n    \"precipitation\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Amount of rainfall\",\n      \"unitCode\": \"MMT\",\n      \"unitText\": \"Millimetres\",\n      \"dataSchema\": \"number\"\n    },\n    \"airTemperature\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Ambient temperature readings\",\n      \"maxOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Maximum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      },\n      \"minOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Minimum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      }\n    }\n  },\n  \"dataSample\": {\n    \"districtCode\": \"KA-12\",\n    \"subDistrictCode\": \"KA-12-SD-05\",\n    \"precipitation\": 34.5,\n    \"airTemperature\": {\n      \"maxOverTime\": 32.4,\n      \"minOverTime\": 21.1\n    },\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\n  }\n}\n",
+									"raw": "{\n  \"id\": \"{{data_bank_id}}\",\n  \"name\": \"AiSandBoxDataBankPM\",\n  \"type\": [\"adex:DataBank\"],\n  \"label\": \"Subdistrict Weather Information\",\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\n  \"uploadedBy\": \"Forecast department\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"organizationType\": \"Public\",\n  \"fileFormat\": \"xlsx\",\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"industry\": \"Environmental Monitoring\",\n  \"geoCoverage\": \"Karnataka, India\",\n  \"yearRange\": \"2021-2024\",\n  \"uploadFrequency\": \"Daily\",\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\n  \"license\": \"CC-BY 4.0\"\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1041,7 +944,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1049,14 +953,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"agra-swachhata-app\",\r\n    \"description\": \"Civic Issues like open defecation, garbage dumping, etc., reported in Agra city via Swachhata app. Publishes all the complaints/issues lodged on the current day, on a daily basis.\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"reporting\",\r\n        \"issue\",\r\n        \"garbage dump\",\r\n        \"debris removal\",\r\n        \"open defecation\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ],\r\n    \"provider\": \"e0760835-6066-301b-b224-\"\r\n}",
+									"raw": "{\r\n  \"id\": \"5519beed-53e1-4f81-a863-9\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1098,7 +1002,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1106,20 +1011,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "abc",
+										"key": "Authorization",
+										"value": "Bearer abs",
 										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:COS\"\r\n    ],\r\n    \"name\": \"cos.cop.iudx.org.in\",\r\n    \"description\": \"COS Smart Kalyan-Dombivli Development Corporation Limited\",\r\n    \"owner\": \"{{owner_id}}\",\r\n    \"cosURL\": \"kdmc.cop-nec.iudx.org.in\",\r\n    \"cosUI\": \"https://catalogue.kdmc.cop-nec.iudx.org.in/\"\r\n}",
+									"raw": "{\r\n  \"id\": \"{{data_bank_id}}\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1160,7 +1059,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1168,14 +1068,14 @@
 								"method": "PUT",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Resource\",\r\n        \"iudx:PointOfInterest\"\r\n    ],\r\n    \"name\": \"wyfy-location\",\r\n    \"label\": \"Wi-Fi Locations in Pimpri-Chinchwad City\",\r\n    \"description\": \"The physical coordinates of Wi-Fi system locations in Pimpri-Chinchwad city.\",\r\n    \"tags\": [\r\n        \"Wi-Fi\",\r\n        \"Wi-Fi zone\",\r\n        \"hotspot\",\r\n        \"internet\",\r\n        \"Wi-Fi access\",\r\n        \"Wi-Fi location\",\r\n        \"wireless internet\",\r\n        \"internet access\"\r\n    ],\r\n    \"apdURL\": \"rs.apd.iudx.org.in\",\r\n    \"accessPolicy\": \"SECURE\",\r\n    \"resourceServer\": \"{{resource_server_id}}\",\r\n    \"provider\": \"{{provider_id}}\",\r\n    \"resourceGroup\": \"{{resource_group_id}}\"\r\n}",
+									"raw": "{\r\n  \"id\": \"2592347e-f808-41da-b1a3-373b4236f151\",\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"{{organizationId}}\",\r\n  \"organizationType\": \"Public\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1231,8 +1131,8 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
@@ -1285,8 +1185,8 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{org_admin_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									}
 								],
@@ -1339,8 +1239,8 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{cos_token}}",
+										"key": "Authorization",
+										"value": "Bearer {{cos_token}}",
 										"type": "text"
 									},
 									{
@@ -1351,9 +1251,9 @@
 									}
 								],
 								"url": {
-									"raw": "{{host}}{{base}}/item?id={{adex_apps_id}}",
+									"raw": "{{localhost}}{{base}}/item?id={{adex_apps_id}}",
 									"host": [
-										"{{host}}{{base}}"
+										"{{localhost}}{{base}}"
 									],
 									"path": [
 										"item"
@@ -1390,7 +1290,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1398,15 +1299,9 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
 									}
 								],
 								"url": {
@@ -1450,7 +1345,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1458,8 +1354,8 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "{{token}}",
+										"key": "Authorization",
+										"value": "Bearer {{org_admin_token}}",
 										"type": "text"
 									},
 									{
@@ -1509,7 +1405,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -1517,19 +1414,13 @@
 								"method": "DELETE",
 								"header": [
 									{
-										"key": "token",
-										"value": "abc",
+										"key": "Authorization",
+										"value": "Bearer abc",
 										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
 									}
 								],
 								"url": {
-									"raw": "{{host}}{{base}}/item?id=b58da193-23d9-43eb-b98a-a103d4b6103c",
+									"raw": "{{host}}{{base}}/item?id=a7815cb3-fcf2-4616-961a-07913560db81",
 									"host": [
 										"{{host}}{{base}}"
 									],
@@ -1539,7 +1430,7 @@
 									"query": [
 										{
 											"key": "id",
-											"value": "b58da193-23d9-43eb-b98a-a103d4b6103c"
+											"value": "a7815cb3-fcf2-4616-961a-07913560db81"
 										}
 									]
 								}
@@ -1586,7 +1477,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"geospatial\"\n}",
+									"raw": "{\n    \"q\" : \"dataBankId\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1635,7 +1526,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"geospetal\",\n    \"fuzzy\" : true\n}",
+									"raw": "{\n    \"q\" : \"databaknId\",\n    \"fuzzy\" : true\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1684,7 +1575,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"geo\",\n    \"autoComplete\" : true\n}",
+									"raw": "{\n    \"q\" : \"datab\",\n    \"autoComplete\" : true\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1733,7 +1624,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"geospetal\",\n    \"fuzzy\" : true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\", \"adex:Apps\", \"adex:AiModel\"]\n        }\n    ]\n}",
+									"raw": "{\n    \"q\" : \"databnk\",\n    \"fuzzy\" : true,\n    \"autoComplete\" : true,\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\", \"adex:Apps\", \"adex:AiModel\"]\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2191,7 +2082,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"],\n    \"limit\" : 100,\n    \"offset\" : 0\n}",
+									"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\", \"type\"],\n    \"limit\" : 100,\n    \"offset\" : 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2245,7 +2136,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\", \"satellite\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"]\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ml\", \"cnn\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2276,7 +2167,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"satellite\", \"railway\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"],\n    \"limit\" : 1\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\", \"railway\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"],\n    \"limit\" : 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2451,12 +2342,7 @@
 							"name": "DataBanks of a department",
 							"request": {
 								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
+								"header": [],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"department\",\n            \"values\": [\"Health Medical and Family Welfare\"]\n        }\n    ],\n    \"limit\" : 100\n}",
@@ -2692,7 +2578,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-05-02T09:15:27+0530\"]\n        }\n    ]\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"betweenTemporal\",\n            \"field\": \"itemCreatedAt\",\n            \"values\": [\"2025-03-20T04:00:00+0530\", \"2025-08-02T09:15:27+0530\"]\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2839,7 +2725,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Private\"]\n    }\n  ]\n}\n",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"organizationType\",\n        \"values\": [\"Public\"]\n    }\n  ]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3063,7 +2949,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"pdf\"]\n    }\n  ]\n}\n",
+									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"fileFormat\",\n        \"values\": [\"csv\"]\n    }\n  ]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3090,32 +2976,6 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"accessPolicy\",\n        \"values\": [\"RESTRICTED\"]\n    }\n  ]\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/search",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Filter on dataReadiness",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\"]\n    },\n    {\n        \"searchType\": \"term\",\n        \"field\": \"dataReadiness\",\n        \"values\": [85]\n    }\n  ]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3205,7 +3065,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"tags\", \"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
+							"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    }\n  ],\n  \"filter\": [\"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3259,7 +3119,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"field\": \"organizationType\",\n      \"values\": [\"Private\"]\n    }\n  ],\n  \"filter\": [\"tags\", \"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
+							"raw": "{\n  \"searchCriteria\": [\n    {\n      \"field\": \"type\",\n      \"values\": [\"adex:DataBank\"]\n    },\n    {\n      \"field\": \"organizationType\",\n      \"values\": [\"Private\"]\n    }\n  ],\n  \"filter\": [\"department\", \"organizationType\", \"fileFormat\", \"dataReadiness\"]\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3381,1159 +3241,6 @@
 							],
 							"path": [
 								"list"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Get Search APIs",
-			"item": [
-				{
-					"name": "DataBank",
-					"item": [
-						{
-							"name": "DataBanks of the given fileFormat",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[fileFormat, type]\"&value=\"[[pdf], [adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[fileFormat, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[pdf], [adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBanks with a permission",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[accessPolicy, type]\"&value=\"[[RESTRICTED], [adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[accessPolicy, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[RESTRICTED], [adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBank of all departments",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBank of all organization type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBanks of an organization type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[organizationType, type]\"&value=\"[[Private], [adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[organizationType, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Private], [adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBanks based on dataReadiness",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[dataReadiness, type]\"&value=\"[[80], [adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[dataReadiness, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[80], [adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBank of all permissions",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "DataBanks of a department",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[department, type]\"&value=\"[[Human Resources], [adex:DataBank]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[department, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Human Resources], [adex:DataBank]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "AI Model",
-					"item": [
-						{
-							"name": "AI Model of all departments",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of all permissions",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of an organization type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[organizationType, type]\"&value=\"[[Private], [adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[organizationType, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Private], [adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of modelType",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[modelType, type]\"&value=\"[[RiskPrediction], [adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[modelType, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[RiskPrediction], [adex:AiModel]]\""
-										},
-										{
-											"key": null,
-											"value": "",
-											"disabled": true
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of the given fileFormat",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[fileFormat, type]\"&value=\"[[pkl],[adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[fileFormat, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[pkl],[adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model with a permission",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[accessPolicy, type]\"&value=\"[[OPEN], [adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[accessPolicy, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[OPEN], [adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of a department",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[department, type]\"&value=\"[[Department of Education], [adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[department, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Department of Education], [adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "AI Model of all organization type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:AiModel]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:AiModel]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Apps",
-					"item": [
-						{
-							"name": "Apps of all departments",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:Apps]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:Apps]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Apps of all organizations",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[type]\"&value=\"[[adex:Apps]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[adex:Apps]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Apps of an organization type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[organizationType, type]\"&value=\"[[Public], [adex:Apps]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[organizationType, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Public], [adex:Apps]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Apps of a department",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}{{base}}/search?property=\"[department, type]\"&value=\"[[Urban Mobility Department], [adex:Apps]]\"",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"search"
-									],
-									"query": [
-										{
-											"key": "property",
-											"value": "\"[department, type]\""
-										},
-										{
-											"key": "value",
-											"value": "\"[[Urban Mobility Department], [adex:Apps]]\""
-										}
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "Get List APIs",
-			"item": [
-				{
-					"name": "List DataBank ids",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Check response header\", function () {",
-									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-									"});",
-									"",
-									"pm.test(\"Check response body\", function () {    ",
-									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{host}}{{base}}/list/dataBank",
-							"host": [
-								"{{host}}{{base}}"
-							],
-							"path": [
-								"list",
-								"dataBank"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "List AI Model ids",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Check response header\", function () {",
-									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-									"});",
-									"",
-									"pm.test(\"Check response body\", function () {    ",
-									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{host}}{{base}}/list/aiModel",
-							"host": [
-								"{{host}}{{base}}"
-							],
-							"path": [
-								"list",
-								"aiModel"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "List Apps ids",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Check response header\", function () {",
-									"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-									"});",
-									"",
-									"pm.test(\"Check response body\", function () {    ",
-									"    const body = pm.response.json();",
-									"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{host}}{{base}}/list/apps",
-							"host": [
-								"{{host}}{{base}}"
-							],
-							"path": [
-								"list",
-								"apps"
 							]
 						}
 					},
