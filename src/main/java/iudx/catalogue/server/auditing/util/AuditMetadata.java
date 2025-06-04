@@ -19,9 +19,10 @@ public class AuditMetadata {
   public final String itemName;
   public final String userId;
   public final String userRole;
+  public final String shortDescription;
 
-  public AuditMetadata(String itemId, String apiEndpoint, String httpMethod, String itemType,
-                       String itemName, String userId, String userRole) {
+  public AuditMetadata(String itemId, String shortDescription, String apiEndpoint, String httpMethod,
+                       String itemType, String itemName, String userId, String userRole) {
     this.itemId = itemId;
     this.apiEndpoint = apiEndpoint;
     this.httpMethod = httpMethod;
@@ -29,6 +30,7 @@ public class AuditMetadata {
     this.itemName = itemName;
     this.userId = userId;
     this.userRole = userRole;
+    this.shortDescription = shortDescription;
   }
 
   public String getOperation() {
