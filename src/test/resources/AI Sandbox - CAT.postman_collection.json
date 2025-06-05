@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "43215f38-7ce9-4af7-ad83-4796416f8f2c",
-		"name": "AI Sandbox | CAT | Latest collection",
+		"name": "AI Sandbox | CAT | Postman collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "29449699",
 		"_collection_link": "https://kranthi-7706.postman.co/workspace/AI-SandBox-Workspace~7b17c3e8-8468-4272-ac8a-42e14886620a/collection/29449699-43215f38-7ce9-4af7-ad83-4796416f8f2c?action=share&source=collection_link&creator=29449699"
@@ -1251,9 +1251,9 @@
 									}
 								],
 								"url": {
-									"raw": "{{localhost}}{{base}}/item?id={{adex_apps_id}}",
+									"raw": "{{host}}{{base}}/item?id={{adex_apps_id}}",
 									"host": [
-										"{{localhost}}{{base}}"
+										"{{host}}{{base}}"
 									],
 									"path": [
 										"item"
@@ -1974,7 +1974,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"Bosch Climo\",\n    \"limit\" : 1000000\n}",
+									"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1982,12 +1982,18 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=1000000",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "1000000"
+										}
 									]
 								}
 							},
@@ -2023,7 +2029,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"q\" : \"Bosch Climo\",\n    \"limit\" : 10,\n    \"offset\" : 100000\n}",
+									"raw": "{\n    \"q\" : \"Bosch Climo\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2031,12 +2037,18 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?page=100000",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "100000"
+										}
 									]
 								}
 							},
@@ -2082,7 +2094,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\", \"type\"],\n    \"limit\" : 100,\n    \"offset\" : 0\n}",
+									"raw": "{\n    \"searchCriteria\" : [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\", \"type\"]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2090,12 +2102,22 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=100&page=1",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "100"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										}
 									]
 								}
 							},
@@ -2167,7 +2189,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\", \"railway\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"],\n    \"limit\" : 1\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:Apps\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"tags\",\n            \"values\": [\"ai\", \"railway\"]\n        }\n    ],\n    \"filter\" : [\"id\", \"tags\"]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2175,12 +2197,18 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=1",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "1"
+										}
 									]
 								}
 							},
@@ -2265,7 +2293,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"],\n    \"limit\" : 1000000,\n    \"offset\" : 0\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2273,12 +2301,18 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=1000000",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "1000000"
+										}
 									]
 								}
 							},
@@ -2314,7 +2348,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"],\n    \"limit\" : 100,\n    \"offset\" : 1000000\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        }\n    ],\n    \"filter\" : [\"id\",\"name\",\"tags\",\"deviceId\"]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2322,12 +2356,22 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=100&page=1000000",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "100"
+										},
+										{
+											"key": "page",
+											"value": "1000000"
+										}
 									]
 								}
 							},
@@ -2345,7 +2389,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"department\",\n            \"values\": [\"Health Medical and Family Welfare\"]\n        }\n    ],\n    \"limit\" : 100\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"department\",\n            \"values\": [\"Health Medical and Family Welfare\"]\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2353,12 +2397,18 @@
 									}
 								},
 								"url": {
-									"raw": "{{host}}{{base}}/search",
+									"raw": "{{host}}{{base}}/search?size=100",
 									"host": [
 										"{{host}}{{base}}"
 									],
 									"path": [
 										"search"
+									],
+									"query": [
+										{
+											"key": "size",
+											"value": "100"
+										}
 									]
 								}
 							},
@@ -2407,7 +2457,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"organizationType\",\n            \"values\": [\"Private\"]\n        }\n    ],\n    \"limit\" : 100\n}",
+									"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"term\",\n            \"field\": \"organizationType\",\n            \"values\": [\"Private\"]\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
