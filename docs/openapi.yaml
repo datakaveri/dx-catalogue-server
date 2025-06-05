@@ -27,20 +27,43 @@ info:
       - The `<payload>` in the request sample could be replaced with the payload given adjacent to the request sample
       - The payload contains `<some_item_id>`, `<provider_id>`, `<some_item_name>`, for which the appropriate values could be added 
     
-    # Pagination
-    Catalogue server also offers way to paginate the result for queries. If a query returns large number of records then user can use additional parameters in query parameters to limit numbers of records to be returned.
-    
-    - <b> Pagination is applicable only for</b>
-       - <b>/search</b>
-    
-    Additional query parameters to be used:
-      - <b>offset</b> : The from parameter defines the offset from the first result you want to fetch,  ( <i>default : 0</i> ,<i>minValue: 0</i>, <i>maxValue: 10000</i> )
-      - <b>limit</b> : The size parameter allows you to configure the maximum results to be returned  ( <i>default: 10000</i> ,<i>minValue: 0</i>, <i>maxValue: 10000</i> )
-
      # API HTTP Responses
     Apart from the response codes specified in each API,
     the API server may respond with certain 4xx and 5xx error codes which are related to common API Gateway behaviours.
     The application should address them accordingly.
+    
+    # Pagination
+    The Catalogue server supports paginating query results to help users manage large datasets efficiently. If a query returns a large number of records, pagination parameters can be used to control how many results are returned per page and which page to fetch.
+    
+    - **Pagination is applicable only for:**
+      - **/search**
+
+    📥 **Query Parameters for Pagination**:
+    - **page**: Specifies which page of the result set to retrieve.  
+      *(Default: 1, Min: 1)*
+
+    - **size**: Specifies how many results should be returned per page.  
+      *(Default: 100, Min: 1, Max: 10000)*
+
+  parameters:
+    - name: page
+      in: query
+      description: Specifies which page of the result set to retrieve
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    - name: size
+      in: query
+      description: Specifies how many results should be returned per page.
+      required: false
+      schema:
+        type: integer
+        default: 100
+        minimum: 1
+        maximum: 10000
   contact:
     name: For support contact IUDX Team at
     email: support@cdpg.org.in
@@ -183,11 +206,13 @@ paths:
         ```
 
         #### Limits and Filters
-        - Results can be paginated using `limit` and `offset`.  
-          For example, `limit=100&offset=10` returns 100 results starting from the 11th.
-        - A subset of properties can be returned using the `filter` parameter.  
-          For example, `filter=[id]` returns only the `id` field for each document.
-        - The sum of `offset` and `limit` must be `<= 10000`.
+        - Pagination: Use `size` and `page` parameters to paginate results.  
+          For example, `size=100&page=2` returns 100 results starting from the 101st record (i.e., page 2).  
+          Internally, the offset is calculated as `offset = size * (page - 1)`.
+        - Field Filtering: Use the `filter` parameter to specify a subset of fields to return.  
+          For example, `filter=[id]` returns only the `id` field for each result.
+        - Limits: The sum of the internally calculated `offset` and `size` must be less than or equal to `10,000` to prevent overly large queries.
+
       operationId: search
       parameters:
         - name: instance
@@ -280,37 +305,33 @@ paths:
         - lang: cURL
           label: search by item type
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "searchCriteria": [
-                {
-                  "searchType": "term",
-                  "field": "type",
-                  "values": ["adex:AiModel"]
-                }
-              ],
-              "filter": ["id"],
-              "limit": 100,
-              "offset": 0
-            }'
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=100&page=1' \
+              --header 'Content-Type: application/json' \
+              --data '{
+                "searchCriteria": [
+                  {
+                    "searchType": "term",
+                    "field": "type",
+                    "values": ["adex:AiModel"]
+                  }
+                ],
+                "filter": ["id"]
+              }'
         - lang: cURL
           label: search by text
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=100&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "q": "sat",
               "autoComplete": true,
               "fuzzy": true,
-              "filter": ["id", "label", "name", "description", "tags"],
-              "limit": 100,
-              "offset": 0
+              "filter": ["id", "label", "name", "description", "tags"]
             }'
         - lang: cURL
           label: Temporal search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=50&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -325,14 +346,12 @@ paths:
                   "values": ["adex:AiModel"]
                 }
               ],
-              "filter": ["id","tags","itemCreatedAt"],
-              "limit": 50,
-              "offset": 0
+              "filter": ["id","tags","itemCreatedAt"]
             }'
         - lang: cURL
           label: Range search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
               "searchCriteria": [
@@ -347,39 +366,37 @@ paths:
                   "values": ["adex:DataBank"]
                 }
               ],
-              "filter": ["id","dataReadiness","tags"],
-              "limit": 25,
-              "offset": 0
+              "filter": ["id","dataReadiness","tags"]
             }'
         - lang: cURL
           label: complex search
           source: |
-            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search?size=25&page=1' \
             --header 'Content-Type: application/json' \
             --data '{
-            "searchCriteria": [
-              {
-                "searchType": "term",
-                "field": "type",
-                "values": ["adex:DataBank"]
-              },
-              {
-                "searchType": "term",
-                "field": "department",
-                "values": ["Environment Forests Science and Technology"]
-              },
-              {
-                "searchType": "betweenTemporal",
-                "field": "itemCreatedAt",
-                "values": ["2024-04-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
-              },
-              {
-                "searchType": "betweenRange",
-                "field": "dataReadiness",
-                "values": [80, 84]
-              }
-            ],
-            "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
+              "searchCriteria": [
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:DataBank"]
+                },
+                {
+                  "searchType": "term",
+                  "field": "department",
+                  "values": ["Environment Forests Science and Technology"]
+                },
+                {
+                  "searchType": "betweenTemporal",
+                  "field": "itemCreatedAt",
+                  "values": ["2024-04-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
+                },
+                {
+                  "searchType": "betweenRange",
+                  "field": "dataReadiness",
+                  "values": [80, 84]
+                }
+              ],
+              "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
   '/list':
     post:
@@ -1005,14 +1022,6 @@ components:
           items:
             type: string
           description: List of properties to include in the response (e.g., id, label, name, description, tags).
-        limit:
-          type: integer
-          description: Limit the number of records returned in the response.
-          minimum: 1
-        offset:
-          type: integer
-          description: Offset from where the next batch of results should be returned.
-          minimum: 0
       required:
         - q
       example:
@@ -1025,8 +1034,6 @@ components:
           - "name"
           - "description"
           - "tags"
-        limit: 100
-        offset: 0
     SearchCriteriaRequest:
       type: object
       properties:
@@ -1035,14 +1042,6 @@ components:
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
-          limit:
-            type: integer
-            description: Limit number of records in search response.
-            minimum: 1
-          offset:
-            type: integer
-            description: Offset from where the next batch of results should be returned.
-            minimum: 0
           filter:
             in: query
             description: Filter properties to display. This is an array of strings.
@@ -1065,14 +1064,6 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
-        limit:
-          type: integer
-          description: Limit number of records in search response.
-          minimum: 1
-        offset:
-          type: integer
-          description: Offset from where the next batch of results should be returned.
-          minimum: 0
         filter:
           in: query
           description: Filter properties to display. This is an array of strings.
@@ -1100,14 +1091,6 @@ components:
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
-        limit:
-          type: integer
-          description: Limit number of records in search response.
-          minimum: 1
-        offset:
-          type: integer
-          description: Offset from where the next batch of results should be returned.
-          minimum: 0
         filter:
           in: query
           description: Filter properties to display. This is an array of strings.
@@ -2609,9 +2592,34 @@ components:
         title:
           type: string
           description: A human-readable title for the message response.
-        totalHits:
-          type: integer
-          description: The total number of hits for the search.
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              description: Current page number.
+            size:
+              type: integer
+              description: Number of items per page.
+            totalCount:
+              type: integer
+              description: Total number of items across all pages.
+            totalPages:
+              type: integer
+              description: Total number of pages.
+            hasNext:
+              type: boolean
+              description: Whether there is a next page.
+            hasPrevious:
+              type: boolean
+              description: Whether there is a previous page.
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
         results:
           type: array
           items:
@@ -2643,12 +2651,18 @@ components:
       required:
         - type
         - title
-        - totalHits
+        - pagination
         - results
       example:
         type: "urn:dx:cat:Success"
         title: "Success"
-        totalHits: 5
+        pagination:
+          page: 1
+          size: 100
+          totalCount: 5
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
         results:
           - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             label: "Satellite-Derived Geospatial Layers"
@@ -2721,9 +2735,35 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        totalHits:
-          type: integer
-          description: The total number of hits for the search
+        pagination:
+          type: object
+          description: Pagination metadata for the results
+          properties:
+            page:
+              type: integer
+              description: Current page number
+            size:
+              type: integer
+              description: Number of items per page
+            totalCount:
+              type: integer
+              description: Total number of items across all pages
+            totalPages:
+              type: integer
+              description: Total number of pages available
+            hasNext:
+              type: boolean
+              description: Indicates if more pages are available
+            hasPrevious:
+              type: boolean
+              description: Indicates if previous pages exist
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
         results:
           type: array
           items:
@@ -2731,7 +2771,8 @@ components:
             properties:
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               id:
                 type: string
@@ -2751,18 +2792,92 @@ components:
       required:
         - type
         - title
-        - totalHits
+        - pagination
         - results
       example:
         type: "urn:dx:cat:Success"
         title: "Success"
-        totalHits: 1
+        pagination:
+          page: 1
+          size: 25
+          totalCount: 1
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
         results:
           - type:
               - "adex:DataBank"
             id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             department: "Environment Forests Science and Technology"
             itemCreatedAt: "2025-04-15T10:30:00Z"
+    successResponseForSearchByItemType:
+      type: object
+      title: search by item type
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered.
+        title:
+          type: string
+          description: A human-readable title for the message response.
+        pagination:
+          type: object
+          description: Pagination metadata for the results.
+          properties:
+            page:
+              type: integer
+              description: Current page number.
+            size:
+              type: integer
+              description: Number of items per page.
+            totalCount:
+              type: integer
+              description: Total number of items across all pages.
+            totalPages:
+              type: integer
+              description: Total number of pages available.
+            hasNext:
+              type: boolean
+              description: Indicates if more pages are available.
+            hasPrevious:
+              type: boolean
+              description: Indicates if previous pages exist.
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Resource identifier.
+            required:
+              - id
+      required:
+        - type
+        - title
+        - pagination
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        pagination:
+          page: 1
+          size: 100
+          totalCount: 3
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
+        results:
+          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+          - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
+          - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
     successResponseForRangeSearch:
       type: object
       title: Range search
@@ -2773,9 +2888,35 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        totalHits:
-          type: integer
-          description: The total number of hits for the search
+        pagination:
+          type: object
+          description: Pagination metadata for the results
+          properties:
+            page:
+              type: integer
+              description: Current page number
+            size:
+              type: integer
+              description: Number of items per page
+            totalCount:
+              type: integer
+              description: Total number of items across all pages
+            totalPages:
+              type: integer
+              description: Total number of pages available
+            hasNext:
+              type: boolean
+              description: Indicates if more pages are available
+            hasPrevious:
+              type: boolean
+              description: Indicates if previous pages exist
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
         results:
           type: array
           items:
@@ -2786,20 +2927,30 @@ components:
                 description: Resource identifier
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags associated with the resource
+              dataReadiness:
+                type: integer
+                description: Optional field indicating how ready the data is (if applicable)
             required:
               - id
               - tags
       required:
         - type
         - title
-        - totalHits
+        - pagination
         - results
       example:
         type: "urn:dx:cat:Success"
         title: "Success"
-        totalHits: 5
+        pagination:
+          page: 1
+          size: 25
+          totalCount: 5
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
         results:
           - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
             tags:
@@ -2834,9 +2985,35 @@ components:
         title:
           type: string
           description: A human-readable title for the message response
-        totalHits:
-          type: integer
-          description: The total number of hits for the search
+        pagination:
+          type: object
+          description: Pagination metadata for the results.
+          properties:
+            page:
+              type: integer
+              description: Current page number.
+            size:
+              type: integer
+              description: Number of items per page.
+            totalCount:
+              type: integer
+              description: Total number of items across all pages.
+            totalPages:
+              type: integer
+              description: Total number of pages available.
+            hasNext:
+              type: boolean
+              description: Indicates if more pages are available.
+            hasPrevious:
+              type: boolean
+              description: Indicates if previous pages exist.
+          required:
+            - page
+            - size
+            - totalCount
+            - totalPages
+            - hasNext
+            - hasPrevious
         results:
           type: array
           items:
@@ -2847,7 +3024,8 @@ components:
                 description: Resource identifier
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags associated with the resource
               itemCreatedAt:
                 type: string
@@ -2860,12 +3038,18 @@ components:
       required:
         - type
         - title
-        - totalHits
+        - pagination
         - results
       example:
         type: "urn:dx:cat:Success"
         title: "Success"
-        totalHits: 3
+        pagination:
+          page: 1
+          size: 50
+          totalCount: 3
+          totalPages: 1
+          hasNext: false
+          hasPrevious: false
         results:
           - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
             tags:
@@ -2900,42 +3084,6 @@ components:
               - "risk prediction"
               - "student analytics"
             itemCreatedAt: "2025-04-15T10:30:00Z"
-    successResponseForSearchByItemType:
-      type: object
-      title: search by item type
-      properties:
-        type:
-          type: string
-          description: URN type of the response indicating if the query was successful or if any errors have been triggered.
-        title:
-          type: string
-          description: A human-readable title for the message response.
-        totalHits:
-          type: integer
-          description: The total number of hits for the search.
-        results:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                description: Resource identifier.
-            required:
-              - id
-      required:
-        - type
-        - title
-        - totalHits
-        - results
-      example:
-        type: "urn:dx:cat:Success"
-        title: "Success"
-        totalHits: 3
-        results:
-          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
-          - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
-          - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
     errorInvalidSchema:
       type: object
       title: Response - invalid schema
