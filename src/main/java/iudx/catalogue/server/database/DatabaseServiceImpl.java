@@ -205,7 +205,6 @@ public class DatabaseServiceImpl implements DatabaseService {
                 .put(HAS_PREVIOUS, hasPrevious);
 
             searchRes.result().put(PAGINATION, pagination);
-            searchRes.result().remove(TOTAL_HITS);
             handler.handle(Future.succeededFuture(searchRes.result()));
           } else {
             LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());
