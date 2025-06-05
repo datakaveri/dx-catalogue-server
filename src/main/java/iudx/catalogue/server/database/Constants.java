@@ -307,8 +307,8 @@ public class Constants {
   static final String ATTRIBUTE = "attrs";
   static final String RESULT = "results";
   static final String SHAPE_KEY = "shape";
-  static final String SIZE_KEY = "size";
-  static final String PAGE_KEY = "page";
+  public static final String SIZE_KEY = "size";
+  public static final String PAGE_KEY = "page";
   public static final String TOTAL_COUNT = "totalCount";
   public static final String TOTAL_PAGES = "totalPages";
   public static final String HAS_NEXT = "hasNext";

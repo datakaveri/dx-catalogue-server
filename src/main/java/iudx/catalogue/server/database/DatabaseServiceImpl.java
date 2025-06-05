@@ -189,12 +189,12 @@ public class DatabaseServiceImpl implements DatabaseService {
           if (searchRes.succeeded()) {
             LOGGER.debug("Success: Successful DB request");
             int totalHits = searchRes.result().getInteger(TOTAL_HITS);
-            int offset = request.getInteger(OFFSET, 1);
-            int size = request.getInteger(LIMIT, DEFAULT_MAX_PAGE_SIZE);
-            int page = (int) (floor((double) offset / size) + 1);
+            int size = request.getInteger(SIZE_KEY, DEFAULT_MAX_PAGE_SIZE);
+
             int totalPages = (int) Math.ceil((double) totalHits / size);
-            boolean hasNext = page < totalPages;
-            boolean hasPrevious = page > 1;
+            int page = request.getInteger(PAGE_KEY, 1);
+            boolean hasNext = totalHits > 0 && page < totalPages;
+            boolean hasPrevious = (page > 1) && (page <= totalPages);
 
             JsonObject pagination = new JsonObject()
                 .put(PAGE_KEY, page)
@@ -203,7 +203,9 @@ public class DatabaseServiceImpl implements DatabaseService {
                 .put(TOTAL_PAGES, totalPages)
                 .put(HAS_NEXT, hasNext)
                 .put(HAS_PREVIOUS, hasPrevious);
+
             searchRes.result().put(PAGINATION, pagination);
+            searchRes.result().remove(TOTAL_HITS);
             handler.handle(Future.succeededFuture(searchRes.result()));
           } else {
             LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());

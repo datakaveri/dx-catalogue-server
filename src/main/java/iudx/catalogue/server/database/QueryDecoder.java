@@ -76,7 +76,7 @@ public final class QueryDecoder {
     /* TODO: Pagination for large result set */
     if (request.getBoolean(SEARCH)) {
       Integer limit =
-          request.getInteger(LIMIT, FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));
+          request.getInteger(LIMIT, DEFAULT_MAX_PAGE_SIZE - request.getInteger(OFFSET, 0));
       elasticQuery.put(SIZE_KEY, limit);
     }
 

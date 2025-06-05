@@ -221,7 +221,8 @@ public class Constants {
   public static final int FILTER_PAGINATION_SIZE = 10000;
   public static final int OFFSET_PAGINATION_SIZE = 9999;
   public static final int MAX_RESULT_WINDOW = 10000;
-  public static final int DEFAULT_MAX_PAGE_SIZE= 10;
+  public static final int DEFAULT_MAX_PAGE_SIZE= 100;
+  public static final int DEFAULT_PAGE_NUMBER= 1;
   public static final int MAXDISTANCE_LIMIT = 10000; // 10KM
   public static final int SERVICE_TIMEOUT = 3000;
   public static final int POPULAR_DATASET_COUNT = 6;
