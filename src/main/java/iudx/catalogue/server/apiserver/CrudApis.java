@@ -43,16 +43,16 @@ public final class CrudApis {
 
   private static final Logger LOGGER = LogManager.getLogger(CrudApis.class);
   private static final Pattern UUID_PATTERN =
-          Pattern.compile(
-                  "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$");
+      Pattern.compile(
+          "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$");
+  private final Api api;
+  private final boolean isUac;
   private DatabaseService dbService;
   private AuthenticationService authService;
   private ValidatorService validatorService;
   private AuditingService auditingService;
   private boolean hasAuditService = false;
   private String host;
-  private final Api api;
-  private final boolean isUac;
 
 
   /**
@@ -114,7 +114,7 @@ public final class CrudApis {
           .withTitle(TITLE_INVALID_SCHEMA)
           .withDetail("Invalid type for item/type not present");
       response.setStatusCode(400)
-              .end(respBuilder.getResponse());
+          .end(respBuilder.getResponse());
     }
     type.retainAll(ITEM_TYPES);
     String itemType = type.toString().replaceAll("\\[", "")
@@ -239,109 +239,109 @@ public final class CrudApis {
                                   JsonObject jwtAuthenticationInfo) {
     authService.tokenInterospect(new JsonObject(),
         jwtAuthenticationInfo, authHandler -> {
-        if (authHandler.failed()) {
-          LOGGER.error("Error: " + authHandler.cause().getMessage());
-          response.setStatusCode(401)
-              .end(new RespBuilder()
-                      .withType(TYPE_TOKEN_INVALID)
-                      .withTitle(TITLE_TOKEN_INVALID)
-                      .withDetail(authHandler.cause().getMessage())
-                      .getResponse());
-        } else {
-          LOGGER.debug("Success: JWT Auth successful: {}", authHandler.result());
+          if (authHandler.failed()) {
+            LOGGER.error("Error: " + authHandler.cause().getMessage());
+            response.setStatusCode(401)
+                .end(new RespBuilder()
+                    .withType(TYPE_TOKEN_INVALID)
+                    .withTitle(TITLE_TOKEN_INVALID)
+                    .withDetail(authHandler.cause().getMessage())
+                    .getResponse());
+          } else {
+            LOGGER.debug("Success: JWT Auth successful: {}", authHandler.result());
 
-          if (jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_AI_MODEL)
-              || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)) {
-            String kcId = authHandler.result().getString(SUB);
-            requestBody.put(PROVIDER_USER_ID, kcId);
-          }
+            if (jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_AI_MODEL)
+                || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)) {
+              String kcId = authHandler.result().getString(SUB);
+              requestBody.put(PROVIDER_USER_ID, kcId);
+            }
 
-          requestBody.put(HTTP_METHOD, routingContext.request().method().toString());
-          /* Link Validating the request to ensure item correctness */
-          validatorService.validateItem(requestBody, valhandler -> {
-            if (valhandler.failed()) {
-              LOGGER.error("Fail: Item validation failed;" + valhandler.cause().getMessage());
-              if (valhandler.cause().getMessage().contains("validation failed. Incorrect id")) {
+            requestBody.put(HTTP_METHOD, routingContext.request().method().toString());
+            /* Link Validating the request to ensure item correctness */
+            validatorService.validateItem(requestBody, valhandler -> {
+              if (valhandler.failed()) {
+                LOGGER.error("Fail: Item validation failed;" + valhandler.cause().getMessage());
+                if (valhandler.cause().getMessage().contains("validation failed. Incorrect id")) {
+                  response.setStatusCode(400)
+                      .end(new RespBuilder()
+                          .withType(TYPE_INVALID_UUID)
+                          .withTitle(TITLE_INVALID_UUID)
+                          .withDetail("Syntax of the UUID is incorrect")
+                          .getResponse());
+                  return;
+                }
                 response.setStatusCode(400)
-                        .end(new RespBuilder()
-                                .withType(TYPE_INVALID_UUID)
-                                .withTitle(TITLE_INVALID_UUID)
-                                .withDetail("Syntax of the UUID is incorrect")
-                                .getResponse());
-                return;
-              }
-              response.setStatusCode(400)
-                  .end(new RespBuilder()
+                    .end(new RespBuilder()
                         .withType(TYPE_LINK_VALIDATION_FAILED)
                         .withTitle(TITLE_LINK_VALIDATION_FAILED)
                         .withDetail(valhandler.cause().getMessage())
                         .getResponse());
-            }
-            if (valhandler.succeeded()) {
-              LOGGER.debug("Success: Item link validation");
-
-              // If post, create. If put, update
-              if (routingContext.request().method().toString() == REQUEST_POST) {
-                /* Requesting database service, creating a item */
-                LOGGER.debug("Info: Inserting item");
-                dbService.createItem(valhandler.result(), dbhandler -> {
-                  if (dbhandler.failed()) {
-                    LOGGER.error("Fail: Item creation;" + dbhandler.cause().getMessage());
-                    response.setStatusCode(400)
-                          .end(dbhandler.cause().getMessage());
-                  }
-                  if (dbhandler.succeeded()) {
-                    LOGGER.info("Success: Item created;");
-                    response.setStatusCode(201)
-                          .end(dbhandler.result().toString());
-
-                    String itemType =
-                        dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
-                    String itemName =
-                        dbhandler.result().getJsonObject(RESULTS).getString(NAME);
-                    if (hasAuditService) {
-                      updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
-                          valhandler.result().getString(SHORTDESCRIPTION),
-                          api.getRouteItems(), REQUEST_POST, itemType, itemName,
-                          authHandler.result().getString(USER_ID),
-                          authHandler.result().getString(USER_ROLE)));
-                    }
-                  }
-                });
-              } else {
-                LOGGER.debug("Info: Updating item");
-                /* Requesting database service, creating a item */
-                dbService.updateItem(valhandler.result(), dbhandler -> {
-                  if (dbhandler.succeeded()) {
-                    LOGGER.info("Success: Item updated;");
-                    response.setStatusCode(200)
-                          .end(dbhandler.result().toString());
-
-                    String itemType =
-                        dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
-                    String itemName = dbhandler.result().getJsonObject(RESULTS).getString(NAME);
-                    if (hasAuditService) {
-                      updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
-                          valhandler.result().getString(SHORTDESCRIPTION),
-                          api.getRouteItems(), REQUEST_PUT, itemType, itemName,
-                          authHandler.result().getString(USER_ID),
-                          authHandler.result().getString(USER_ROLE)));
-                    }
-                  } else if (dbhandler.failed()) {
-                    LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
-                    if (dbhandler.cause().getLocalizedMessage().contains("Doc doesn't exist")) {
-                      response.setStatusCode(404);
-                    } else {
-                      response.setStatusCode(400);
-                    }
-                    response.end(dbhandler.cause().getMessage());
-                  }
-                });
               }
-            }
-          });
-        }
-      });
+              if (valhandler.succeeded()) {
+                LOGGER.debug("Success: Item link validation");
+
+                // If post, create. If put, update
+                if (routingContext.request().method().toString() == REQUEST_POST) {
+                  /* Requesting database service, creating a item */
+                  LOGGER.debug("Info: Inserting item");
+                  dbService.createItem(valhandler.result(), dbhandler -> {
+                    if (dbhandler.failed()) {
+                      LOGGER.error("Fail: Item creation;" + dbhandler.cause().getMessage());
+                      response.setStatusCode(400)
+                          .end(dbhandler.cause().getMessage());
+                    }
+                    if (dbhandler.succeeded()) {
+                      LOGGER.info("Success: Item created;");
+                      response.setStatusCode(201)
+                          .end(dbhandler.result().toString());
+
+                      String itemType =
+                          dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
+                      String itemName =
+                          dbhandler.result().getJsonObject(RESULTS).getString(NAME);
+                      if (hasAuditService) {
+                        updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                            valhandler.result().getString(SHORTDESCRIPTION),
+                            api.getRouteItems(), REQUEST_POST, itemType, itemName,
+                            authHandler.result().getString(USER_ID),
+                            authHandler.result().getString(USER_ROLE)));
+                      }
+                    }
+                  });
+                } else {
+                  LOGGER.debug("Info: Updating item");
+                  /* Requesting database service, creating a item */
+                  dbService.updateItem(valhandler.result(), dbhandler -> {
+                    if (dbhandler.succeeded()) {
+                      LOGGER.info("Success: Item updated;");
+                      response.setStatusCode(200)
+                          .end(dbhandler.result().toString());
+
+                      String itemType =
+                          dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
+                      String itemName = dbhandler.result().getJsonObject(RESULTS).getString(NAME);
+                      if (hasAuditService) {
+                        updateAuditTable(new AuditMetadata(valhandler.result().getString(ID),
+                            valhandler.result().getString(SHORTDESCRIPTION),
+                            api.getRouteItems(), REQUEST_PUT, itemType, itemName,
+                            authHandler.result().getString(USER_ID),
+                            authHandler.result().getString(USER_ROLE)));
+                      }
+                    } else if (dbhandler.failed()) {
+                      LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
+                      if (dbhandler.cause().getLocalizedMessage().contains("Doc doesn't exist")) {
+                        response.setStatusCode(404);
+                      } else {
+                        response.setStatusCode(400);
+                      }
+                      response.end(dbhandler.cause().getMessage());
+                    }
+                  });
+                }
+              }
+            });
+          }
+        });
   }
 
   /**
@@ -582,8 +582,9 @@ public final class CrudApis {
                   String itemName = jwtAuthenticationInfo.getString(NAME);
                   String shortDescription = jwtAuthenticationInfo.getString(SHORTDESCRIPTION);
                   if (hasAuditService) {
-                    updateAuditTable(new AuditMetadata(itemId, shortDescription, api.getRouteItems(),
-                        REQUEST_DELETE, itemType, itemName, authHandler.result().getString(USER_ID),
+                    updateAuditTable(new AuditMetadata(itemId, shortDescription,
+                        api.getRouteItems(), REQUEST_DELETE, itemType, itemName,
+                        authHandler.result().getString(USER_ID),
                         authHandler.result().getString(USER_ROLE)));
                   }
                 } else {
@@ -607,7 +608,7 @@ public final class CrudApis {
   Future<JsonObject> getParentObjectInfo(String itemId) {
     Promise<JsonObject> promise = Promise.promise();
     JsonObject req = new JsonObject().put(ID, itemId)
-            .put(SEARCH_TYPE, "getParentObjectInfo");
+        .put(SEARCH_TYPE, "getParentObjectInfo");
 
     LOGGER.debug(req);
     dbService.searchQuery(
@@ -634,8 +635,8 @@ public final class CrudApis {
    * Creates a new catalogue instance and handles the request/response flow.
    *
    * @param routingContext the routing context for handling HTTP requests and responses
-   * @param catAdmin he catalogue admin for the item
-   * @throws  RuntimeException if item creation fails
+   * @param catAdmin       he catalogue admin for the item
+   * @throws RuntimeException if item creation fails
    */
   public void createInstanceHandler(RoutingContext routingContext, String catAdmin) {
 
@@ -650,32 +651,30 @@ public final class CrudApis {
     String instance = routingContext.queryParams().get(ID);
 
 
-
     //  Start insertion flow
 
 
     // Json schema validate item
     authenticationInfo.put(TOKEN,
-                            routingContext.get(HEADER_TOKEN))
-                            .put(METHOD, REQUEST_POST)
-                            .put(API_ENDPOINT, api.getRouteInstance())
-                            .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
-                            .put(ID, host);
+            routingContext.get(HEADER_TOKEN))
+        .put(METHOD, REQUEST_POST)
+        .put(API_ENDPOINT, api.getRouteInstance())
+        .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
+        .put(ID, host);
     // Introspect token and authorize operation
     authService.tokenInterospect(new JsonObject(), authenticationInfo, authhandler -> {
       if (authhandler.failed()) {
         response.setStatusCode(401)
-                .end(new RespBuilder()
-                          .withType(TYPE_TOKEN_INVALID)
-                          .withTitle(TITLE_TOKEN_INVALID)
-                          .withDetail(authhandler.cause().getMessage())
-                          .getResponse());
-        return;
+            .end(new RespBuilder()
+                .withType(TYPE_TOKEN_INVALID)
+                .withTitle(TITLE_TOKEN_INVALID)
+                .withDetail(authhandler.cause().getMessage())
+                .getResponse());
       } else {
         /* INSTANCE = "" to make sure createItem can be used for onboarding instance and items */
         JsonObject body = new JsonObject().put(ID, instance)
-                                          .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
-                                          .put(INSTANCE, "");
+            .put(TYPE, new JsonArray().add(ITEM_TYPE_INSTANCE))
+            .put(INSTANCE, "");
         dbService.createItem(body, res -> {
           if (res.succeeded()) {
             LOGGER.info("Success: Instance created;");
@@ -696,9 +695,9 @@ public final class CrudApis {
    * Deletes the specified instance from the database.
    *
    * @param routingContext the routing context
-   * @param catAdmin  the catalogue admin
+   * @param catAdmin       the catalogue admin
    * @throws NullPointerException if routingContext is null
-   * @throws RuntimeException if the instance cannot be deleted
+   * @throws RuntimeException     if the instance cannot be deleted
    * @TODO call auditing service after successful deletion
    */
   public void deleteInstanceHandler(RoutingContext routingContext, String catAdmin) {
@@ -718,24 +717,23 @@ public final class CrudApis {
 
     // Json schema validate item
     authenticationInfo.put(TOKEN, routingContext.get(HEADER_TOKEN))
-                      .put(METHOD, REQUEST_DELETE)
-                      .put(API_ENDPOINT, api.getRouteInstance())
-                      .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
-                      .put(ID, host);
+        .put(METHOD, REQUEST_DELETE)
+        .put(API_ENDPOINT, api.getRouteInstance())
+        .put(ITEM_TYPE, ITEM_TYPE_INSTANCE)
+        .put(ID, host);
     // Introspect token and authorize operation
     authService.tokenInterospect(new JsonObject(), authenticationInfo, authhandler -> {
       if (authhandler.failed()) {
         response.setStatusCode(401)
             .end(new RespBuilder()
-                        .withType(TYPE_TOKEN_INVALID)
-                        .withTitle(TITLE_TOKEN_INVALID)
-                        .withDetail(authhandler.cause().getMessage())
-                        .getResponse());
-        return;
+                .withType(TYPE_TOKEN_INVALID)
+                .withTitle(TITLE_TOKEN_INVALID)
+                .withDetail(authhandler.cause().getMessage())
+                .getResponse());
       } else {
         /* INSTANCE = "" to make sure createItem can be used for onboarding instance and items */
         JsonObject body = new JsonObject().put(ID, instance)
-                                          .put(INSTANCE, "");
+            .put(INSTANCE, "");
         dbService.deleteItem(body, res -> {
           if (res.succeeded()) {
             LOGGER.info("Success: Instance deleted;");
@@ -755,9 +753,8 @@ public final class CrudApis {
   /**
    * Check if the itemId contains certain invalid characters.
    *
-   *
    * @param itemId which is a String
-   * @return  true if the item ID contains invalid characters, false otherwise
+   * @return true if the item ID contains invalid characters, false otherwise
    */
   private boolean validateId(String itemId) {
     return UUID_PATTERN.matcher(itemId).matches();
@@ -769,8 +766,8 @@ public final class CrudApis {
    *
    * <p>This method builds a structured audit log from the provided {@link AuditMetadata} instance,
    * which contains details about the API request and user information. It determines the operation
-   * type and user role based on the HTTP method and user role embedded within the metadata. The audit
-   * record is then asynchronously published to a RabbitMQ-based auditing service.
+   * type and user role based on the HTTP method and user role embedded within the metadata. The
+   * audit record is then asynchronously published to a RabbitMQ-based auditing service.
    *
    * @param metadata An instance of {@link AuditMetadata} containing information such as:
    *                 <ul>

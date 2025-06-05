@@ -228,7 +228,6 @@ public final class SearchApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     JsonObject requestBody = routingContext.body().asJsonObject();
-    String token = routingContext.get(HEADER_TOKEN);
 
     /* HTTP request instance/host details */
     String instanceId = request.getHeader(HEADER_INSTANCE);
@@ -262,6 +261,7 @@ public final class SearchApis {
     requestBody.put(PAGE_KEY, page);
     requestBody.put(OFFSET, offset);
 
+    String token = routingContext.get(HEADER_TOKEN);
     if (token != null && !token.isEmpty()) {
       JsonObject jwtAuthenticationInfo = new JsonObject()
           .put(TOKEN, token)

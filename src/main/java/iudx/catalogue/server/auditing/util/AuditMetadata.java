@@ -21,8 +21,9 @@ public class AuditMetadata {
   public final String userRole;
   public final String shortDescription;
 
-  public AuditMetadata(String itemId, String shortDescription, String apiEndpoint, String httpMethod,
-                       String itemType, String itemName, String userId, String userRole) {
+  public AuditMetadata(String itemId, String shortDescription, String apiEndpoint,
+                       String httpMethod, String itemType, String itemName, String userId,
+                       String userRole) {
     this.itemId = itemId;
     this.apiEndpoint = apiEndpoint;
     this.httpMethod = httpMethod;
