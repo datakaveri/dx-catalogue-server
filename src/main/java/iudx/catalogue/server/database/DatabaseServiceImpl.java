@@ -194,7 +194,7 @@ public class DatabaseServiceImpl implements DatabaseService {
             int totalPages = (int) Math.ceil((double) totalHits / size);
             int page = request.getInteger(PAGE_KEY, 1);
             boolean hasNext = totalHits > 0 && page < totalPages;
-            boolean hasPrevious = (page > 1) && (page <= totalPages);
+            boolean hasPrevious = page > 1 && page <= totalPages;
 
             JsonObject pagination = new JsonObject()
                 .put(PAGE_KEY, page)
