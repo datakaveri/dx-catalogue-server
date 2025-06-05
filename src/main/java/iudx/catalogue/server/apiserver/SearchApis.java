@@ -8,6 +8,8 @@ package iudx.catalogue.server.apiserver;
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
+import static iudx.catalogue.server.database.Constants.PAGE_KEY;
+import static iudx.catalogue.server.database.Constants.SIZE_KEY;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.MultiMap;
@@ -226,12 +228,40 @@ public final class SearchApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     JsonObject requestBody = routingContext.body().asJsonObject();
-    String token = routingContext.get(HEADER_TOKEN);
 
     /* HTTP request instance/host details */
     String instanceId = request.getHeader(HEADER_INSTANCE);
     requestBody.put(HEADER_INSTANCE, instanceId);
 
+    // Set default size and page
+    int size = DEFAULT_MAX_PAGE_SIZE;
+    int page = DEFAULT_PAGE_NUMBER;
+
+    // Override if query params are present
+    if (request.getParam(SIZE_KEY) != null) {
+      try {
+        size = Integer.parseInt(request.getParam(SIZE_KEY));
+      } catch (NumberFormatException e) {
+        LOGGER.warn("Invalid size param, defaulting to 100");
+      }
+    }
+
+    if (request.getParam(PAGE_KEY) != null) {
+      try {
+        page = Integer.parseInt(request.getParam(PAGE_KEY));
+      } catch (NumberFormatException e) {
+        LOGGER.warn("Invalid page param, defaulting to 1");
+      }
+    }
+
+    int offset = size * (page - 1);
+
+    requestBody.put(SIZE_KEY, size);
+    requestBody.put(LIMIT, size);
+    requestBody.put(PAGE_KEY, page);
+    requestBody.put(OFFSET, offset);
+
+    String token = routingContext.get(HEADER_TOKEN);
     if (token != null && !token.isEmpty()) {
       JsonObject jwtAuthenticationInfo = new JsonObject()
           .put(TOKEN, token)
