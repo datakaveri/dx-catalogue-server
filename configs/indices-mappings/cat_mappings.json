@@ -70,9 +70,14 @@
             },
             "_word_vector": {
                 "type": "dense_vector",
+                "dims": 100,
                 "index": true,
                 "similarity": "cosine",
-                "dims": 100
+                "index_options": {
+                    "type": "int8_hnsw",
+                    "m": 16,
+                    "ef_construction": 100
+                }
             },
             "accessObjectInfo": {
                 "type": "flattened"
@@ -86,7 +91,7 @@
                     }
                 }
             },
-            "address": {
+            "adexResourceAPIs": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -173,6 +178,26 @@
             "dataDescriptor": {
                 "type": "flattened"
             },
+            "dataReadiness": {
+                "type": "float",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "dataSample": {
+                "type": "flattened"
+            },
+            "department": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
             "description": {
                 "type": "text",
                 "fields": {
@@ -185,7 +210,52 @@
             "deviceInfo": {
                 "type": "flattened"
             },
+            "fileFormat": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "fileSize": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "geoCoverage": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
             "id": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "id_bck": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "industry": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -228,6 +298,15 @@
                 }
             },
             "label": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "license": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -301,7 +380,43 @@
                     }
                 }
             },
+            "mediaURL": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "modelType": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
             "name": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "organizationId": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "organizationType": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -328,7 +443,25 @@
                     }
                 }
             },
+            "owner_bck": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
             "provider": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "providerKcId": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -341,6 +474,24 @@
                 "type": "flattened"
             },
             "providerUserId": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "provider_bck": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "randuuid": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -423,6 +574,15 @@
                     }
                 },
                 "fielddata": true
+            },
+            "resourceGroup_bck": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
             },
             "resourceServer": {
                 "type": "text",
@@ -553,7 +713,7 @@
                     }
                 }
             },
-            "stac_version": {
+            "shortDescription": {
                 "type": "text",
                 "fields": {
                     "keyword": {
@@ -580,7 +740,34 @@
                     }
                 }
             },
-            "icon_base64": {
+            "uploadFrequency": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "uploadedBy": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "verifiedBy": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "yearRange": {
                 "type": "text",
                 "fields": {
                     "keyword": {
