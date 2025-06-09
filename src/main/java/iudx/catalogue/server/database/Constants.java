@@ -43,6 +43,7 @@ public class Constants {
   public static final String DATASET = "DATASET";
   public static final String FORWARD_SLASH = "/";
   public static final String WILDCARD_KEY = "wildcard";
+  public static final String CASE_INSENSITIVE = "case_insensitive";
   public static final String AGGREGATION_ONLY = "AGGREGATION";
   public static final String AGGREGATION_LIST = "AGGREGATION_LIST";
   public static final String RATING_AGGREGATION_ONLY = "R_AGGREGATION";
