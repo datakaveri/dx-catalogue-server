@@ -269,36 +269,44 @@ public final class QueryDecoder {
             case TERM: {
               JsonArray shouldQuery = new JsonArray();
               for (int j = 0; j < values.size(); j++) {
+                String value = values.getString(j);
                 String matchQuery;
 
                 // raw field matches (e.g. tags, description, location)
                 if (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field)
                     || field.startsWith(LOCATION)) {
-                  matchQuery = MATCH_QUERY.replace("$1", field)
-                      .replace("$2", values.getString(j));
+                  matchQuery = MATCH_QUERY.replace("$1", field).replace("$2", value);
                   shouldQuery.add(new JsonObject(matchQuery));
 
                   if ("true".equals(request.getString(FUZZY))
                       && (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field))) {
                     matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
-                        .replace("$2", values.getString(j));
+                        .replace("$2", value);
                     shouldQuery.add(new JsonObject(matchQuery));
                   }
+                } else if (FILE_FORMAT.equals(field)) {
+                  // Use wildcard query for case-insensitive match
+                  JsonObject wildcardQuery = new JsonObject()
+                      .put(WILDCARD_KEY, new JsonObject()
+                          .put(field + KEYWORD_KEY, new JsonObject()
+                              .put(VALUE, value.toLowerCase())
+                              .put(CASE_INSENSITIVE, true)));
+                  shouldQuery.add(wildcardQuery);
                 } else {
-                  // check if field ends with .keyword or not
+                  // fallback to .keyword match
                   if (field.endsWith(KEYWORD_KEY)) {
                     matchQuery = MATCH_QUERY.replace("$1", field)
-                        .replace("$2", values.getString(j));
+                        .replace("$2", value);
                   } else {
                     matchQuery = MATCH_QUERY.replace("$1", field + KEYWORD_KEY)
-                        .replace("$2", values.getString(j));
+                        .replace("$2", value);
                   }
                   shouldQuery.add(new JsonObject(matchQuery));
 
                   if ("true".equals(request.getString(FUZZY))
                       && (LABEL.equals(field) || INSTANCE.equals(field))) {
-                    matchQuery = FUZZY_MATCH_QUERY.replace("$1", field).replace("$2",
-                        values.getString(j));
+                    matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
+                        .replace("$2", value);
                     shouldQuery.add(new JsonObject(matchQuery));
                   }
                 }
