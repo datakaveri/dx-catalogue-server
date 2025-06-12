@@ -31,16 +31,11 @@ import iudx.catalogue.server.auditing.util.AuditMetadata;
 import iudx.catalogue.server.authenticator.AuthenticationService;
 import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.util.Api;
-import iudx.catalogue.server.util.Constants;
 import iudx.catalogue.server.validator.ValidatorService;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
