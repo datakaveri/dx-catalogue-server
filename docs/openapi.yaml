@@ -44,26 +44,6 @@ info:
 
     - **size**: Specifies how many results should be returned per page.  
       *(Default: 100, Min: 1, Max: 10000)*
-
-  parameters:
-    - name: page
-      in: query
-      description: Specifies which page of the result set to retrieve
-      required: false
-      schema:
-        type: integer
-        default: 1
-        minimum: 1
-
-    - name: size
-      in: query
-      description: Specifies how many results should be returned per page.
-      required: false
-      schema:
-        type: integer
-        default: 100
-        minimum: 1
-        maximum: 10000
   contact:
     name: For support contact IUDX Team at
     email: support@cdpg.org.in
@@ -214,12 +194,6 @@ paths:
         - Limits: The sum of the internally calculated `offset` and `size` must be less than or equal to `10,000` to prevent overly large queries.
 
       operationId: search
-      parameters:
-        - name: instance
-          in: header
-          description: |
-            DX instance on which this query is to be made. Don't mention this if search on entire catalogue is to be made. Else mentioning a specific instance name here restricts search only to that instance.
-          required: false
       requestBody:
         required: true
         content:
@@ -534,7 +508,8 @@ paths:
         - name: Authorization
           in: header
           description:
-            Bearer token for authorization. Example: "Bearer <keycloak_token>"
+            Bearer token for authorization.
+          example: "Bearer <keycloak_token>"
           required: true
           schema:
             type: string
@@ -630,7 +605,8 @@ paths:
         - name: Authorization
           in: header
           description:
-            Bearer token for authorization. Example: "Bearer <keycloak_token>"
+            Bearer token for authorization.
+          example: "Bearer <keycloak_token>"
           required: true
           schema:
             type: string
@@ -768,7 +744,8 @@ paths:
         - name: Authorization
           in: header
           description:
-            Bearer token for authorization. Example: "Bearer <keycloak_token>"
+            Bearer token for authorization.
+          example: "Bearer <keycloak_token>"
           required: true
           schema:
             type: string
@@ -911,7 +888,7 @@ components:
         title:
           description: A human readable title to the message response.
         totalHits:
-          type: integer <int32>
+          type: integer
           description: Total number of documents which matched the query.
       required:
         - type
@@ -1042,14 +1019,6 @@ components:
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
-          filter:
-            in: query
-            description: Filter properties to display. This is an array of strings.
-            schema:
-              type: array
-              maxItems: 10
-              items:
-                type: string
       required:
         - searchCriteria
     TextSearchRequest:
@@ -1064,14 +1033,6 @@ components:
         autoComplete:
           type: boolean
           description: Enables autocomplete suggestions.
-        filter:
-          in: query
-          description: Filter properties to display. This is an array of strings.
-          schema:
-            type: array
-            maxItems: 10
-            items:
-              type: string
       required:
         - q
     ComplexSearchRequest:
@@ -1091,14 +1052,6 @@ components:
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
-        filter:
-          in: query
-          description: Filter properties to display. This is an array of strings.
-          schema:
-            type: array
-            maxItems: 10
-            items:
-              type: string
       required:
         - q
         - searchCriteria
@@ -1240,7 +1193,7 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
-          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
         type:
           type: array
@@ -1251,10 +1204,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
@@ -1353,10 +1306,10 @@ components:
           maxLength: 512
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         tags:
           type: array
           items:
@@ -1451,7 +1404,7 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
-          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
         type:
           type: array
@@ -1466,10 +1419,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         organizationType:
           type: string
           enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
@@ -1477,9 +1430,6 @@ components:
           type: string
         canBeUsedFor:
           type: object
-          propertyNames:
-            type: string
-            maxLength: 100
           additionalProperties:
             type: string
             maxLength: 300
@@ -1616,7 +1566,7 @@ components:
             name:
               type: string
               maxLength: 512
-              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
               description: Name of the AI Model item
             provider:
               type: string
@@ -1849,7 +1799,7 @@ components:
             name:
               type: string
               maxLength: 512
-              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
               description: Name of the ADeX Application item
             tags:
               type: array
@@ -1965,7 +1915,7 @@ components:
               pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
             name:
               type: string
-              pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
               maxLength: 512
             type:
               type: array
@@ -1979,7 +1929,7 @@ components:
               maxLength: 512
             description:
               type: string
-              maxLength: 4000
+              maxLength: 12000
             tags:
               type: array
               items:
@@ -2088,7 +2038,7 @@ components:
               type: string
             description:
               type: string
-              maxLength: 4000
+              maxLength: 12000
             shortDescription:
               type: string
               maxLength: 512
@@ -2206,7 +2156,7 @@ components:
               pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
             name:
               type: string
-              pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
               maxLength: 512
             type:
               type: array
@@ -2224,7 +2174,7 @@ components:
               maxLength: 512
             description:
               type: string
-              maxLength: 4000
+              maxLength: 12000
             organizationType:
               type: string
               enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
@@ -2232,9 +2182,6 @@ components:
               type: string
             canBeUsedFor:
               type: object
-              propertyNames:
-                type: string
-                maxLength: 100
               additionalProperties:
                 type: string
                 maxLength: 300
@@ -2377,7 +2324,7 @@ components:
               description: Unique identifier of the model item
             name:
               type: string
-              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
               maxLength: 512
               description: An explanation about the purpose of this instance.
             organizationId:
@@ -3098,8 +3045,8 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
+      required:
+        - type
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -3121,8 +3068,8 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
+      required:
+        - type
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -3144,8 +3091,8 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
+      required:
+        - type
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -3165,8 +3112,8 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
+      required:
+        - type
       example:
         type: urn:dx:cat:LinkValidationFailed
         title: Link Validation Failed
@@ -3247,7 +3194,7 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
-          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
         type:
           type: array
@@ -3258,10 +3205,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
@@ -3357,10 +3304,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
@@ -3453,7 +3400,7 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         name:
           type: string
-          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
         type:
           type: array
@@ -3464,10 +3411,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
