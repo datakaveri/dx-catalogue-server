@@ -131,13 +131,13 @@
       "type": "string",
       "title": "The description schema",
       "description": "Detailed description of the model",
-      "maxLength": 4000
+      "maxLength": 12000
     },
     "shortDescription": {
       "type": "string",
       "title": "The shortDescription schema",
       "description": "Short description of the model",
-      "maxLength": 512
+      "maxLength": 3200
     },
     "organizationType": {
       "type": "string",

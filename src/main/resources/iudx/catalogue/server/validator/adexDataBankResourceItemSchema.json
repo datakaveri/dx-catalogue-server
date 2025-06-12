@@ -125,7 +125,7 @@
     "description": {
       "type": "string",
       "title": "The description schema",
-      "maxLength": 4000
+      "maxLength": 12000
     },
     "organizationId": {
       "$id": "#/properties/organizationId",
@@ -147,7 +147,7 @@
     "shortDescription": {
       "type": "string",
       "title": "",
-      "maxLength": 512
+      "maxLength": 3200
     },
     "industry" : {
       "type": "string",
