@@ -12,6 +12,7 @@ import static iudx.catalogue.server.auditing.util.Constants.ROLE;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
 import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.util.Constants.DETAIL;
 import static iudx.catalogue.server.util.Constants.ERROR;
 import static iudx.catalogue.server.util.Constants.ID;
 import static iudx.catalogue.server.util.Constants.METHOD;
@@ -129,16 +130,29 @@ public final class CrudApis {
         requestBody,
         schValHandler -> {
           if (schValHandler.failed()) {
-
-            response
-                .setStatusCode(400)
-                .end(
-                    new RespBuilder()
-                        .withType(TYPE_INVALID_SCHEMA)
-                        .withTitle(TITLE_INVALID_SCHEMA)
-                        .withDetail(TITLE_INVALID_SCHEMA)
-                        .withResult(schValHandler.cause().getMessage())
-                        .getResponse());
+            try {
+              JsonObject errJson = new JsonObject(schValHandler.cause().getMessage());
+              response
+                  .setStatusCode(400)
+                  .end(
+                      new RespBuilder()
+                          .withType(TYPE_INVALID_SCHEMA)
+                          .withTitle(TITLE_INVALID_SCHEMA)
+                          .withDetail(errJson.getString(DETAIL, TITLE_INVALID_SCHEMA))
+                          .withResult(errJson.getJsonArray(RESULTS, new JsonArray()))
+                          .getResponse());
+            } catch (Exception e) {
+              LOGGER.error("Invalid error format", e);
+              response
+                  .setStatusCode(400)
+                  .end(
+                      new RespBuilder()
+                          .withType(TYPE_INVALID_SCHEMA)
+                          .withTitle(TITLE_INVALID_SCHEMA)
+                          .withDetail(TITLE_INVALID_SCHEMA)
+                          .withResult(schValHandler.cause().getMessage())
+                          .getResponse());
+            }
             return;
           }
           if (schValHandler.succeeded()) {

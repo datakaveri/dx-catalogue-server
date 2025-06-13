@@ -235,7 +235,7 @@ public class ValidatorServiceImpl implements ValidatorService {
               LOGGER.error("Fail: Invalid Schema");
               LOGGER.error(x.getMessage());
               handler.handle(
-                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
+                  Future.failedFuture((x.getMessage())));
             });
   }
 
@@ -797,19 +797,19 @@ public class ValidatorServiceImpl implements ValidatorService {
       Future<String> validationFuture;
       switch (searchType) {
         case TERM:
-          validationFuture = termValidator.validate(criterion.encode());
+          validationFuture = termValidator.validateSearchCriteria(criterion.encode());
           break;
 
         case BETWEEN_RANGE:
         case BEFORE_RANGE:
         case AFTER_RANGE:
-          validationFuture = rangeValidator.validate(criterion.encode());
+          validationFuture = rangeValidator.validateSearchCriteria(criterion.encode());
           break;
 
         case BETWEEN_TEMPORAL:
         case BEFORE_TEMPORAL:
         case AFTER_TEMPORAL:
-          validationFuture = temporalValidator.validate(criterion.encode());
+          validationFuture = temporalValidator.validateSearchCriteria(criterion.encode());
           break;
 
         default:
@@ -847,7 +847,7 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   public ValidatorService validateGeoSearchQuery(JsonObject request,
                                                  Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = geoSearchQueryValidator.validate(request.toString());
+    isValidSchema = geoSearchQueryValidator.validateSearchCriteria(request.toString());
 
     SearchQueryValidatorHelper.handleGeoSearchValidationResult(isValidSchema, request, handler);
     return this;
@@ -855,7 +855,7 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   public ValidatorService validateTextSearchQuery(JsonObject request,
                                                   Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = textSearchQueryValidator.validate(request.toString());
+    isValidSchema = textSearchQueryValidator.validateSearchCriteria(request.toString());
 
     SearchQueryValidatorHelper.handleTextSearchValidationResult(isValidSchema, request, handler);
     return this;
@@ -863,7 +863,7 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   public ValidatorService validateFilterSearchQuery(JsonObject request,
                                                     Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = filterSearchQueryValidator.validate(request.toString());
+    isValidSchema = filterSearchQueryValidator.validateSearchCriteria(request.toString());
 
     SearchQueryValidatorHelper.handleFilterSearchValidationResult(isValidSchema, request, handler);
     return this;
