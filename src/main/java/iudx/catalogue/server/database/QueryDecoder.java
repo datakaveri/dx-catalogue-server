@@ -273,13 +273,22 @@ public final class QueryDecoder {
                 String matchQuery;
 
                 // raw field matches (e.g. tags, description, location)
-                if (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field)
+                if (DESCRIPTION_ATTR.equals(field)
                     || field.startsWith(LOCATION)) {
                   matchQuery = MATCH_QUERY.replace("$1", field).replace("$2", value);
                   shouldQuery.add(new JsonObject(matchQuery));
 
                   if ("true".equals(request.getString(FUZZY))
-                      && (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field))) {
+                      && DESCRIPTION_ATTR.equals(field)) {
+                    matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
+                        .replace("$2", value);
+                    shouldQuery.add(new JsonObject(matchQuery));
+                  }
+                } else if (TAGS.equals(field)) {
+                  matchQuery = MATCH_PHRASE_QUERY.replace("$1", field).replace("$2", value);
+                  shouldQuery.add(new JsonObject(matchQuery));
+
+                  if ("true".equals(request.getString(FUZZY))) {
                     matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
                         .replace("$2", value);
                     shouldQuery.add(new JsonObject(matchQuery));
