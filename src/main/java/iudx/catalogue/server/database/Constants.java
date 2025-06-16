@@ -257,6 +257,7 @@ public class Constants {
   public static final String MUST_NOT_QUERY = "{\"bool\":{\"must_not\":$1}}";
   public static final String FILTER_QUERY = "{\"bool\":{\"filter\":[$1]}}";
   public static final String MATCH_QUERY = "{\"match\":{\"$1\":\"$2\"}}";
+  public static final String MATCH_PHRASE_QUERY = "{\"match_phrase\":{\"$1\":\"$2\"}}";
   public static final String FUZZY_MATCH_QUERY = "{ \"match\": { \"$1\": { \"query\": "
       + "\"$2\", \"fuzziness\": \"AUTO\", \"operator\": \"or\" }}}";
   public static final String TERM_QUERY = "{\"term\":{\"$1\":\"$2\"}}";
