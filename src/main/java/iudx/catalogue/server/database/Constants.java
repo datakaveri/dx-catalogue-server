@@ -315,7 +315,7 @@ public class Constants {
   public static final String TOTAL_PAGES = "totalPages";
   public static final String HAS_NEXT = "hasNext";
   public static final String HAS_PREVIOUS = "hasPrevious";
-  public static final String PAGINATION = "pagination";
+  public static final String PAGINATION_INFO = "paginationInfo";
   static final int STATIC_DELAY_TIME = 3000;
   /* Database */
   static final String AGGREGATION_KEY = "aggs";

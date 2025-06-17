@@ -2,7 +2,6 @@ package iudx.catalogue.server.database;
 
 import static iudx.catalogue.server.database.Constants.*;
 import static iudx.catalogue.server.util.Constants.*;
-import static java.lang.Math.floor;
 
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
@@ -196,7 +195,7 @@ public class DatabaseServiceImpl implements DatabaseService {
             boolean hasNext = totalHits > 0 && page < totalPages;
             boolean hasPrevious = page > 1 && page <= totalPages;
 
-            JsonObject pagination = new JsonObject()
+            JsonObject paginationInfo = new JsonObject()
                 .put(PAGE_KEY, page)
                 .put(SIZE_KEY, size)
                 .put(TOTAL_COUNT, totalHits)
@@ -204,7 +203,7 @@ public class DatabaseServiceImpl implements DatabaseService {
                 .put(HAS_NEXT, hasNext)
                 .put(HAS_PREVIOUS, hasPrevious);
 
-            searchRes.result().put(PAGINATION, pagination);
+            searchRes.result().put(PAGINATION_INFO, paginationInfo);
             handler.handle(Future.succeededFuture(searchRes.result()));
           } else {
             LOGGER.error("Fail: DB Request;" + searchRes.cause().getMessage());
