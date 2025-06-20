@@ -697,7 +697,8 @@ public final class QueryDecoder {
 
     if (itemType.equalsIgnoreCase(TAGS) || itemType.equalsIgnoreCase(DEPARTMENT)
         || itemType.equalsIgnoreCase(ORGANIZATION_TYPE) || itemType.equalsIgnoreCase(FILE_FORMAT)
-        || itemType.equalsIgnoreCase(DATA_READINESS) || itemType.equalsIgnoreCase(MODEL_TYPE)) {
+        || itemType.equalsIgnoreCase(DATA_READINESS) || itemType.equalsIgnoreCase(MODEL_TYPE)
+        || itemType.equalsIgnoreCase(UPLOADED_BY)) {
       if (instanceId == null || instanceId == "") {
         tempQuery = LIST_AGGREGATION_QUERY_NO_FILTER
             .replace("$field", itemType + KEYWORD_KEY);
