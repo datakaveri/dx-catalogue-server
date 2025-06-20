@@ -372,6 +372,103 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
+  /count:
+    post:
+      tags:
+        - Discovery
+      description: |
+        Count aggregation query for catalogue metadata using the first `term`-type filter.
+
+        #### 🚩 Behavior
+        - The **first object** in `searchCriteria` array is used to build the **aggregation field**.
+        - Count result returns the frequency of each value under that aggregation field.
+
+        #### 🎯 UI Use Case:
+        Used in the **summary card widgets** to show:
+        - Number of Databanks (`type=adex:DataBank`)
+        - Number of AI models (`type=adex:AiModel`)
+        - Number of Potential Applications (`type=adex:Apps`)
+        - Distribution by department or use case.
+
+        > 📌 `type`, `tags`, `department`, `organizationType`, etc. must be keyword-mapped fields in ES.
+        > Note: Only `term`-based fields are supported for aggregation.
+
+      operationId: count
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                searchCriteria:
+                  type: array
+                  minItems: 1
+                  maxItems: 1  # Only the first object is considered
+                  items:
+                    type: object
+                    required:
+                      - searchType
+                      - field
+                      - values
+                    properties:
+                      searchType:
+                        type: string
+                        enum: [ term ]
+                        description: Must be "term" for count query
+                      field:
+                        type: string
+                        description: Field name to apply the term filter on
+                      values:
+                        type: array
+                        items:
+                          type: string
+                        description: List of values to count against
+              required:
+                - searchCriteria
+            example:
+              searchCriteria:
+                - searchType: term
+                  field: type
+                  values: [ "adex:DataBank", "adex:Apps", "adex:AiModel" ]
+      responses:
+        '200':
+          description: Aggregated count results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:cat:Success
+                  title:
+                    type: string
+                    example: Success
+                  doc_count:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    example:
+                      adex:DataBank: 300
+                      adex:AiModel: 50
+        '400':
+          description: Invalid input or missing `searchCriteria`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForDiscovery'
+              examples:
+                Missing Search Criteria:
+                  value:
+                    type: "urn:dx:cat:InvalidSyntax"
+                    title: "Missing Search Criteria"
+                    detail: "The request must contain a non-empty searchCriteria block."
+                Invalid Aggregation Field:
+                  value:
+                    type: "urn:dx:cat:InvalidPropertyValue"
+                    title: "Invalid Aggregation"
+                    detail: "The aggregation field must support keyword mapping"
   '/list':
     post:
       tags:
