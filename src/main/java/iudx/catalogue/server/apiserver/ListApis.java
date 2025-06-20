@@ -99,6 +99,7 @@ public final class ListApis {
           case DEPARTMENT:
           case ORGANIZATION_TYPE:
           case FILE_FORMAT:
+          case UPLOADED_BY:
             type = itemType;
             break;
           case OWNER:
@@ -269,6 +270,7 @@ public final class ListApis {
           case FILE_FORMAT:
           case DATA_READINESS:
           case MODEL_TYPE:
+          case UPLOADED_BY:
           case ID:
             type.add(itemType);
             break;
