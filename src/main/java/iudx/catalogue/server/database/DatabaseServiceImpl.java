@@ -307,7 +307,7 @@ public class DatabaseServiceImpl implements DatabaseService {
     }
 
     /* Construct the query to be made */
-    JsonObject query = queryDecoder.searchQuery(request);
+    JsonObject query = queryDecoder.countQuery(request);
     if (query.containsKey(ERROR)) {
 
       LOGGER.error("Fail: Query returned with an error");

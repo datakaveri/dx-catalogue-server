@@ -622,27 +622,43 @@ public final class ElasticClient {
    *
    * @param request Elastic Request
    * @TODO XPack Security
-   * @TODO Can combine countAsync and searchAsync
    */
   private Future<JsonObject> countAsync(Request request) {
     Promise<JsonObject> promise = Promise.promise();
 
-    DbResponseMessageBuilder responseMsg = new DbResponseMessageBuilder();
-
     client.performRequestAsync(request, new ResponseListener() {
       @Override
       public void onSuccess(Response response) {
-
         try {
           int statusCode = response.getStatusLine().getStatusCode();
           if (statusCode != 200 && statusCode != 204) {
             promise.fail(DATABASE_BAD_QUERY);
             return;
           }
-          JsonObject responseJson = new JsonObject(EntityUtils.toString(response.getEntity()));
-          responseMsg.statusSuccess()
-                  .setTotalHits(responseJson.getInteger(COUNT));
-          promise.complete(responseMsg.getResponse());
+
+          String responseBody = EntityUtils.toString(response.getEntity());
+          JsonObject responseJson = new JsonObject(responseBody);
+
+          // Extract counts from aggregations
+          JsonObject counts = new JsonObject();
+          if (responseJson.containsKey(AGGREGATIONS)) {
+            JsonObject resultsAgg = responseJson.getJsonObject(AGGREGATIONS).getJsonObject(RESULTS);
+            if (resultsAgg != null && resultsAgg.containsKey(BUCKETS)) {
+              for (Object o : resultsAgg.getJsonArray(BUCKETS)) {
+                JsonObject bucket = (JsonObject) o;
+                String key = bucket.getString(KEY);
+                Integer count = bucket.getInteger(DOC_COUNT);
+                counts.put(key, count);
+              }
+            }
+          }
+
+          JsonObject finalResponse = new JsonObject()
+              .put(TYPE, TYPE_SUCCESS)
+              .put(TITLE, TITLE_SUCCESS)
+              .put(DOC_COUNT, counts);
+
+          promise.complete(finalResponse);
 
         } catch (IOException e) {
           promise.fail(e);
@@ -668,9 +684,9 @@ public final class ElasticClient {
    * @TODO XPack Security
    */
   public ElasticClient countAsync(String query, String index,
-      Handler<AsyncResult<JsonObject>> resultHandler) {
+                                  Handler<AsyncResult<JsonObject>> resultHandler) {
 
-    Request queryRequest = new Request(REQUEST_GET, index + "/_count");
+    Request queryRequest = new Request(REQUEST_POST, index + "/_search");
     queryRequest.setJsonEntity(query);
     Future<JsonObject> future = countAsync(queryRequest);
     future.onComplete(resultHandler);
