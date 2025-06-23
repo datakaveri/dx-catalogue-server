@@ -10,6 +10,7 @@ import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
 import static iudx.catalogue.server.database.Constants.PAGE_KEY;
 import static iudx.catalogue.server.database.Constants.SIZE_KEY;
+import static iudx.catalogue.server.database.Constants.SORT;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.MultiMap;
@@ -261,6 +262,10 @@ public final class SearchApis {
     requestBody.put(PAGE_KEY, page);
     requestBody.put(OFFSET, offset);
 
+    LOGGER.debug(request.params().toString());
+
+    QueryMapper.extractSortFromRawUri(routingContext.request().uri(), requestBody);
+
     String token = routingContext.get(HEADER_TOKEN);
     if (token != null && !token.isEmpty()) {
       JsonObject jwtAuthenticationInfo = new JsonObject()
@@ -278,8 +283,7 @@ public final class SearchApis {
                   .withDetail(authHandler.cause().getMessage())
                   .getResponse());
         } else {
-          LOGGER.debug("Auth res: " + authHandler.result());
-          requestBody.put("sub", authHandler.result().getString("sub"));
+          requestBody.put(SUB, authHandler.result().getString(SUB));
           processSearch(request, response, requestBody);
         }
       });

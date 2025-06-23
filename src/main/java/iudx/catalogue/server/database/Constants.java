@@ -26,6 +26,10 @@ public class Constants {
   public static final String TERMS_KEY = "terms";
   public static final String STRING_QUERY_KEY = "query_string";
   public static final String FROM = "from";
+  public static final String ORDER = "order";
+  public static final String DESC = "desc";
+  public static final String SORT = "sort";
+  public static final String ASC = "asc";
   public static final String KEYWORD_KEY = ".keyword";
   public static final String DEVICEID_KEY = "deviceId";
   public static final String TAG_AQM = "aqm";

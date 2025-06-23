@@ -1,6 +1,8 @@
 package iudx.catalogue.server.apiserver.util;
 
+import static iudx.catalogue.server.database.Constants.SORT;
 import static iudx.catalogue.server.util.Constants.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.Range;
 import io.vertx.core.MultiMap;
@@ -295,6 +297,37 @@ public class QueryMapper {
     }
 
     return new JsonObject().put(STATUS, SUCCESS);
+  }
+
+  /**
+   * Extracts and injects 'sort' param from raw query string to support semicolon-based multi-field sort.
+   *
+   * @param uri the full request URI
+   * @param requestBody the JsonObject being built
+   */
+  public static void extractSortFromRawUri(String uri, JsonObject requestBody) {
+    try {
+      String[] uriParts = uri.split("\\?", 2);
+      if (uriParts.length < 2) return;
+
+      String query = uriParts[1]; // get part after ?
+      String[] pairs = query.split("&");
+
+      for (String pair : pairs) {
+        if (pair.startsWith("sort=")) {
+          String rawSort = pair.substring(5); // after 'sort='
+          String decodedSort = java.net.URLDecoder.decode(rawSort,
+              UTF_8.name());
+          if (!decodedSort.isEmpty()) {
+            requestBody.put(SORT, decodedSort);
+            LOGGER.debug("Manually extracted and set sort param: {}", decodedSort);
+          }
+          break;
+        }
+      }
+    } catch (Exception e) {
+      LOGGER.error("Failed to extract sort param from raw URI", e);
+    }
   }
 
 }
