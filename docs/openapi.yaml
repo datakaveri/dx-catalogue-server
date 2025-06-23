@@ -1329,8 +1329,6 @@ components:
           type: string
         industry:
           type: string
-        uploadedBy:
-          type: string
         license:
           type: string
         fileSize:
@@ -1345,12 +1343,10 @@ components:
         - organizationId
         - accessPolicy
         - organizationType
-        - department
         - modelType
         - fileFormat
         - mediaURL
         - industry
-        - uploadedBy
         - license
         - fileSize
       example:
@@ -1383,7 +1379,6 @@ components:
         fileFormat: 'ipynb'
         industry: 'Agriculture'
         mediaURL: 'someUrl'
-        uploadedBy: 'john.doe@datakaveri.org'
         license: 'MIT'
         fileSize: '15MB'
     exampleEntityWIdDataBankResource:
@@ -1427,8 +1422,6 @@ components:
           maximum: 100
         industry:
           type: string
-        uploadedBy:
-          type: string
         geoCoverage:
           type: string
         yearRange:
@@ -1454,10 +1447,8 @@ components:
         - accessPolicy
         - organizationType
         - fileFormat
-        - department
         - resourceType
         - industry
-        - uploadedBy
         - geoCoverage
         - yearRange
         - verifiedBy
@@ -1481,7 +1472,6 @@ components:
         organizationType: Private
         fileFormat: .xl
         industry: Climate Research
-        uploadedBy: 'john.doe@datakaveri.org'
         geoCoverage: Pan India
         yearRange: '2015-2023'
         verifiedBy: 'Ministry of Earth Sciences'
@@ -1567,9 +1557,6 @@ components:
         itemCreatedAt:
           type: string
           format: date-time
-        uploadedBy:
-          type: string
-          format: email
         fileFormat:
           type: string
         accessPolicy:
@@ -1583,8 +1570,6 @@ components:
         - shortDescription
         - description
         - organizationType
-        - department
-        - uploadedBy
         - fileFormat
         - accessPolicy
         - canBeUsedFor
@@ -1609,7 +1594,6 @@ components:
         description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
-        uploadedBy: 'cdpg@datakaveri.org'
         fileFormat: 'xlsx'
         accessPolicy: 'Public'
         canBeUsedFor:
@@ -1690,9 +1674,6 @@ components:
             organizationType:
               type: string
               description: Type of organization providing the model
-            department:
-              type: string
-              description: Department name
             modelType:
               type: string
               description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
@@ -1717,11 +1698,9 @@ components:
             - provider
             - accessPolicy
             - organizationType
-            - department
             - modelType
             - fileFormat
             - industry
-            - uploadedBy
             - license
             - fileSize
       example:
@@ -1755,7 +1734,7 @@ components:
           modelType: 'ImageClassifier'
           fileFormat: 'ipynb'
           industry: 'Agriculture'
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Agriculture and Co-operation'
           license: 'MIT'
           fileSize: '15MB'
           itemStatus: "ACTIVE"
@@ -1821,10 +1800,8 @@ components:
             - accessPolicy
             - organizationType
             - fileFormat
-            - department
             - resourceType
             - industry
-            - uploadedBy
             - geoCoverage
             - yearRange
             - verifiedBy
@@ -1855,7 +1832,7 @@ components:
           department: 'Department of IT, Electronics and Communication'
           resourceType: 'DATASET'
           industry: 'Climate Research'
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Department of IT, Electronics and Communication'
           geoCoverage: 'Karnataka'
           yearRange: '2015-2023'
           verifiedBy: 'Ministry of Earth Sciences'
@@ -1914,9 +1891,6 @@ components:
             organizationType:
               type: string
               description: Type of organization providing the application
-            department:
-              type: string
-              description: Department name
             itemStatus:
               type: string
               enum: [ "ACTIVE", "INACTIVE" ]
@@ -1933,8 +1907,6 @@ components:
             - shortDescription
             - description
             - organizationType
-            - department
-            - uploadedBy
             - fileFormat
             - accessPolicy
             - canBeUsedFor
@@ -1964,8 +1936,7 @@ components:
             - training
             - algorithm
           organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          uploadedBy: 'cdpg@datakaveri.org'
+
           fileFormat: 'xlsx'
           accessPolicy: 'Public'
           canBeUsedFor:
@@ -2038,15 +2009,11 @@ components:
             organizationType:
               type: string
               enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
-            department:
-              type: string
             modelType:
               type: string
             fileFormat:
               type: string
             industry:
-              type: string
-            uploadedBy:
               type: string
             license:
               type: string
@@ -2061,11 +2028,9 @@ components:
             - tags
             - accessPolicy
             - organizationType
-            - department
             - modelType
             - fileFormat
             - industry
-            - uploadedBy
             - license
             - fileSize
       example:
@@ -2101,7 +2066,7 @@ components:
           modelType: 'ImageClassifier'
           fileFormat: 'ipynb'
           industry: 'Agriculture'
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Agriculture and Co-operation'
           ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
           license: 'MIT'
           fileSize: '15MB'
@@ -2161,8 +2126,6 @@ components:
               type: string
             industry:
               type: string
-            uploadedBy:
-              type: string
             geoCoverage:
               type: string
             yearRange:
@@ -2172,8 +2135,6 @@ components:
             uploadFrequency:
               type: string
             license:
-              type: string
-            department:
               type: string
             resourceType:
               type: string
@@ -2187,10 +2148,8 @@ components:
             - accessPolicy
             - organizationType
             - fileFormat
-            - department
             - resourceType
             - industry
-            - uploadedBy
             - geoCoverage
             - yearRange
             - verifiedBy
@@ -2218,7 +2177,7 @@ components:
           organizationType: Private
           fileFormat: .xls
           industry: Climate Research
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Department of IT, Electronics and Communication'
           geoCoverage: Pan India
           yearRange: '2015-2023'
           verifiedBy: 'Ministry of Earth Sciences'
@@ -2276,8 +2235,6 @@ components:
             organizationType:
               type: string
               enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
-            department:
-              type: string
             canBeUsedFor:
               type: object
               additionalProperties:
@@ -2319,9 +2276,6 @@ components:
             itemCreatedAt:
               type: string
               format: date-time
-            uploadedBy:
-              type: string
-              format: email
             fileFormat:
               type: string
             accessPolicy:
@@ -2335,8 +2289,6 @@ components:
             - shortDescription
             - description
             - organizationType
-            - department
-            - uploadedBy
             - fileFormat
             - accessPolicy
             - canBeUsedFor
@@ -2365,8 +2317,7 @@ components:
           shortDescription: 'A test potential application item for detecting crop disease'
           description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
           organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          uploadedBy: 'cdpg@datakaveri.org'
+
           fileFormat: 'xlsx'
           accessPolicy: 'Public'
           canBeUsedFor:
@@ -2449,9 +2400,6 @@ components:
             organizationType:
               type: string
               description: Type of organization providing the model
-            department:
-              type: string
-              description: Department name
             modelType:
               type: string
               description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
@@ -2500,7 +2448,7 @@ components:
           modelType: 'ImageClassifier'
           fileFormat: 'ipynb'
           industry: 'Agriculture'
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Agriculture and Co-operation'
           license: 'MIT'
           fileSize: '15MB'
           itemStatus: "ACTIVE"
@@ -2550,7 +2498,7 @@ components:
           department: 'Department of IT, Electronics and Communication'
           resourceType: 'DATASET'
           industry: 'Climate Research'
-          uploadedBy: 'john.doe@datakaveri.org'
+          uploadedBy: 'Department of IT, Electronics and Communication'
           geoCoverage: 'Karnataka'
           yearRange: '2015-2023'
           verifiedBy: 'Ministry of Earth Sciences'
@@ -2603,8 +2551,7 @@ components:
             - training
             - algorithm
           organizationType: 'Private'
-          department: 'Agriculture and Co-operation'
-          uploadedBy: 'cdpg@datakaveri.org'
+
           fileFormat: 'xlsx'
           accessPolicy: 'Public'
           canBeUsedFor:
@@ -3328,8 +3275,6 @@ components:
           type: string
         industry:
           type: string
-        uploadedBy:
-          type: string
         license:
           type: string
         fileSize:
@@ -3344,11 +3289,9 @@ components:
         - provider
         - accessPolicy
         - organizationType
-        - department
         - modelType
         - fileFormat
         - industry
-        - uploadedBy
         - license
         - fileSize
       example:
@@ -3378,7 +3321,6 @@ components:
         modelType: 'ImageClassifier'
         fileFormat: 'ipynb'
         industry: 'Agriculture'
-        uploadedBy: 'john.doe@datakaveri.org'
         license: 'MIT'
         fileSize: '15MB'
     exampleEntityDataBank:
@@ -3427,8 +3369,6 @@ components:
           type: string
         industry:
           type: string
-        uploadedBy:
-          type: string
         geoCoverage:
           type: string
         yearRange:
@@ -3450,10 +3390,8 @@ components:
         - accessPolicy
         - organizationType
         - fileFormat
-        - department
         - resourceType
         - industry
-        - uploadedBy
         - geoCoverage
         - yearRange
         - verifiedBy
@@ -3479,7 +3417,6 @@ components:
         department: 'Department of IT, Electronics and Communication'
         resourceType: 'DATASET'
         industry: 'Climate Research'
-        uploadedBy: 'john.doe@datakaveri.org'
         geoCoverage: 'Karnataka'
         yearRange: '2015-2023'
         verifiedBy: 'Ministry of Earth Sciences'
@@ -3522,8 +3459,6 @@ components:
           enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
         department:
           type: string
-        uploadedBy:
-          type: string
         fileFormat:
           type: string
         accessPolicy:
@@ -3560,8 +3495,6 @@ components:
         - description
         - tags
         - organizationType
-        - department
-        - uploadedBy
         - fileFormat
         - accessPolicy
         - canBeUsedFor
@@ -3588,7 +3521,6 @@ components:
           - algorithm
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
-        uploadedBy: 'cdpg@datakaveri.org'
         fileFormat: 'xlsx'
         accessPolicy: 'Public'
         canBeUsedFor:
