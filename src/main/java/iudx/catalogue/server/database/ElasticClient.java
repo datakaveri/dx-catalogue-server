@@ -656,7 +656,7 @@ public final class ElasticClient {
           JsonObject finalResponse = new JsonObject()
               .put(TYPE, TYPE_SUCCESS)
               .put(TITLE, TITLE_SUCCESS)
-              .put(DOC_COUNT, counts);
+              .put(RESULTS, new JsonArray().add(counts));
 
           promise.complete(finalResponse);
 

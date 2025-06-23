@@ -526,7 +526,7 @@ public final class QueryDecoder {
    * @return Elasticsearch query as a JsonObject with filters and a single terms aggregation.
    */
   public JsonObject countQuery(JsonObject request) {
-    // Ensure that a searchCriteria block is present
+    // Validate presence of searchCriteria
     if (!request.containsKey(SEARCH_CRITERIA_KEY)
         || request.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
       return new JsonObject().put(ERROR, new RespBuilder()
@@ -537,38 +537,103 @@ public final class QueryDecoder {
     }
 
     JsonArray searchCriteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
-    JsonObject criterion = searchCriteriaArray.getJsonObject(0);
-    String field = criterion.getString(FIELD);
-    JsonArray values = criterion.getJsonArray(VALUES);
-
-    // Build the bool filter
     JsonArray mustArray = new JsonArray();
-    JsonArray mustNotArray = new JsonArray();
+    JsonObject termsMap = new JsonObject(); // field -> array of values
 
-    JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB));
-    mustArray.addAll(accessPolicyClause.getJsonArray(MUST));
-    mustNotArray.addAll(accessPolicyClause.getJsonArray(MUST_NOT));
+    for (int i = 0; i < searchCriteriaArray.size(); i++) {
+      JsonObject criterion = searchCriteriaArray.getJsonObject(i);
+      String searchType = criterion.getString(SEARCH_TYPE);
+      String field = criterion.getString(FIELD);
+
+      switch (searchType) {
+        case TERM: {
+          JsonArray values = criterion.getJsonArray(VALUES);
+          // Aggregate values for same field
+          if (!termsMap.containsKey(field)) {
+            termsMap.put(field, values);
+          } else {
+            JsonArray existing = termsMap.getJsonArray(field);
+            for (int j = 0; j < values.size(); j++) {
+              if (!existing.contains(values.getString(j))) {
+                existing.add(values.getString(j));
+              }
+            }
+            termsMap.put(field, existing);
+          }
+          break;
+        }
+
+        case BETWEEN_RANGE:
+        case BETWEEN_TEMPORAL: {
+          JsonObject range = new JsonObject();
+          range.put(GREATER_THAN_EQUALS, criterion.getJsonArray(VALUES).getValue(0));
+          range.put(LESS_THAN_EQUALS, criterion.getJsonArray(VALUES).getValue(1));
+
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        case AFTER_RANGE:
+        case AFTER_TEMPORAL: {
+          JsonObject range = new JsonObject().put(GREATER_THAN_EQUALS,
+              criterion.getJsonArray(VALUES).getValue(0));
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        case BEFORE_RANGE:
+        case BEFORE_TEMPORAL: {
+          JsonObject range = new JsonObject().put(LESS_THAN_EQUALS,
+              criterion.getJsonArray(VALUES).getValue(0));
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        default: {
+          return new JsonObject().put(ERROR, new RespBuilder()
+              .withType("UNSUPPORTED_SEARCH_TYPE")
+              .withTitle("Invalid Search Type")
+              .withDetail("Only 'term' and range/temporal types are supported in /count.")
+              .getJsonResponse());
+        }
+      }
+    }
+
+    // Add all collected term filters
+    for (String field : termsMap.fieldNames()) {
+      JsonArray values = termsMap.getJsonArray(field);
+      mustArray.add(new JsonObject()
+          .put(TERMS_KEY, new JsonObject()
+              .put(field + KEYWORD_KEY, values)));
+    }
+
+    // Access control filter
+    JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB));
+    mustArray.addAll(accessPolicy.getJsonArray(MUST));
+    JsonArray mustNotArray = accessPolicy.getJsonArray(MUST_NOT);
 
     JsonObject boolFilter = new JsonObject();
-    if (!mustNotArray.isEmpty()) {
-      boolFilter.put(MUST_NOT, mustNotArray);
-    }
     if (!mustArray.isEmpty()) {
       boolFilter.put(MUST, mustArray);
     }
-
-    // Construct the aggregation on the provided field.
-    JsonObject termsAgg = new JsonObject()
-        .put(FIELD, field + KEYWORD_KEY)
-        .put(INCLUDE, values)
-        .put(SIZE_KEY, values.size());
-
-    JsonObject aggs = new JsonObject().put(RESULTS, new JsonObject().put(TERMS_KEY, termsAgg));
+    if (!mustNotArray.isEmpty()) {
+      boolFilter.put(MUST_NOT, mustNotArray);
+    }
 
     return new JsonObject()
         .put(QUERY_KEY, new JsonObject().put("bool", boolFilter))
-        .put(AGGREGATION_KEY, aggs)
-        .put(SIZE_KEY, 0);
+        .put(SIZE_KEY, 0)
+        .put(AGGREGATION_KEY, new JsonObject()
+            .put(RESULTS, new JsonObject()
+                .put(TERMS_KEY, new JsonObject()
+                    .put(FIELD, TYPE_KEYWORD))));
+
   }
 
   /**
