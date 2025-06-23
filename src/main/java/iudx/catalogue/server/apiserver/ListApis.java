@@ -271,6 +271,7 @@ public final class ListApis {
           case DATA_READINESS:
           case MODEL_TYPE:
           case UPLOADED_BY:
+          case INDUSTRY:
           case ID:
             type.add(itemType);
             break;
