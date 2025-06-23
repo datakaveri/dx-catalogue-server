@@ -24,6 +24,7 @@ public final class JwtData {
   private String drl;
   private List<String> roles = new ArrayList<>();
   private String organizationId;
+  private String organizationName;
 
   public JwtData() {
     super();
@@ -34,6 +35,7 @@ public final class JwtData {
     setAccessToken(json.getString("access_token"));
     setClientId(json.getString("client_id"));
     setOrganizationId(json.getString("organisation_id"));
+    setOrganizationName(json.getString("organisation_name"));
     extractRoles(json);
   }
 
@@ -171,6 +173,14 @@ public final class JwtData {
     this.roles = roles;
   }
 
+  public String getOrganizationName() {
+    return organizationName;
+  }
+
+  public void setOrganizationName(String organizationName) {
+    this.organizationName = organizationName;
+  }
+
   @Override
   public String toString() {
     return "JwtData ["
@@ -188,6 +198,7 @@ public final class JwtData {
         + ", drl=" + drl
         + ", roles=" + roles
         + ", organizationId=" + organizationId
+        + ", organizationName=" + organizationName
         + "]";
   }
 }

@@ -22,11 +22,9 @@
       "description": "An test AI model for detecting crop disease with the help of infected leaf images.",
       "organizationType": "Private",
       "organizationId": "{{UUID}}",
-      "department": "Agriculture and Co-operation",
       "modelType": "ImageClassifier",
       "fileFormat": "ipynb",
       "industry": "Agriculture",
-      "uploadedBy": "john.doe@datakaveri.org",
       "license": "MIT",
       "fileSize": "15MB"
     }
@@ -41,12 +39,10 @@
     "accessPolicy",
     "organizationType",
     "organizationId",
-    "department",
     "modelType",
     "mediaURL",
     "fileFormat",
     "industry",
-    "uploadedBy",
     "license",
     "fileSize"
   ],
