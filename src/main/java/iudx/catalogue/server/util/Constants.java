@@ -183,6 +183,7 @@ public class Constants {
   public static final String ORGANIZATION_NAME = "organizationName";
   public static final String FILE_FORMAT = "fileFormat";
   public static final String UPLOADED_BY = "uploadedBy";
+  public static final String INDUSTRY = "industry";
   public static final String DATA_READINESS = "dataReadiness";
   public static final String MODEL_TYPE = "modelType";
   public static final String AVERAGE_RATING = "average_rating";

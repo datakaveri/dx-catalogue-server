@@ -58,8 +58,6 @@
     "shortDescription",
     "description",
     "organizationType",
-    "department",
-    "uploadedBy",
     "fileFormat",
     "accessPolicy",
     "canBeUsedFor",

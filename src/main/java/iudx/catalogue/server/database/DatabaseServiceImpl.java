@@ -179,6 +179,11 @@ public class DatabaseServiceImpl implements DatabaseService {
       return null;
     }
 
+    JsonArray sortClause = queryDecoder.buildSortClause(request);
+    if (sortClause != null && !sortClause.isEmpty()) {
+      query.put(SORT, sortClause);
+    }
+
     LOGGER.debug("Info: Query constructed;" + query.toString());
 
     client.searchAsync(

@@ -19,13 +19,11 @@
       "organizationType": "Private",
       "fileFormat": "xlsx",
       "industry": "Climate Research",
-      "uploadedBy": "john.doe@datakaveri.org",
       "geoCoverage": "Pan India",
       "yearRange": "2015-2023",
       "verifiedBy": "Ministry of Earth Sciences",
       "uploadFrequency": "Weekly",
-      "license": "CC-BY 4.0",
-      "department": "Department of IT, Electronics and Communication"
+      "license": "CC-BY 4.0"
     }
   ],
   "required": [
@@ -39,9 +37,7 @@
     "organizationType",
     "organizationId",
     "fileFormat",
-    "department",
     "industry",
-    "uploadedBy",
     "geoCoverage",
     "yearRange",
     "verifiedBy",

@@ -2,6 +2,7 @@ package iudx.catalogue.server.database;
 
 import static iudx.catalogue.server.database.Constants.*;
 import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.validator.Constants.ITEM_CREATED_AT;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -454,6 +455,38 @@ public final class QueryDecoder {
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
     }
+  }
+
+  public JsonArray buildSortClause(JsonObject request) {
+    if (!request.containsKey(SORT)) {
+      return null;
+    }
+
+    String sortParam = request.getString(SORT);
+    JsonArray sortArray = new JsonArray();
+
+    String[] sortFields = sortParam.split(";");
+    for (int i = 0; i < Math.min(sortFields.length, 3); i++) {
+      String[] parts = sortFields[i].split(":");
+      if (parts.length == 2) {
+        String field = parts[0].trim();
+        String order = parts[1].trim().toLowerCase();
+
+        if (!order.equals(ASC) && !order.equals(Constants.DESC)) {
+          continue;
+        }
+
+        if (!field.endsWith(KEYWORD_KEY)
+            && (!field.equalsIgnoreCase(ITEM_CREATED_AT))) {
+          field = field + KEYWORD_KEY;
+        }
+
+        JsonObject sortObj = new JsonObject().put(field, new JsonObject().put(ORDER, order));
+        sortArray.add(sortObj);
+      }
+    }
+
+    return sortArray;
   }
 
   /**

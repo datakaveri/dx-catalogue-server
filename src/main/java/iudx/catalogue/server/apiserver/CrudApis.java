@@ -265,9 +265,13 @@ public final class CrudApis {
             LOGGER.debug("Success: JWT Auth successful: {}", authHandler.result());
 
             if (jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_AI_MODEL)
-                || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)) {
+                || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)
+                || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_APPS)) {
               String kcId = authHandler.result().getString(SUB);
+              String orgName = authHandler.result().getString(ORGANIZATION_NAME);
               requestBody.put(PROVIDER_USER_ID, kcId);
+              requestBody.put(DEPARTMENT, orgName);
+              requestBody.put(UPLOADED_BY, orgName);
             }
 
             requestBody.put(HTTP_METHOD, routingContext.request().method().toString());

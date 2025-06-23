@@ -6,6 +6,7 @@ import static iudx.catalogue.server.auditing.util.Constants.USER_ROLE;
 import static iudx.catalogue.server.authenticator.Constants.*;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_AI_MODEL;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_APPS;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_DATA_BANK;
 import static iudx.catalogue.server.util.Constants.METHOD;
 import static iudx.catalogue.server.util.Constants.ORGANIZATION_ID;
@@ -211,7 +212,8 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
     // Extra DELETE method check: match jwtData.getSub() with ownerUserId
     if (method == Method.DELETE
         && (itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)
-        || itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL))) {
+        || itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)
+        || itemType.equalsIgnoreCase(ITEM_TYPE_APPS))) {
       String subId = jwtData.getSub();
       String ownerUserId = authenticationInfo.getString(PROVIDER_USER_ID);
 
