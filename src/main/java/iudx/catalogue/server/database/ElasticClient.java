@@ -12,6 +12,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.io.IOException;
@@ -689,7 +690,17 @@ public final class ElasticClient {
       String index, String doc, Handler<AsyncResult<JsonObject>> resultHandler) {
 
     // TODO: Validation
-    Request docRequest = new Request(REQUEST_POST, index + "/_doc");
+    JsonObject docJson;
+    try {
+      docJson = new JsonObject(doc);
+    } catch (DecodeException e) {
+      resultHandler.handle(Future.failedFuture(
+          "Invalid JSON document: " + e.getMessage()));
+      return this;
+    }
+
+    String docId = docJson.getString(ID);
+    Request docRequest = new Request(REQUEST_POST, index + "/_doc/" + docId);
     docRequest.setJsonEntity(doc.toString());
 
     Future<JsonObject> future = docAsync(REQUEST_POST, docRequest);
