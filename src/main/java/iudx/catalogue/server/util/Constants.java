@@ -175,10 +175,12 @@ public class Constants {
   public static final String NAME = "name";
   public static final String FILTER = "filter";
   public static final String MUST_NOT = "must_not";
+  public static final String MUST = "must";
   public static final String TAGS = "tags";
   public static final String DEPARTMENT = "department";
   public static final String ORGANIZATION_TYPE = "organizationType";
   public static final String ORGANIZATION_ID = "organizationId";
+  public static final String ORGANIZATION_NAME = "organizationName";
   public static final String FILE_FORMAT = "fileFormat";
   public static final String UPLOADED_BY = "uploadedBy";
   public static final String DATA_READINESS = "dataReadiness";
@@ -194,6 +196,7 @@ public class Constants {
   public static final String AUTO_COMPLETE = "autoComplete";
   public static final String FIELD = "field";
   public static final String VALUES = "values";
+  public static final String INCLUDE = "include";
 
   /** HTTP Methods. */
   public static final String REQUEST_GET = "GET";

@@ -372,6 +372,77 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
+  /count:
+    post:
+      tags:
+        - Discovery
+      description: |
+        Count aggregation query for catalogue metadata using filters defined via `searchCriteria`.
+
+        #### 🚩 Behavior
+        - All objects in the `searchCriteria` array are combined using logical **AND**.
+        - Filters with `searchType` of `"term"` and `"range"` (numeric or temporal) are supported.
+        - The response always includes a count **aggregated by `type.keyword`**.
+
+        #### 🎯 UI Use Case:
+        Used in summary dashboards to show:
+        - Number of Data Banks (`type=adex:DataBank`)
+        - Number of AI Models (`type=adex:AiModel`)
+        - Number of Potential Applications (`type=adex:Apps`)
+        - Distribution by `type` after applying department/tags/date filters
+
+        > 📌 Aggregation is always based on `type.keyword`.  
+        > The `results` object contains key-value pairs for each `type`.
+
+      operationId: count
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+      responses:
+        '200':
+          description: Aggregated count results by `type`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:cat:Success
+                  title:
+                    type: string
+                    example: Success
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: integer
+                    example:
+                      - adex:DataBank: 131
+                        adex:Apps: 14
+        '400':
+          description: Invalid input or unsupported search criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForDiscovery'
+              examples:
+                Missing Search Criteria:
+                  value:
+                    type: "urn:dx:cat:InvalidSyntax"
+                    title: "Missing Search Criteria"
+                    detail: "The request must contain a non-empty searchCriteria block."
+                Invalid Search Type:
+                  value:
+                    type: "urn:dx:cat:InvalidPropertyValue"
+                    title: "Invalid Search Type"
+                    detail: "Only 'term' and range/temporal filters are supported for count aggregation."
+
   '/list':
     post:
       tags:

@@ -382,48 +382,9 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
-    String sub = request.getString(SUB);
-
-    if (sub != null && !sub.isEmpty()) {
-      // Public access
-      JsonObject publicAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", OPEN));
-
-      // Restricted access
-      JsonObject restrictedAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", RESTRICTED));
-
-      // Private access by owner
-      JsonObject privateAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", PRIVATE));
-
-      JsonObject ownerMatch = new JsonObject(MATCH_QUERY
-          .replace("$1", PROVIDER_USER_ID).replace("$2", sub));
-
-      // private + ownerUserId = own private data
-      JsonObject privateOwned = new JsonObject()
-          .put("bool", new JsonObject()
-              .put("must", new JsonArray()
-                  .add(privateAccess)
-                  .add(ownerMatch)));
-
-      // Combined access filter: PUBLIC or RESTRICTED or OWN PRIVATE
-      JsonObject accessControl = new JsonObject()
-          .put("bool", new JsonObject()
-              .put("should", new JsonArray()
-                  .add(publicAccess)
-                  .add(restrictedAccess)
-                  .add(privateOwned)));
-
-      mustQuery.add(accessControl);
-
-    } else {
-      // Not authenticated → Exclude all PRIVATE data
-      JsonObject excludeAllPrivate = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY)
-          .replace("$2", PRIVATE));
-      mustNotQuery.add(excludeAllPrivate);
-    }
+    JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB));
+    mustQuery.addAll(accessPolicyClause.getJsonArray(MUST));
+    mustNotQuery.addAll(accessPolicyClause.getJsonArray(MUST_NOT));
 
     /* checking the requests for limit attribute */
     if (request.containsKey(LIMIT)) {
@@ -493,6 +454,186 @@ public final class QueryDecoder {
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
     }
+  }
+
+  /**
+   * Builds access control filter based on authentication (sub).
+   *
+   * @param sub The user ID from token
+   * @return A JsonObject containing two arrays: mustQuery, mustNotQuery
+   */
+  private JsonObject buildAccessPolicyFilter(String sub) {
+    JsonArray mustQuery = new JsonArray();
+    JsonArray mustNotQuery = new JsonArray();
+
+    if (sub != null && !sub.isEmpty()) {
+      // Public access
+      JsonObject publicAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", OPEN));
+
+      // Restricted access
+      JsonObject restrictedAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", RESTRICTED));
+
+      // Private access
+      JsonObject privateAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", PRIVATE));
+
+      // Owner match
+      JsonObject ownerMatch = new JsonObject(MATCH_QUERY
+          .replace("$1", PROVIDER_USER_ID).replace("$2", sub));
+
+      // private + owner match → own private items
+      JsonObject privateOwned = new JsonObject()
+          .put("bool", new JsonObject()
+              .put("must", new JsonArray()
+                  .add(privateAccess)
+                  .add(ownerMatch)));
+
+      // access control → allow OPEN, RESTRICTED, or OWN PRIVATE
+      JsonObject accessControl = new JsonObject()
+          .put("bool", new JsonObject()
+              .put("should", new JsonArray()
+                  .add(publicAccess)
+                  .add(restrictedAccess)
+                  .add(privateOwned)));
+
+      mustQuery.add(accessControl);
+    } else {
+      // If not authenticated, exclude PRIVATE
+      JsonObject excludeAllPrivate = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY)
+          .replace("$2", PRIVATE));
+      mustNotQuery.add(excludeAllPrivate);
+    }
+
+    return new JsonObject()
+        .put(MUST, mustQuery)
+        .put(MUST_NOT, mustNotQuery);
+  }
+
+  /**
+   * Builds a count aggregation query for Elasticsearch using the first `term`-type search criterion.
+   *
+   * <p>This method supports multiple `searchCriteria` filters, but uses only the first item
+   * to determine the aggregation field and values.</p>
+   *
+   * <p>The rest of the filters (including access control) are added to the bool query.</p>
+   *
+   * <p>Aggregation is only performed for `term` type queries on fields with keyword mapping.</p>
+   *
+   * @param request The incoming request body containing `searchCriteria` and optionally `sub` for access control.
+   * @return Elasticsearch query as a JsonObject with filters and a single terms aggregation.
+   */
+  public JsonObject countQuery(JsonObject request) {
+    // Validate presence of searchCriteria
+    if (!request.containsKey(SEARCH_CRITERIA_KEY)
+        || request.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
+      return new JsonObject().put(ERROR, new RespBuilder()
+          .withType("MISSING_SEARCH_CRITERIA")
+          .withTitle("Missing Search Criteria")
+          .withDetail("The request must contain a non-empty searchCriteria block.")
+          .getJsonResponse());
+    }
+
+    JsonArray searchCriteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
+    JsonArray mustArray = new JsonArray();
+    JsonObject termsMap = new JsonObject(); // field -> array of values
+
+    for (int i = 0; i < searchCriteriaArray.size(); i++) {
+      JsonObject criterion = searchCriteriaArray.getJsonObject(i);
+      String searchType = criterion.getString(SEARCH_TYPE);
+      String field = criterion.getString(FIELD);
+
+      switch (searchType) {
+        case TERM: {
+          JsonArray values = criterion.getJsonArray(VALUES);
+          // Aggregate values for same field
+          if (!termsMap.containsKey(field)) {
+            termsMap.put(field, values);
+          } else {
+            JsonArray existing = termsMap.getJsonArray(field);
+            for (int j = 0; j < values.size(); j++) {
+              if (!existing.contains(values.getString(j))) {
+                existing.add(values.getString(j));
+              }
+            }
+            termsMap.put(field, existing);
+          }
+          break;
+        }
+
+        case BETWEEN_RANGE:
+        case BETWEEN_TEMPORAL: {
+          JsonObject range = new JsonObject();
+          range.put(GREATER_THAN_EQUALS, criterion.getJsonArray(VALUES).getValue(0));
+          range.put(LESS_THAN_EQUALS, criterion.getJsonArray(VALUES).getValue(1));
+
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        case AFTER_RANGE:
+        case AFTER_TEMPORAL: {
+          JsonObject range = new JsonObject().put(GREATER_THAN_EQUALS,
+              criterion.getJsonArray(VALUES).getValue(0));
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        case BEFORE_RANGE:
+        case BEFORE_TEMPORAL: {
+          JsonObject range = new JsonObject().put(LESS_THAN_EQUALS,
+              criterion.getJsonArray(VALUES).getValue(0));
+          mustArray.add(new JsonObject()
+              .put(RANGE, new JsonObject()
+                  .put(field, range)));
+          break;
+        }
+
+        default: {
+          return new JsonObject().put(ERROR, new RespBuilder()
+              .withType("UNSUPPORTED_SEARCH_TYPE")
+              .withTitle("Invalid Search Type")
+              .withDetail("Only 'term' and range/temporal types are supported in /count.")
+              .getJsonResponse());
+        }
+      }
+    }
+
+    // Add all collected term filters
+    for (String field : termsMap.fieldNames()) {
+      JsonArray values = termsMap.getJsonArray(field);
+      mustArray.add(new JsonObject()
+          .put(TERMS_KEY, new JsonObject()
+              .put(field + KEYWORD_KEY, values)));
+    }
+
+    // Access control filter
+    JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB));
+    mustArray.addAll(accessPolicy.getJsonArray(MUST));
+    JsonArray mustNotArray = accessPolicy.getJsonArray(MUST_NOT);
+
+    JsonObject boolFilter = new JsonObject();
+    if (!mustArray.isEmpty()) {
+      boolFilter.put(MUST, mustArray);
+    }
+    if (!mustNotArray.isEmpty()) {
+      boolFilter.put(MUST_NOT, mustNotArray);
+    }
+
+    return new JsonObject()
+        .put(QUERY_KEY, new JsonObject().put("bool", boolFilter))
+        .put(SIZE_KEY, 0)
+        .put(AGGREGATION_KEY, new JsonObject()
+            .put(RESULTS, new JsonObject()
+                .put(TERMS_KEY, new JsonObject()
+                    .put(FIELD, TYPE_KEYWORD))));
+
   }
 
   /**
