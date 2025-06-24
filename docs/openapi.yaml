@@ -399,6 +399,44 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
+  /search/myassets:
+    post:
+      summary: Search assets created by the current authenticated user
+      description: >
+        Returns assets owned by the current authenticated user, using the same
+        unified search format as the `/search` endpoint. This endpoint automatically
+        filters results to only include items where `ownerUserId` matches the
+        authenticated user's `sub` value from the token.
+
+        Supports property-based, temporal, and numeric range filters, as well as
+        full-text search.
+      operationId: myAssetsSearch
+      tags:
+        - Discovery
+      security:
+        - authorization: [ ]
+      requestBody:
+        description: Request body containing unified search filters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchCriteriaRequest'
+      responses:
+        '200':
+          description: A successful search response with assets owned by the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid request query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid authentication token
   /count:
     post:
       tags:
@@ -928,6 +966,11 @@ tags:
       These apis are intended to be used by User Interfaces.
     x-displayName: List
 components:
+  securitySchemes:
+    authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     successResponseWithObjects:
       type: object
