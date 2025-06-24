@@ -62,6 +62,7 @@ public class Constants {
   public static final String COS = "cos";
   public static final String OWNER = "owner";
   public static final String PROVIDER_USER_ID = "ownerUserId";
+  public static final String MY_ASSETS_REQ = "myAssetsRequest";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
   public static final String COS_ITEM = "cos";
   public static final String AI_MODEL = "aiModel";

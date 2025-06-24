@@ -262,8 +262,6 @@ public final class SearchApis {
     requestBody.put(PAGE_KEY, page);
     requestBody.put(OFFSET, offset);
 
-    LOGGER.debug(request.params().toString());
-
     QueryMapper.extractSortFromRawUri(routingContext.request().uri(), requestBody);
 
     String token = routingContext.get(HEADER_TOKEN);
@@ -271,7 +269,7 @@ public final class SearchApis {
       JsonObject jwtAuthenticationInfo = new JsonObject()
           .put(TOKEN, token)
           .put(METHOD, REQUEST_GET)
-          .put(API_ENDPOINT, api.getRouteSearch());
+          .put(API_ENDPOINT, routingContext.normalizedPath());
 
       authService.tokenInterospect(new JsonObject(), jwtAuthenticationInfo, authHandler -> {
         if (authHandler.failed()) {
@@ -361,7 +359,8 @@ public final class SearchApis {
             .end(validateHandler.cause().getLocalizedMessage());
       } else {
         String path = request.path();
-        if (path.equals(api.getRouteSearch())) {
+        requestBody.put(MY_ASSETS_REQ, path.equals(api.getRouteSearchMyAssets()));
+        if (path.equals(api.getRouteSearch()) || path.equals(api.getRouteSearchMyAssets())) {
           dbService.searchQuery(requestBody, handler -> {
             if (handler.succeeded()) {
               JsonObject resultJson = handler.result();

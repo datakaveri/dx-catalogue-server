@@ -64,6 +64,7 @@ public class Constants {
 
   public static final String ROUTE_RELATIONSHIP = "/relationship";
   public static final String ROUTE_SEARCH = "/search";
+  public static final String ROUTE_SEARCH_MY_ASSETS = "/search/myassets";
   public static final String ROUTE_NLP_SEARCH = "/nlpsearch";
   public static final String ROUTE_LIST_ITEMS = "/list/:itemType";
   public static final String ROUTE_LIST = "/list";
