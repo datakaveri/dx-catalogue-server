@@ -2,6 +2,7 @@ package iudx.catalogue.server.database;
 
 import static iudx.catalogue.server.database.Constants.*;
 import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.validator.Constants.DATA_UPLOAD_STATUS;
 import static iudx.catalogue.server.validator.Constants.ITEM_CREATED_AT;
 
 import io.vertx.core.json.JsonArray;
@@ -383,6 +384,20 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
+    // Exclude adex:DataBank items with dataUploadStatus = false
+    JsonObject mustTypeDatabank = new JsonObject()
+        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
+    JsonObject mustUploadFalse = new JsonObject()
+        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
+
+    JsonObject boolMustClause = new JsonObject()
+        .put("bool", new JsonObject().put(MUST, new JsonArray()
+            .add(mustTypeDatabank)
+            .add(mustUploadFalse)));
+
+    mustNotQuery.add(boolMustClause);
+
+    // Access control filter
     JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB), request);
     mustQuery.addAll(accessPolicyClause.getJsonArray(MUST));
     mustNotQuery.addAll(accessPolicyClause.getJsonArray(MUST_NOT));
@@ -653,6 +668,17 @@ public final class QueryDecoder {
               .put(field + KEYWORD_KEY, values)));
     }
 
+    // Exclude adex:DataBank items with dataUploadStatus = false
+    JsonObject mustTypeDatabank = new JsonObject()
+        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
+    JsonObject mustUploadFalse = new JsonObject()
+        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
+
+    JsonObject boolMustClause = new JsonObject()
+        .put("bool", new JsonObject().put(MUST, new JsonArray()
+            .add(mustTypeDatabank)
+            .add(mustUploadFalse)));
+
     // Access control filter
     JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB), request);
     mustArray.addAll(accessPolicy.getJsonArray(MUST));
@@ -913,13 +939,13 @@ public final class QueryDecoder {
     StringBuilder queryBuilder = new StringBuilder();
     queryBuilder.append(QUERY_START);
 
-    // Always include at least accessPolicy filter
-    queryBuilder.append(QUERY_BOOL_FILTER_START);
-
+    queryBuilder.append("\"query\": { \"bool\": {");
     // Access policy filter
     JsonArray allowedPolicies = new JsonArray();
     allowedPolicies.add(OPEN).add(RESTRICTED);
 
+    // Start "filter" array
+    queryBuilder.append("\"filter\": [");
     String openRestrictedFilter = TERMS_QUERY_TEMPLATE
         .replace("$field", ACCESS_POLICY + KEYWORD_KEY)
         .replace("$value", allowedPolicies.toString());
@@ -927,13 +953,14 @@ public final class QueryDecoder {
     // Create the `must_not exists` part for missing accessPolicy
     String accessPolicyMissing = MUST_NOT_EXISTS_QUERY_TEMPLATE
         .replace("$field", ACCESS_POLICY);
-
     String shouldArray = String.format("[%s,%s]", openRestrictedFilter, accessPolicyMissing);
     String openRestrictedOrMissing = SHOULD_QUERY.replace("$1", shouldArray);
 
     // Private access policy needs special handling: restrict by ownerUserId = sub
     // Access policy filter logic
     boolean hasToken = request.containsKey(SUB) && request.getString(SUB) != null;
+
+    // Add access policy filters
     if (hasToken) {
       String shouldClause = getShouldClause(request.getString(SUB), openRestrictedOrMissing);
       queryBuilder.append(shouldClause).append(",");
@@ -942,7 +969,7 @@ public final class QueryDecoder {
       queryBuilder.append(openRestrictedOrMissing).append(",");
     }
 
-    //instanceId filter
+    //instance filter
     String instanceId = request.getString(INSTANCE);
     if (instanceId != null && !instanceId.isEmpty()) {
       String instanceFilter = TERM_QUERY_TEMPLATE
@@ -963,18 +990,30 @@ public final class QueryDecoder {
           String extraFilter = TERMS_QUERY_TEMPLATE
               .replace("$field", field + KEYWORD_KEY)
               .replace("$value", values.toString());
-          // Assuming a single value in "values" for simplicity
           queryBuilder.append(extraFilter).append(",");
         }
       }
     }
 
-    // Remove last comma if necessary
+    // Remove trailing comma in "filter"
     if (queryBuilder.toString().endsWith(",")) {
-      queryBuilder = new StringBuilder(queryBuilder.substring(0, queryBuilder.length() - 1));
+      queryBuilder.setLength(queryBuilder.length() - 1);
     }
+    queryBuilder.append("],"); // close "filter"
 
-    queryBuilder.append(QUERY_BOOL_FILTER_END);
+    // Add must_not clause inside same bool
+    JsonObject mustTypeDatabank = new JsonObject()
+        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
+    JsonObject mustUploadFalse = new JsonObject()
+        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
+    JsonObject boolMustClause = new JsonObject()
+        .put("bool", new JsonObject().put(MUST, new JsonArray()
+            .add(mustTypeDatabank)
+            .add(mustUploadFalse)));
+    String mustNotDatabankClause = "\"must_not\": [" + boolMustClause.encode() + "]";
+    queryBuilder.append(mustNotDatabankClause);
+
+    queryBuilder.append("} },");
 
     queryBuilder.append(AGGS_START);
 

@@ -192,6 +192,12 @@
     "@context": {
       "type": "string",
       "format": "uri"
+    },
+    "dataUploadStatus": {
+      "type": "boolean",
+      "title": "Indicates whether data has been successfully uploaded",
+      "description": "This field is set by the server once data is uploaded and report generation is successful.",
+      "default": false
     }
   },
   "additionalProperties": true
