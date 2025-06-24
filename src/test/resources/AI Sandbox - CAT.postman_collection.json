@@ -3356,6 +3356,61 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "My Assets",
+			"item": [
+				{
+					"name": "MyAssetsSearch (200)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{org_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:DataBank\", \"adex:Apps\", \"adex:AiModel\"]\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}{{base}}/search/myassets?sort=itemCreatedAt:asc;name:desc&page=1&size=1000",
+							"host": [
+								"{{host}}{{base}}"
+							],
+							"path": [
+								"search",
+								"myassets"
+							],
+							"query": [
+								{
+									"key": "sort",
+									"value": "itemCreatedAt:asc;name:desc"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "size",
+									"value": "1000"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
