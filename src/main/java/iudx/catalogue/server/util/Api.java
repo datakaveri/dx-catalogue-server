@@ -16,6 +16,7 @@ public class Api {
   private StringBuilder routeInstance;
   private StringBuilder routeRelationship;
   private StringBuilder routeSearch;
+  private StringBuilder routeSearchMyAssets;
   private StringBuilder routeNlpSearch;
   private StringBuilder routeListItems;
   private StringBuilder routeListMulItems;
@@ -66,6 +67,7 @@ public class Api {
     routeInstance = new StringBuilder(dxApiBasePath).append(ROUTE_INSTANCE);
     routeRelationship = new StringBuilder(dxApiBasePath).append(ROUTE_RELATIONSHIP);
     routeSearch = new StringBuilder(dxApiBasePath).append(ROUTE_SEARCH);
+    routeSearchMyAssets = new StringBuilder(dxApiBasePath).append(ROUTE_SEARCH_MY_ASSETS);
     routeNlpSearch = new StringBuilder(dxApiBasePath).append(ROUTE_NLP_SEARCH);
     routeListItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST_ITEMS);
     routeListMulItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST);
@@ -111,6 +113,9 @@ public class Api {
 
   public String getRouteSearch() {
     return routeSearch.toString();
+  }
+  public String getRouteSearchMyAssets() {
+    return routeSearchMyAssets.toString();
   }
 
   public String getRouteNlpSearch() {

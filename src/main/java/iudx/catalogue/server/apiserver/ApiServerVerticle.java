@@ -390,6 +390,25 @@ public class ApiServerVerticle extends AbstractVerticle {
               }
               searchApis.postSearchHandler(routingContext);
             });
+    router
+        .post(api.getRouteSearchMyAssets())
+        .produces(MIME_APPLICATION_JSON)
+        .failureHandler(exceptionhandler)
+        .handler(
+            routingContext -> {
+              /* checking auhthentication info in requests */
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
+                searchApis.postSearchHandler(routingContext);
+              } else {
+                LOGGER.warn("Fail: Unathorized CRUD operation");
+                routingContext.response().setStatusCode(401).end();
+              }
+            });
 
     /* NLP Search */
     router

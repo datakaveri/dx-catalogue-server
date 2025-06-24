@@ -383,7 +383,7 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
-    JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB));
+    JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB), request);
     mustQuery.addAll(accessPolicyClause.getJsonArray(MUST));
     mustNotQuery.addAll(accessPolicyClause.getJsonArray(MUST_NOT));
 
@@ -495,45 +495,52 @@ public final class QueryDecoder {
    * @param sub The user ID from token
    * @return A JsonObject containing two arrays: mustQuery, mustNotQuery
    */
-  private JsonObject buildAccessPolicyFilter(String sub) {
+  private JsonObject buildAccessPolicyFilter(String sub, JsonObject request) {
     JsonArray mustQuery = new JsonArray();
     JsonArray mustNotQuery = new JsonArray();
 
+    boolean isMyAssetsRequest = request.getBoolean(MY_ASSETS_REQ, false);
+
     if (sub != null && !sub.isEmpty()) {
-      // Public access
-      JsonObject publicAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", OPEN));
+      if (isMyAssetsRequest) {
+        // Strictly match owned items only
+        JsonObject ownerMatch = new JsonObject(MATCH_QUERY
+            .replace("$1", PROVIDER_USER_ID)
+            .replace("$2", sub));
+        mustQuery.add(ownerMatch);
+      } else {
+        // Public access
+        JsonObject publicAccess = new JsonObject(MATCH_QUERY
+            .replace("$1", ACCESS_POLICY).replace("$2", OPEN));
 
-      // Restricted access
-      JsonObject restrictedAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", RESTRICTED));
+        // Restricted access
+        JsonObject restrictedAccess = new JsonObject(MATCH_QUERY
+            .replace("$1", ACCESS_POLICY).replace("$2", RESTRICTED));
 
-      // Private access
-      JsonObject privateAccess = new JsonObject(MATCH_QUERY
-          .replace("$1", ACCESS_POLICY).replace("$2", PRIVATE));
+        // Private access
+        JsonObject privateAccess = new JsonObject(MATCH_QUERY
+            .replace("$1", ACCESS_POLICY).replace("$2", PRIVATE));
 
-      // Owner match
-      JsonObject ownerMatch = new JsonObject(MATCH_QUERY
-          .replace("$1", PROVIDER_USER_ID).replace("$2", sub));
+        // Owner match
+        JsonObject ownerMatch = new JsonObject(MATCH_QUERY
+            .replace("$1", PROVIDER_USER_ID).replace("$2", sub));
 
-      // private + owner match → own private items
-      JsonObject privateOwned = new JsonObject()
-          .put("bool", new JsonObject()
-              .put("must", new JsonArray()
-                  .add(privateAccess)
-                  .add(ownerMatch)));
+        JsonObject privateOwned = new JsonObject()
+            .put("bool", new JsonObject()
+                .put("must", new JsonArray()
+                    .add(privateAccess)
+                    .add(ownerMatch)));
 
-      // access control → allow OPEN, RESTRICTED, or OWN PRIVATE
-      JsonObject accessControl = new JsonObject()
-          .put("bool", new JsonObject()
-              .put("should", new JsonArray()
-                  .add(publicAccess)
-                  .add(restrictedAccess)
-                  .add(privateOwned)));
+        JsonObject accessControl = new JsonObject()
+            .put("bool", new JsonObject()
+                .put("should", new JsonArray()
+                    .add(publicAccess)
+                    .add(restrictedAccess)
+                    .add(privateOwned)));
 
-      mustQuery.add(accessControl);
+        mustQuery.add(accessControl);
+      }
     } else {
-      // If not authenticated, exclude PRIVATE
       JsonObject excludeAllPrivate = new JsonObject(MATCH_QUERY
           .replace("$1", ACCESS_POLICY)
           .replace("$2", PRIVATE));
@@ -647,7 +654,7 @@ public final class QueryDecoder {
     }
 
     // Access control filter
-    JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB));
+    JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB), request);
     mustArray.addAll(accessPolicy.getJsonArray(MUST));
     JsonArray mustNotArray = accessPolicy.getJsonArray(MUST_NOT);
 
