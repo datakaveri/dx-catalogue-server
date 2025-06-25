@@ -40,7 +40,6 @@
     "organizationType",
     "organizationId",
     "modelType",
-    "mediaURL",
     "fileFormat",
     "industry",
     "license",
@@ -201,6 +200,16 @@
       "title": "The @context schema",
       "description": "JSON-LD context URI",
       "format": "uri"
+    },
+    "dataUploadStatus": {
+      "type": "boolean",
+      "title": "Indicates whether data has been successfully uploaded",
+      "description": "This field is set by the server once data is uploaded and report generation is successful.",
+      "default": false
+    },
+    "mediaURL": {
+      "type": "string",
+      "description": "URL to the external resource"
     }
   },
   "additionalProperties": true

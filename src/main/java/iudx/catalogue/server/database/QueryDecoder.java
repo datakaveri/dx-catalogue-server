@@ -384,18 +384,10 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
-    // Exclude adex:DataBank items with dataUploadStatus = false
-    JsonObject mustTypeDatabank = new JsonObject()
-        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
-    JsonObject mustUploadFalse = new JsonObject()
-        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
-
-    JsonObject boolMustClause = new JsonObject()
-        .put("bool", new JsonObject().put(MUST, new JsonArray()
-            .add(mustTypeDatabank)
-            .add(mustUploadFalse)));
-
-    mustNotQuery.add(boolMustClause);
+    // Exclude DataBank and AiModel items with dataUploadStatus = false
+    mustNotQuery
+        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK))
+        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL));
 
     // Access control filter
     JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB), request);
@@ -470,6 +462,20 @@ public final class QueryDecoder {
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
     }
+  }
+
+  private JsonObject excludeTypeWithUploadStatusFalse(String type) {
+    JsonObject mustType = new JsonObject()
+        .put(TERM, new JsonObject().put(TYPE_KEYWORD, type));
+
+    JsonObject mustUploadFalse = new JsonObject()
+        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
+
+    return new JsonObject()
+        .put("bool", new JsonObject()
+            .put(MUST, new JsonArray()
+                .add(mustType)
+                .add(mustUploadFalse)));
   }
 
   public JsonArray buildSortClause(JsonObject request) {
@@ -668,21 +674,14 @@ public final class QueryDecoder {
               .put(field + KEYWORD_KEY, values)));
     }
 
-    // Exclude adex:DataBank items with dataUploadStatus = false
-    JsonObject mustTypeDatabank = new JsonObject()
-        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
-    JsonObject mustUploadFalse = new JsonObject()
-        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
-
-    JsonObject boolMustClause = new JsonObject()
-        .put("bool", new JsonObject().put(MUST, new JsonArray()
-            .add(mustTypeDatabank)
-            .add(mustUploadFalse)));
-
     // Access control filter
     JsonObject accessPolicy = buildAccessPolicyFilter(request.getString(SUB), request);
     mustArray.addAll(accessPolicy.getJsonArray(MUST));
     JsonArray mustNotArray = accessPolicy.getJsonArray(MUST_NOT);
+
+    mustNotArray
+        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK))
+        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL));
 
     JsonObject boolFilter = new JsonObject();
     if (!mustArray.isEmpty()) {
@@ -1001,17 +1000,14 @@ public final class QueryDecoder {
     }
     queryBuilder.append("],"); // close "filter"
 
-    // Add must_not clause inside same bool
-    JsonObject mustTypeDatabank = new JsonObject()
-        .put(TERM, new JsonObject().put(TYPE_KEYWORD, ITEM_TYPE_DATA_BANK));
-    JsonObject mustUploadFalse = new JsonObject()
-        .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
-    JsonObject boolMustClause = new JsonObject()
-        .put("bool", new JsonObject().put(MUST, new JsonArray()
-            .add(mustTypeDatabank)
-            .add(mustUploadFalse)));
-    String mustNotDatabankClause = "\"must_not\": [" + boolMustClause.encode() + "]";
+    // Add must_not clause if dataUploadStatus is false for databank and aimodel items
+
+    String mustNotDatabankClause =
+        "\"must_not\": [" + excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK).encode();
     queryBuilder.append(mustNotDatabankClause);
+    queryBuilder.append(',');
+    String mustNotAiModelClause = excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL).encode() + "]";
+    queryBuilder.append(mustNotAiModelClause);
 
     queryBuilder.append("} },");
 

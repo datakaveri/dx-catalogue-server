@@ -105,22 +105,32 @@ public final class CrudApis {
 
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
-    Set<String> type = new HashSet<String>(new JsonArray().getList());
+    Set<String> type;
     try {
-      type = new HashSet<String>(requestBody.getJsonArray(TYPE).getList());
+      JsonArray typeArray = requestBody.getJsonArray(TYPE);
+
+      if (typeArray == null || typeArray.isEmpty()) {
+        throw new IllegalArgumentException("Missing or empty 'type' field");
+      }
+
+      type = new HashSet<>(typeArray.getList());
+      type.retainAll(ITEM_TYPES);
+
+      if (type.isEmpty()) {
+        throw new IllegalArgumentException("No valid types found in 'type' field");
+      }
     } catch (Exception e) {
-      LOGGER.error("Fail: Invalid type");
+      LOGGER.error("Fail: Invalid type", e);
       RespBuilder respBuilder = new RespBuilder()
           .withType(TYPE_INVALID_SCHEMA)
           .withTitle(TITLE_INVALID_SCHEMA)
           .withDetail("Invalid type for item/type not present");
       response.setStatusCode(400)
           .end(respBuilder.getResponse());
+      return;
     }
-    type.retainAll(ITEM_TYPES);
     String itemType = type.toString().replaceAll("\\[", "")
         .replaceAll("\\]", "");
-
     LOGGER.debug("Info: itemType;" + itemType);
 
     // Start insertion flow
