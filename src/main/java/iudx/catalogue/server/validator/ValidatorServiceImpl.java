@@ -317,6 +317,11 @@ public class ValidatorServiceImpl implements ValidatorService {
 
     request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
         .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+    if (request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank()) {
+      request.put(DATA_UPLOAD_STATUS, true);
+    } else {
+      request.put(DATA_UPLOAD_STATUS, false);
+    }
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
         .replace("$1", ITEM_TYPE_AI_MODEL).replace("$2", request.getString(NAME));
@@ -352,7 +357,9 @@ public class ValidatorServiceImpl implements ValidatorService {
 
     request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
         .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    if (method.equalsIgnoreCase(REQUEST_POST)) {
+    if (request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank()) {
+      request.put(DATA_UPLOAD_STATUS, true);
+    } else {
       request.put(DATA_UPLOAD_STATUS, false);
     }
 

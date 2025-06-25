@@ -12,6 +12,7 @@ public class Constants {
   public static final String ACTIVE = "ACTIVE";
   public static final String ITEM_CREATED_AT = "itemCreatedAt";
   public static final String DATA_UPLOAD_STATUS = "dataUploadStatus";
+  public static final String MEDIA_URL = "mediaURL";
   public static final String LAST_UPDATED = "lastUpdated";
   public static final String CONTEXT = "@context";
 
