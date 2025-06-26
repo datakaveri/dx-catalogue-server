@@ -80,7 +80,6 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
 
       JWTClaimsSet claimsSet = jwtProcessor.process(token, null);
       String stringjson = claimsSet.toString();
-      LOGGER.debug("JWTClaimsSet (processed): " + stringjson);
 
       JwtData jwtData = new JwtData(new JsonObject(stringjson));
 
