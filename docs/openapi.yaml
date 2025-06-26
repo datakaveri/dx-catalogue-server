@@ -1548,6 +1548,8 @@ components:
         label:
           type: string
           maxLength: 512
+        industry:
+          type: string
         shortDescription:
           type: string
           maxLength: 3200
@@ -1557,43 +1559,40 @@ components:
         organizationType:
           type: string
           enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
-        department:
-          type: string
-        canBeUsedFor:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 300
-          maxProperties: 5
-        dataInputsAndAiTechniques:
-          type: object
-          properties:
-            Input Data Banks:
-              type: array
-              items:
+        sections:
+          type: array
+          items:
+            type: object
+            required: [ title ]
+            properties:
+              title:
                 type: string
-                maxLength: 200
-            Expected Output:
-              type: array
-              items:
+              content:
                 type: string
-                maxLength: 200
-            AI Models:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-            Potential Benefits:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-          required:
-            - Input Data Banks
-            - Expected Output
-            - AI Models
-            - Potential Benefits
-          additionalProperties: false
+              points:
+                type: array
+                items:
+                  type: string
+              subsections:
+                type: array
+                items:
+                  type: object
+                  anyOf:
+                    - required: [ subtitle, points ]
+                    - required: [ subtitle, content ]
+                  properties:
+                    subtitle:
+                      type: string
+                    content:
+                      type: string
+                    points:
+                      type: array
+                      items:
+                        type: string
+            anyOf:
+              - required: [ content ]
+              - required: [ points ]
+              - required: [ subsections ]
         itemStatus:
           type: string
           enum: [ 'ACTIVE', 'INACTIVE' ]
@@ -1606,21 +1605,26 @@ components:
           type: string
           enum: [ 'Public', 'Private' ]
       required:
-        - name
         - type
-        - tags
+        - name
         - label
         - shortDescription
         - description
+        - industry
+        - tags
         - organizationType
-        - fileFormat
-        - accessPolicy
-        - canBeUsedFor
-        - dataInputsAndAiTechniques
+        - sections
       example:
+        '@context': 'https://agrijson.org'
+        id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
         type:
           - 'adex:Apps'
-        name: 'crop-disease-app'
+        name: 'crop-disease-detector-app'
+        label: 'Crop Disease Detection Application'
+        industry: 'smaple industry'
+        ownerUserId: 'e2c6a437-8109-4a2c-8923-efc2a9e6df1d'
+        shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+        description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
         tags:
           - ai
           - ml
@@ -1632,31 +1636,24 @@ components:
           - machine learning
           - training
           - algorithm
-        label: 'Test-Crop Disease Detection Model'
-        shortDescription: 'A test potential application item for detecting crop disease'
-        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
         organizationType: 'Private'
-        department: 'Agriculture and Co-operation'
-        fileFormat: 'xlsx'
-        accessPolicy: 'Public'
-        canBeUsedFor:
-          cropMonitoring: 'Detect and classify diseases in crops using image input'
-          yieldOptimization: 'Improve crop yield by early detection of diseases'
-        dataInputsAndAiTechniques:
-          Input Data Banks:
-            - 'Annotated Leaf Image Dataset'
-            - 'Crop Type Classification Data'
-          Expected Output:
-            - 'Disease Type'
-            - 'Confidence Score'
-            - 'Recommended Treatment'
-          AI Models:
-            - 'Convolutional Neural Networks'
-            - 'Transfer Learning'
-          Potential Benefits:
-            - 'Early detection of crop diseases'
-            - 'Reduction in crop loss'
-            - 'Better planning and resource allocation'
+        sections:
+          - title: 'Problem Statement'
+            content: 'Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.'
+          - title: 'Proposed Solution'
+            subsections:
+              - subtitle: 'Model Capabilities'
+                points:
+                  - 'Detect multiple types of leaf diseases from images.'
+                  - 'Provide confidence score and explainability metrics.'
+                  - 'Suggest optimal treatment actions.'
+              - subtitle: 'Delivery Channels'
+                content: 'The application is accessible via Android app and web dashboard. Farmers upload images and receive results within seconds.'
+          - title: 'Expected Impact'
+            points:
+              - 'Reduce crop damage by early intervention.'
+              - 'Lower pesticide usage with targeted treatments.'
+              - 'Empower farmers through actionable insights.'
     successResponseForCreateAIModelEntity:
       type: object
       title: AI Model Entity
@@ -1928,32 +1925,84 @@ components:
               type: string
               maxLength: 512
               description: User-friendly label for the application
+            shortDescription:
+              type: string
+              maxLength: 3200
             description:
               type: string
-              description: Detailed description of the application
+              maxLength: 12000
             organizationType:
               type: string
-              description: Type of organization providing the application
+            industry:
+              type: string
+            sections:
+              type: array
+              items:
+                type: object
+                required: [ title ]
+                properties:
+                  title:
+                    type: string
+                  content:
+                    type: string
+                  points:
+                    type: array
+                    items:
+                      type: string
+                  subsections:
+                    type: array
+                    items:
+                      type: object
+                      anyOf:
+                        - required: [ subtitle, points ]
+                        - required: [ subtitle, content ]
+                      properties:
+                        subtitle:
+                          type: string
+                        content:
+                          type: string
+                        points:
+                          type: array
+                          items:
+                            type: string
+                anyOf:
+                  - required: [ content ]
+                  - required: [ points ]
+                  - required: [ subsections ]
             itemStatus:
               type: string
               enum: [ "ACTIVE", "INACTIVE" ]
-              description: Current status of the application
             itemCreatedAt:
               type: string
               format: date-time
-              description: Creation timestamp of the application item
-          required:
-            - name
-            - type
-            - tags
-            - label
-            - shortDescription
-            - description
-            - organizationType
-            - fileFormat
-            - accessPolicy
-            - canBeUsedFor
-            - dataInputsAndAiTechniques
+            canBeUsedFor:
+              type: object
+              additionalProperties:
+                type: string
+            dataInputsAndAiTechniques:
+              type: object
+              properties:
+                Input Data Banks:
+                  type: array
+                  items:
+                    type: string
+                Expected Output:
+                  type: array
+                  items:
+                    type: string
+                AI Models:
+                  type: array
+                  items:
+                    type: string
+                Potential Benefits:
+                  type: array
+                  items:
+                    type: string
+      required:
+        - type
+        - title
+        - detail
+        - results
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
@@ -1979,9 +2028,24 @@ components:
             - training
             - algorithm
           organizationType: 'Private'
-
-          fileFormat: 'xlsx'
-          accessPolicy: 'Public'
+          industry: 'Agriculture'
+          sections:
+            - title: 'Problem Statement'
+              content: 'Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.'
+            - title: 'Proposed Solution'
+              subsections:
+                - subtitle: 'Model Capabilities'
+                  points:
+                    - 'Detect multiple types of leaf diseases from images.'
+                    - 'Provide confidence score and explainability metrics.'
+                    - 'Suggest optimal treatment actions.'
+                - subtitle: 'Delivery Channels'
+                  content: 'The application is accessible via Android app and web dashboard. Farmers upload images and receive results within seconds.'
+            - title: 'Expected Impact'
+              points:
+                - 'Reduce crop damage by early intervention.'
+                - 'Lower pesticide usage with targeted treatments.'
+                - 'Empower farmers through actionable insights.'
           canBeUsedFor:
             cropMonitoring: 'Detect and classify diseases in crops using image input'
             yieldOptimization: 'Improve crop yield by early detection of diseases'
@@ -2232,8 +2296,8 @@ components:
           itemCreatedAt: "2024-01-07T04:53:31+0530"
     successResponseForUpdateAdexAppsEntity:
       type: object
-      title: ADeX Potential Application Entity
-      description: ADeX Application metadata item is successfully updated
+      title: Potential Applications Entity
+      description: An ADeX Potential Application item is successfully created
       properties:
         type:
           type: string
@@ -2251,39 +2315,84 @@ components:
             '@context':
               type: string
               format: uri
+              description: JSON-LD context URI
             id:
               type: string
-              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
-            name:
-              type: string
-              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-              maxLength: 512
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the application item
             type:
               type: array
               items:
                 type: string
+              description: Type tags from the ADeX vocabulary
+            name:
+              type: string
+              maxLength: 512
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+              description: Name of the ADeX Application item
             tags:
               type: array
               items:
                 type: string
+              description: Tags associated with the ADeX Application item
             label:
               type: string
               maxLength: 512
+              description: User-friendly label for the application
             shortDescription:
               type: string
-              maxLength: 512
+              maxLength: 3200
             description:
               type: string
               maxLength: 12000
             organizationType:
               type: string
-              enum: [ 'Private', 'Public', "Academic Institution", "NGO/Non-profit", "NA", '' ]
+            industry:
+              type: string
+            sections:
+              type: array
+              items:
+                type: object
+                required: [ title ]
+                properties:
+                  title:
+                    type: string
+                  content:
+                    type: string
+                  points:
+                    type: array
+                    items:
+                      type: string
+                  subsections:
+                    type: array
+                    items:
+                      type: object
+                      anyOf:
+                        - required: [ subtitle, points ]
+                        - required: [ subtitle, content ]
+                      properties:
+                        subtitle:
+                          type: string
+                        content:
+                          type: string
+                        points:
+                          type: array
+                          items:
+                            type: string
+                anyOf:
+                  - required: [ content ]
+                  - required: [ points ]
+                  - required: [ subsections ]
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+            itemCreatedAt:
+              type: string
+              format: date-time
             canBeUsedFor:
               type: object
               additionalProperties:
                 type: string
-                maxLength: 300
-              maxProperties: 5
             dataInputsAndAiTechniques:
               type: object
               properties:
@@ -2291,60 +2400,36 @@ components:
                   type: array
                   items:
                     type: string
-                    maxLength: 200
                 Expected Output:
                   type: array
                   items:
                     type: string
-                    maxLength: 200
                 AI Models:
                   type: array
                   items:
                     type: string
-                    maxLength: 200
                 Potential Benefits:
                   type: array
                   items:
                     type: string
-                    maxLength: 200
-              required:
-                - Input Data Banks
-                - Expected Output
-                - AI Models
-                - Potential Benefits
-              additionalProperties: false
-            itemStatus:
-              type: string
-              enum: [ 'ACTIVE', 'INACTIVE' ]
-            itemCreatedAt:
-              type: string
-              format: date-time
-            fileFormat:
-              type: string
-            accessPolicy:
-              type: string
-              enum: [ 'Public', 'Private' ]
-          required:
-            - name
-            - type
-            - tags
-            - label
-            - shortDescription
-            - description
-            - organizationType
-            - fileFormat
-            - accessPolicy
-            - canBeUsedFor
-            - dataInputsAndAiTechniques
+      required:
+        - type
+        - title
+        - detail
+        - results
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
-        detail: 'Success: Item updated successfully'
+        detail: 'Success: Item created'
         results:
-          "@context": "https://agrijson.org"
-          type: [ "adex:Apps" ]
-          id: "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
-          name: 'crop-disease-app'
+          '@context': "https://agrijson.org"
+          id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
+          type:
+            - 'adex:Apps'
+          name: 'crop-disease-detector-app'
+          label: 'Crop Disease Detection Application'
+          shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+          description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
           tags:
             - ai
             - ml
@@ -2356,13 +2441,25 @@ components:
             - machine learning
             - training
             - algorithm
-          label: 'Test-Crop Disease Detection Model'
-          shortDescription: 'A test potential application item for detecting crop disease'
-          description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
           organizationType: 'Private'
-
-          fileFormat: 'xlsx'
-          accessPolicy: 'Public'
+          industry: 'Agriculture'
+          sections:
+            - title: 'Problem Statement'
+              content: 'Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.'
+            - title: 'Proposed Solution'
+              subsections:
+                - subtitle: 'Model Capabilities'
+                  points:
+                    - 'Detect multiple types of leaf diseases from images.'
+                    - 'Provide confidence score and explainability metrics.'
+                    - 'Suggest optimal treatment actions.'
+                - subtitle: 'Delivery Channels'
+                  content: 'The application is accessible via Android app and web dashboard. Farmers upload images and receive results within seconds.'
+            - title: 'Expected Impact'
+              points:
+                - 'Reduce crop damage by early intervention.'
+                - 'Lower pesticide usage with targeted treatments.'
+                - 'Empower farmers through actionable insights.'
           canBeUsedFor:
             cropMonitoring: 'Detect and classify diseases in crops using image input'
             yieldOptimization: 'Improve crop yield by early detection of diseases'
@@ -2382,7 +2479,7 @@ components:
               - 'Reduction in crop loss'
               - 'Better planning and resource allocation'
           itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-07T04:53:31+0530"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForGetAIModelEntity:
       type: object
       title: AI Model Entity
@@ -2570,53 +2667,45 @@ components:
       required:
         - type
       example:
-        type: 'urn:dx:cat:Success'
-        title: 'Success'
-        detail: 'Success: Item fetched Successfully'
-        results:
-          '@context': "https://agrijson.org"
-          id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
-          type:
-            - 'adex:Apps'
-          name: 'crop-disease-detector-app'
-          label: 'Crop Disease Detection Application'
-          shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
-          description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
-          tags:
-            - ai
-            - ml
-            - model
-            - ai-model
-            - ml-model
-            - machine
-            - learning
-            - machine learning
-            - training
-            - algorithm
-          organizationType: 'Private'
-
-          fileFormat: 'xlsx'
-          accessPolicy: 'Public'
-          canBeUsedFor:
-            cropMonitoring: 'Detect and classify diseases in crops using image input'
-            yieldOptimization: 'Improve crop yield by early detection of diseases'
-          dataInputsAndAiTechniques:
-            Input Data Banks:
-              - 'Annotated Leaf Image Dataset'
-              - 'Crop Type Classification Data'
-            Expected Output:
-              - 'Disease Type'
-              - 'Confidence Score'
-              - 'Recommended Treatment'
-            AI Models:
-              - 'Convolutional Neural Networks'
-              - 'Transfer Learning'
-            Potential Benefits:
-              - 'Early detection of crop diseases'
-              - 'Reduction in crop loss'
-              - 'Better planning and resource allocation'
-          itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-05T02:09:10+0530"
+        type:
+          - 'adex:Apps'
+        name: 'crop-disease-app'
+        tags:
+          - ai
+          - ml
+          - model
+          - ai-model
+          - ml-model
+          - machine
+          - learning
+          - machine learning
+          - training
+          - algorithm
+        label: 'Test-Crop Disease Detection Model'
+        shortDescription: 'A test potential application item for detecting crop disease'
+        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
+        organizationType: 'Private'
+        department: 'Agriculture and Co-operation'
+        fileFormat: 'xlsx'
+        accessPolicy: 'Public'
+        canBeUsedFor:
+          cropMonitoring: 'Detect and classify diseases in crops using image input'
+          yieldOptimization: 'Improve crop yield by early detection of diseases'
+        dataInputsAndAiTechniques:
+          Input Data Banks:
+            - 'Annotated Leaf Image Dataset'
+            - 'Crop Type Classification Data'
+          Expected Output:
+            - 'Disease Type'
+            - 'Confidence Score'
+            - 'Recommended Treatment'
+          AI Models:
+            - 'Convolutional Neural Networks'
+            - 'Transfer Learning'
+          Potential Benefits:
+            - 'Early detection of crop diseases'
+            - 'Reduction in crop loss'
+            - 'Better planning and resource allocation'
     successResponseForAutocompleteFuzzyTextSearch:
       type: object
       title: search by text
@@ -3480,6 +3569,8 @@ components:
           type: string
           pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
+        industry:
+          type: string
         type:
           type: array
           items:
@@ -3499,49 +3590,51 @@ components:
             type: string
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
-        department:
-          type: string
-        fileFormat:
-          type: string
-        accessPolicy:
-          type: string
-        canBeUsedFor:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 300
-        dataInputsAndAiTechniques:
-          type: object
-          properties:
-            Input Data Banks:
-              type: array
-              items:
+          enum: [ 'Private', 'Public', 'Academic Institution', 'NGO/Non-profit', 'NA', '' ]
+        sections:
+          type: array
+          items:
+            type: object
+            required: [ title ]
+            properties:
+              title:
                 type: string
-            Expected Output:
-              type: array
-              items:
+              content:
                 type: string
-            AI Models:
-              type: array
-              items:
-                type: string
-            Potential Benefits:
-              type: array
-              items:
-                type: string
+              points:
+                type: array
+                items:
+                  type: string
+              subsections:
+                type: array
+                items:
+                  type: object
+                  anyOf:
+                    - required: [ subtitle, points ]
+                    - required: [ subtitle, content ]
+                  properties:
+                    subtitle:
+                      type: string
+                    content:
+                      type: string
+                    points:
+                      type: array
+                      items:
+                        type: string
+            anyOf:
+              - required: [ content ]
+              - required: [ points ]
+              - required: [ subsections ]
       required:
         - type
         - name
         - label
         - shortDescription
         - description
+        - industry
         - tags
         - organizationType
-        - fileFormat
-        - accessPolicy
-        - canBeUsedFor
-        - dataInputsAndAiTechniques
+        - sections
       example:
         '@context': 'https://agrijson.org'
         id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
@@ -3549,6 +3642,8 @@ components:
           - 'adex:Apps'
         name: 'crop-disease-detector-app'
         label: 'Crop Disease Detection Application'
+        industry: 'smaple industry'
+        ownerUserId: 'e2c6a437-8109-4a2c-8923-efc2a9e6df1d'
         shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
         description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
         tags:
@@ -3563,27 +3658,23 @@ components:
           - training
           - algorithm
         organizationType: 'Private'
-        department: 'Agriculture and Co-operation'
-        fileFormat: 'xlsx'
-        accessPolicy: 'Public'
-        canBeUsedFor:
-          cropMonitoring: 'Detect and classify diseases in crops using image input'
-          yieldOptimization: 'Improve crop yield by early detection of diseases'
-        dataInputsAndAiTechniques:
-          Input Data Banks:
-            - 'Annotated Leaf Image Dataset'
-            - 'Crop Type Classification Data'
-          Expected Output:
-            - 'Disease Type'
-            - 'Confidence Score'
-            - 'Recommended Treatment'
-          AI Models:
-            - 'Convolutional Neural Networks'
-            - 'Transfer Learning'
-          Potential Benefits:
-            - 'Early detection of crop diseases'
-            - 'Reduction in crop loss'
-            - 'Better planning and resource allocation'
+        sections:
+          - title: 'Problem Statement'
+            content: 'Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments.'
+          - title: 'Proposed Solution'
+            subsections:
+              - subtitle: 'Model Capabilities'
+                points:
+                  - 'Detect multiple types of leaf diseases from images.'
+                  - 'Provide confidence score and explainability metrics.'
+                  - 'Suggest optimal treatment actions.'
+              - subtitle: 'Delivery Channels'
+                content: 'The application is accessible via Android app and web dashboard. Farmers upload images and receive results within seconds.'
+          - title: 'Expected Impact'
+            points:
+              - 'Reduce crop damage by early intervention.'
+              - 'Lower pesticide usage with targeted treatments.'
+              - 'Empower farmers through actionable insights.'
     unAuthorizedAccess:
       type: object
       title: Common to unauthorized access response

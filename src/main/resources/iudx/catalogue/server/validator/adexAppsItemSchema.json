@@ -1,69 +1,79 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "http://example.com/apps-metadata.schema.json",
+  "$id": "http://example.com/use-case.schema.json",
+  "title": "AI Use Case Template Schema",
+  "description": "Schema for defining structured AI use case templates with sections, subsections, and bullet points.",
   "type": "object",
-  "title": "Adex Potential Applications Metadata Schema",
-  "description": "Schema for ADeX Apps model metadata.",
-  "default": {},
-  "examples": [
-    {
-      "type": [
-        "adex:Apps"
-      ],
-      "name": "SomeName",
-      "tags": [
-        "ai", "ml", "model", "aimodel", "mlmodel",
-        "ai-model", "ml-model", "machine", "learning",
-        "machine learning", "training", "algorithm"
-      ],
-      "label": "Test-Crop Disease Detection Model",
-      "description": "An test potential application item for detecting crop disease with the help of infected leaf images.",
-      "organizationType": "Private",
-      "department": "Agriculture and Co-operation",
-      "shortDescription": "A test potential application item for detecting crop disease",
-      "uploadedBy": "cdpg@datakaveri.org",
-      "fileFormat": "xlsx",
-      "accessPolicy": "OPEN",
-      "canBeUsedFor": {
-        "cropMonitoring": "Detect and classify diseases in crops using image input",
-        "yieldOptimization": "Improve crop yield by early detection of diseases"
-      },
-      "dataInputsAndAiTechniques": {
-        "Input Data Banks": [
-          "Annotated Leaf Image Dataset",
-          "Crop Type Classification Data"
-        ],
-        "Expected Output": [
-          "Disease Type",
-          "Confidence Score",
-          "Recommended Treatment"
-        ],
-        "AI Models": [
-          "Convolutional Neural Networks",
-          "Transfer Learning"
-        ],
-        "Potential Benefits": [
-          "Early detection of crop diseases",
-          "Reduction in crop loss",
-          "Better planning and resource allocation"
-        ]
-      }
-    }
-  ],
   "required": [
+    "sections",
     "name",
     "type",
     "tags",
     "label",
+    "industry",
     "shortDescription",
     "description",
-    "organizationType",
-    "fileFormat",
-    "accessPolicy",
-    "canBeUsedFor",
-    "dataInputsAndAiTechniques"
+    "organizationType"
   ],
   "properties": {
+    "sections": {
+      "type": "array",
+      "description": "Main sections of the use case document",
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Section title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Main body content of the section (used when no subsections are defined)"
+          },
+          "points": {
+            "type": "array",
+            "description": "Bullet points under the subsection",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subsections": {
+            "type": "array",
+            "description": "List of subsections under the section",
+            "items": {
+              "type": "object",
+              "anyOf": [
+                { "required": ["subtitle", "points"] },
+                { "required": ["subtitle", "content"] }
+              ],
+              "properties": {
+                "subtitle": {
+                  "type": "string",
+                  "description": "Subtitle of the subsection"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "Content under the subsection"
+                },
+                "points": {
+                  "type": "array",
+                  "description": "Bullet points under the subsection",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "anyOf": [
+          { "required": ["content"] },
+          { "required": ["points"] },
+          { "required": ["subsections"] }
+        ]
+      }
+    },
     "name": {
       "$id": "#/properties/name",
       "type": "string",
@@ -133,12 +143,14 @@
     "shortDescription": {
       "type": "string",
       "title": "The short description schema",
-      "description": "Short description about the item"
+      "description": "Short description about the item",
+      "maxLength": 3200
     },
     "description": {
       "type": "string",
       "title": "The description schema",
-      "description": "Detailed description of the model"
+      "description": "Detailed description of the model",
+      "maxLength": 12000
     },
     "organizationType": {
       "type": "string",
@@ -150,69 +162,6 @@
       "type": "string",
       "title": "The department schema",
       "description": "Department name"
-    },
-    "accessPolicy": {
-      "$id": "#/properties/accessPolicy",
-      "type": "string",
-      "title": "The access policy schema",
-      "default": "",
-      "pattern": "^(RESTRICTED|OPEN|PRIVATE)$"
-    },
-    "canBeUsedFor": {
-      "type": "object",
-      "title": "The canBeUsedFor schema",
-      "description": "Potential uses of the model",
-      "propertyNames": {
-        "type": "string",
-        "maxLength": 100
-      },
-      "additionalProperties": {
-        "type": "string",
-        "maxLength": 300
-      },
-      "maxProperties": 5
-    },
-    "dataInputsAndAiTechniques": {
-      "type": "object",
-      "title": "The dataInputsAndAiTechniques schema",
-      "description": "Input data sources and AI methods",
-      "properties": {
-        "Input Data Banks": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "maxLength": 200
-          }
-        },
-        "Expected Output": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "maxLength": 200
-          }
-        },
-        "AI Models": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "maxLength": 200
-          }
-        },
-        "Potential Benefits": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "maxLength": 200
-          }
-        }
-      },
-      "required": [
-        "Input Data Banks",
-        "Expected Output",
-        "AI Models",
-        "Potential Benefits"
-      ],
-      "additionalProperties": false
     },
     "itemStatus": {
       "type": "string",
