@@ -332,7 +332,9 @@ public final class CrudApis {
                             valhandler.result().getString(SHORTDESCRIPTION),
                             api.getRouteItems(), REQUEST_POST, itemType, itemName,
                             authHandler.result().getString(USER_ID),
-                            authHandler.result().getString(USER_ROLE)));
+                            authHandler.result().getString(USER_ROLE),
+                            authHandler.result().getString(ORGANIZATION_ID),
+                            authHandler.result().getString(ORGANIZATION_NAME)));
                       }
                     }
                   });
@@ -353,7 +355,9 @@ public final class CrudApis {
                             valhandler.result().getString(SHORTDESCRIPTION),
                             api.getRouteItems(), REQUEST_PUT, itemType, itemName,
                             authHandler.result().getString(USER_ID),
-                            authHandler.result().getString(USER_ROLE)));
+                            authHandler.result().getString(USER_ROLE),
+                            authHandler.result().getString(ORGANIZATION_ID),
+                            authHandler.result().getString(ORGANIZATION_NAME)));
                       }
                     } else if (dbhandler.failed()) {
                       LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
@@ -436,7 +440,9 @@ public final class CrudApis {
                 if (hasAuditService) {
                   updateAuditTable(new AuditMetadata(itemId, shortDescription, api.getRouteItems(),
                       REQUEST_GET, itemType, itemName, authHandler.result().getString(USER_ID),
-                      authHandler.result().getString(USER_ROLE)));
+                      authHandler.result().getString(USER_ROLE),
+                      authHandler.result().getString(ORGANIZATION_ID),
+                      authHandler.result().getString(ORGANIZATION_NAME)));
                 }
               }
             } else {
@@ -613,7 +619,9 @@ public final class CrudApis {
                     updateAuditTable(new AuditMetadata(itemId, shortDescription,
                         api.getRouteItems(), REQUEST_DELETE, itemType, itemName,
                         authHandler.result().getString(USER_ID),
-                        authHandler.result().getString(USER_ROLE)));
+                        authHandler.result().getString(USER_ROLE),
+                        authHandler.result().getString(ORGANIZATION_ID),
+                        authHandler.result().getString(ORGANIZATION_NAME)));
                   }
                 } else {
                   response.setStatusCode(404)
@@ -820,6 +828,8 @@ public final class CrudApis {
         .put(CREATED_AT, createdAt)
         .put(USERID, metadata.userId)
         .put(ROLE, metadata.getRole())
+        .put(ORG_ID, metadata.orgId)
+        .put(ORG_NAME, metadata.orgName)
         .put(OPERATION, metadata.getOperation())
         .put(SHORT_DESCRIPTION, metadata.shortDescription)
         .put(MYACTIVITY_ENABLED, true);

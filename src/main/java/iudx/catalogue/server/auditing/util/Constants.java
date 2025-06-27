@@ -40,6 +40,9 @@ public class Constants {
   /* Auditing Service Constants*/
   public static final String USER_ROLE = "user_role";
   public static final String ROLE = "role";
+  public static final String ORG_ID = "org_id";
+  public static final String ORG_NAME = "org_name";
+
 
   public static final String USER_ID = "userID";
 
