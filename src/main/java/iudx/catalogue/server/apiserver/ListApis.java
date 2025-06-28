@@ -10,6 +10,7 @@ package iudx.catalogue.server.apiserver;
 
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
+import static iudx.catalogue.server.database.Constants.LABEL;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.AsyncResult;
@@ -273,6 +274,8 @@ public final class ListApis {
           case UPLOADED_BY:
           case INDUSTRY:
           case ID:
+          case LABEL:
+          case NAME:
             type.add(itemType);
             break;
           case OWNER:
