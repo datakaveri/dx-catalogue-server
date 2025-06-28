@@ -487,8 +487,6 @@ public final class CrudApis {
         });
       } else {
         // OPEN or RESTRICTED
-        response.setStatusCode(200).end(result.toString());
-
         if (token != null && !token.isEmpty()) {
           JsonObject jwtAuthInfo = new JsonObject()
               .put(TOKEN, token)
@@ -496,7 +494,17 @@ public final class CrudApis {
               .put(API_ENDPOINT, api.getRouteItems());
 
           authService.tokenInterospect(new JsonObject(), jwtAuthInfo, authHandler -> {
-            if (authHandler.succeeded() && hasAuditService) {
+            if (authHandler.failed()) {
+              LOGGER.warn("Fail: Invalid token");
+              response.setStatusCode(401).end(new RespBuilder()
+                  .withType(TYPE_TOKEN_INVALID)
+                  .withTitle(TITLE_TOKEN_INVALID)
+                  .withDetail(authHandler.cause().getMessage())
+                  .getResponse());
+              return;
+            }
+            response.setStatusCode(200).end(result.toString());
+            if (hasAuditService) {
               updateAuditTable(new AuditMetadata(
                   itemId, shortDescription, api.getRouteItems(), REQUEST_GET,
                   itemType, itemName,
@@ -507,6 +515,8 @@ public final class CrudApis {
               ));
             }
           });
+        } else {
+          response.setStatusCode(200).end(result.toString());
         }
       }
     });
