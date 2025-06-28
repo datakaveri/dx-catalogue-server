@@ -11,6 +11,9 @@ import static iudx.catalogue.server.auditing.util.Constants.OPERATION;
 import static iudx.catalogue.server.auditing.util.Constants.ROLE;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
+import static iudx.catalogue.server.database.Constants.ACCESS_POLICY;
+import static iudx.catalogue.server.database.Constants.OPEN;
+import static iudx.catalogue.server.database.Constants.PRIVATE;
 import static iudx.catalogue.server.util.Constants.*;
 import static iudx.catalogue.server.util.Constants.DETAIL;
 import static iudx.catalogue.server.util.Constants.ERROR;
@@ -272,7 +275,7 @@ public final class CrudApis {
                     .withDetail(authHandler.cause().getMessage())
                     .getResponse());
           } else {
-            LOGGER.debug("Success: JWT Auth successful: {}", authHandler.result());
+            LOGGER.debug("Success: JWT Auth successful");
 
             if (jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_AI_MODEL)
                 || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)
@@ -384,7 +387,6 @@ public final class CrudApis {
    */
   // tag::db-service-calls[]
   public void getItemHandler(RoutingContext routingContext) {
-
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
@@ -393,86 +395,119 @@ public final class CrudApis {
 
     LOGGER.debug("Info: Getting item; id=" + itemId);
 
-    JsonObject requestBody = new JsonObject().put(ID, itemId);
-
     if (!validateId(itemId)) {
       LOGGER.error("Fail: Invalid request payload");
-      response.setStatusCode(400)
-          .end(new RespBuilder()
-              .withType(TYPE_INVALID_UUID)
-              .withTitle(TITLE_INVALID_UUID)
-              .withDetail("The id is invalid")
-              .getResponse());
+      response.setStatusCode(400).end(new RespBuilder()
+          .withType(TYPE_INVALID_UUID)
+          .withTitle(TITLE_INVALID_UUID)
+          .withDetail("The id is invalid")
+          .getResponse());
       return;
     }
 
-    // Token is optional: if present, validate & audit
-    if (token != null && !token.isEmpty()) {
-      JsonObject jwtAuthenticationInfo = new JsonObject()
-          .put(TOKEN, token)
-          .put(METHOD, REQUEST_GET)
-          .put(API_ENDPOINT, api.getRouteItems());
+    JsonObject requestBody = new JsonObject().put(ID, itemId);
 
-      authService.tokenInterospect(new JsonObject(), jwtAuthenticationInfo, authHandler -> {
-        if (authHandler.failed()) {
-          LOGGER.warn("Warning: Token introspection failed, skipping audit");
-          fetchItemWithoutAudit(requestBody, response);
-        } else {
-          dbService.getItem(requestBody, dbhandler -> {
-            if (dbhandler.succeeded()) {
-              if (dbhandler.result().getInteger(TOTAL_HITS) == 0) {
-                LOGGER.error("Fail: Item not found");
-                JsonObject result = dbhandler.result();
-                result.put(STATUS, ERROR).put(TYPE, TYPE_ITEM_NOT_FOUND)
-                    .put("detail", "doc doesn't exist");
-                response.setStatusCode(404).end(result.toString());
-              } else {
-                LOGGER.info("Success: Retrieved item");
-                response.setStatusCode(200).end(dbhandler.result().toString());
+    dbService.getItem(requestBody, dbHandler -> {
+      if (dbHandler.failed()) {
+        LOGGER.error("Fail: DB Error; " + dbHandler.cause().getMessage());
+        response.setStatusCode(500).end(new RespBuilder()
+            .withType(TYPE_INTERNAL_SERVER_ERROR)
+            .withTitle(TITLE_INTERNAL_SERVER_ERROR)
+            .withDetail(dbHandler.cause().getMessage())
+            .getResponse());
+        return;
+      }
 
-                String itemType = dbhandler.result().getJsonArray(RESULTS).getJsonObject(0)
-                    .getJsonArray(TYPE).getString(0);
-                String itemName =
-                    dbhandler.result().getJsonArray(RESULTS).getJsonObject(0).getString(NAME);
-                String shortDescription =
-                    dbhandler.result().getJsonArray(RESULTS).getJsonObject(0)
-                        .getString(SHORTDESCRIPTION);
-                if (hasAuditService) {
-                  updateAuditTable(new AuditMetadata(itemId, shortDescription, api.getRouteItems(),
-                      REQUEST_GET, itemType, itemName, authHandler.result().getString(USER_ID),
-                      authHandler.result().getString(USER_ROLE),
-                      authHandler.result().getString(ORGANIZATION_ID),
-                      authHandler.result().getString(ORGANIZATION_NAME)));
-                }
-              }
+      JsonObject result = dbHandler.result();
+      if (result.getInteger(TOTAL_HITS) == 0) {
+        LOGGER.error("Fail: Item not found");
+        result.put(STATUS, ERROR)
+            .put(TYPE, TYPE_ITEM_NOT_FOUND)
+            .put("detail", "doc doesn't exist");
+        response.setStatusCode(404).end(result.toString());
+        return;
+      }
+
+      JsonObject item = result.getJsonArray(RESULTS).getJsonObject(0);
+      String accessPolicy = item.getString(ACCESS_POLICY, "");
+      String ownerUserId = item.getString(PROVIDER_USER_ID, "");
+      String itemType = item.getJsonArray(TYPE).getString(0);
+      String itemName = item.getString(NAME, "");
+      String shortDescription = item.getString(SHORTDESCRIPTION, "");
+
+      if (PRIVATE.equalsIgnoreCase(accessPolicy)) {
+        if (token == null || token.isEmpty()) {
+          LOGGER.warn("Fail: Token required for PRIVATE item");
+          response.setStatusCode(403).end(new RespBuilder()
+              .withType(TYPE_ACCESS_DENIED)
+              .withTitle("Token is not provided")
+              .withDetail("Token required for private items")
+              .getResponse());
+          return;
+        }
+
+        JsonObject jwtAuthInfo = new JsonObject()
+            .put(TOKEN, token)
+            .put(METHOD, REQUEST_GET)
+            .put(API_ENDPOINT, api.getRouteItems());
+
+        authService.tokenInterospect(new JsonObject(), jwtAuthInfo, authHandler -> {
+          if (authHandler.failed()) {
+            LOGGER.warn("Fail: Invalid token for PRIVATE item");
+            response.setStatusCode(401).end(new RespBuilder()
+                .withType(TYPE_TOKEN_INVALID)
+                .withTitle(TITLE_TOKEN_INVALID)
+                .withDetail(authHandler.cause().getMessage())
+                .getResponse());
+          } else {
+            String userId = authHandler.result().getString(SUB);
+            if (!userId.equals(ownerUserId)) {
+              LOGGER.warn("Fail: User is not owner of PRIVATE item");
+              response.setStatusCode(403).end(new RespBuilder()
+                  .withType(TYPE_TOKEN_INVALID)
+                  .withTitle("Access Denied")
+                  .withDetail("Only owner can access this item")
+                  .getResponse());
             } else {
-              LOGGER.error("Fail: DB Error;" + dbhandler.cause().getMessage());
-              response.setStatusCode(400).end(dbhandler.cause().getMessage());
+              LOGGER.info("Success: Retrieved PRIVATE item (owner verified)");
+              response.setStatusCode(200).end(result.toString());
+
+              if (hasAuditService) {
+                updateAuditTable(new AuditMetadata(
+                    itemId, shortDescription, api.getRouteItems(), REQUEST_GET,
+                    itemType, itemName,
+                    authHandler.result().getString(USER_ID),
+                    authHandler.result().getString(USER_ROLE),
+                    authHandler.result().getString(ORGANIZATION_ID),
+                    authHandler.result().getString(ORGANIZATION_NAME)
+                ));
+              }
+            }
+          }
+        });
+      } else {
+        // OPEN or RESTRICTED
+        response.setStatusCode(200).end(result.toString());
+
+        if (token != null && !token.isEmpty()) {
+          JsonObject jwtAuthInfo = new JsonObject()
+              .put(TOKEN, token)
+              .put(METHOD, REQUEST_GET)
+              .put(API_ENDPOINT, api.getRouteItems());
+
+          authService.tokenInterospect(new JsonObject(), jwtAuthInfo, authHandler -> {
+            if (authHandler.succeeded() && hasAuditService) {
+              updateAuditTable(new AuditMetadata(
+                  itemId, shortDescription, api.getRouteItems(), REQUEST_GET,
+                  itemType, itemName,
+                  authHandler.result().getString(USER_ID),
+                  authHandler.result().getString(USER_ROLE),
+                  authHandler.result().getString(ORGANIZATION_ID),
+                  authHandler.result().getString(ORGANIZATION_NAME)
+              ));
             }
           });
         }
-      });
-    } else {
-      fetchItemWithoutAudit(requestBody, response);
-    }
-  }
-
-  private void fetchItemWithoutAudit(JsonObject requestBody, HttpServerResponse response) {
-    dbService.getItem(requestBody, dbhandler -> {
-      if (dbhandler.succeeded()) {
-        if (dbhandler.result().getInteger(TOTAL_HITS) == 0) {
-          LOGGER.error("Fail: Item not found");
-          JsonObject result = dbhandler.result();
-          result.put(STATUS, ERROR).put(TYPE, TYPE_ITEM_NOT_FOUND)
-              .put("detail", "doc doesn't exist");
-          response.setStatusCode(404).end(result.toString());
-        } else {
-          LOGGER.info("Success: Retrieved item (no audit)");
-          response.setStatusCode(200).end(dbhandler.result().toString());
-        }
-      } else {
-        LOGGER.error("Fail: DB Error;" + dbhandler.cause().getMessage());
-        response.setStatusCode(400).end(dbhandler.cause().getMessage());
       }
     });
   }
