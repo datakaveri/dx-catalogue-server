@@ -315,16 +315,13 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+    request.put(ITEM_STATUS, ACTIVE)
+        .put(LAST_UPDATED, getPrettyLastUpdatedForUI())
         .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    if (request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank()) {
-      request.put(DATA_UPLOAD_STATUS, true);
-    } else {
-      request.put(DATA_UPLOAD_STATUS, false);
-    }
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
         .replace("$1", ITEM_TYPE_AI_MODEL).replace("$2", request.getString(NAME));
+
     client.searchAsync(
         checkQuery,
         docIndex,
@@ -341,9 +338,31 @@ public class ValidatorServiceImpl implements ValidatorService {
             LOGGER.debug("AI Model already exists with the name {} in organization {}",
                 request.getString(NAME), request.getString(ORGANIZATION_ID));
             handler.handle(Future.failedFuture("Fail: AI Model item already exists"));
-          } else {
-            handler.handle(Future.succeededFuture(request));
+            return;
           }
+
+          // Handle dataUploadStatus here — after checking existing ES data
+          boolean mediaUrlPresent =
+              request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+          if (method.equalsIgnoreCase(REQUEST_POST)) {
+            // On POST: Always infer from mediaURL
+            request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+          } else if (method.equalsIgnoreCase(REQUEST_PUT)) {
+            // On PUT: Preserve previous true if already set
+            boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.result());
+            boolean previousMediaUrlPresent = extractMediaUrlFromES(res.result());
+
+            if (mediaUrlPresent) {
+              request.put(DATA_UPLOAD_STATUS, true);
+            } else if (wasPreviouslyUploaded && !previousMediaUrlPresent) {
+              // Preserve only if upload was done via the alternate (non-mediaURL) flow
+              request.put(DATA_UPLOAD_STATUS, true);
+            } else {
+              request.put(DATA_UPLOAD_STATUS, false);
+            }
+          }
+
+          handler.handle(Future.succeededFuture(request));
         });
   }
 
@@ -355,16 +374,14 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
 
-    request.put(ITEM_STATUS, ACTIVE).put(LAST_UPDATED, getPrettyLastUpdatedForUI())
+    request.put(ITEM_STATUS, ACTIVE)
+        .put(LAST_UPDATED, getPrettyLastUpdatedForUI())
         .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    if (request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank()) {
-      request.put(DATA_UPLOAD_STATUS, true);
-    } else {
-      request.put(DATA_UPLOAD_STATUS, false);
-    }
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
-        .replace("$1", ITEM_TYPE_DATA_BANK).replace("$2", request.getString(NAME));
+        .replace("$1", ITEM_TYPE_DATA_BANK)
+        .replace("$2", request.getString(NAME));
+
     client.searchAsync(
         checkQuery,
         docIndex,
@@ -377,14 +394,61 @@ public class ValidatorServiceImpl implements ValidatorService {
           String returnType = getReturnTypeForValidation(res.result());
           LOGGER.debug(returnType);
           if (method.equalsIgnoreCase(REQUEST_POST)
-              && returnType.contains(ITEM_TYPE_AI_MODEL)) {
+              && returnType.contains(ITEM_TYPE_DATA_BANK)) {
             LOGGER.debug("Data Bank item already exists with the name {} in organization {}",
                 request.getString(NAME), request.getString(ORGANIZATION_ID));
             handler.handle(Future.failedFuture("Fail: DataBank item already exists"));
-          } else {
-            handler.handle(Future.succeededFuture(request));
+            return;
           }
+
+          // Handle dataUploadStatus here — after checking existing ES data
+          boolean mediaUrlPresent =
+              request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank();
+          if (method.equalsIgnoreCase(REQUEST_POST)) {
+            // On POST: Always infer from mediaURL
+            request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+          } else if (method.equalsIgnoreCase(REQUEST_PUT)) {
+            // On PUT: Preserve previous true if already set
+            boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.result());
+            boolean previousMediaUrlPresent = extractMediaUrlFromES(res.result());
+
+            if (mediaUrlPresent) {
+              request.put(DATA_UPLOAD_STATUS, true);
+            } else if (wasPreviouslyUploaded && !previousMediaUrlPresent) {
+              // Preserve only if upload was done via the alternate (non-mediaURL) flow
+              request.put(DATA_UPLOAD_STATUS, true);
+            } else {
+              request.put(DATA_UPLOAD_STATUS, false);
+            }
+          }
+
+          handler.handle(Future.succeededFuture(request));
         });
+  }
+
+  private boolean extractDataUploadStatusFromES(JsonObject esResult) {
+    try {
+      JsonObject res = esResult.getJsonArray(RESULTS).getJsonObject(0);
+      if (res != null && !res.isEmpty()) {
+        return res.getBoolean(DATA_UPLOAD_STATUS, false);
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error extracting dataUploadStatus from ES", e);
+    }
+    return false;
+  }
+
+  private boolean extractMediaUrlFromES(JsonObject esResult) {
+    try {
+      JsonObject res = esResult.getJsonArray(RESULTS).getJsonObject(0);
+      if (res != null && !res.isEmpty()) {
+        String mediaUrl = res.getString(MEDIA_URL, "");
+        return !mediaUrl.isBlank();
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error extracting mediaURL from ES", e);
+    }
+    return false;
   }
 
   private void validateResourceGroup(
