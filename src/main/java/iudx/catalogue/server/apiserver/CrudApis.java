@@ -441,7 +441,7 @@ public final class CrudApis {
           response.setStatusCode(403).end(new RespBuilder()
               .withType(TYPE_ACCESS_DENIED)
               .withTitle("Token is not provided")
-              .withDetail("Token required for private items")
+              .withDetail("You don't have access to the resource.")
               .getResponse());
           return;
         }
