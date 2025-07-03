@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
  * <p>The API Server verticle implements the IUDX Catalogue Server APIs. It handles the API requests
  * from the clients and interacts with the associated Service to respond.
  *
+ * @version 1.0
  * @see io.vertx.core.Vertx
  * @see io.vertx.core.AbstractVerticle
  * @see io.vertx.core.http.HttpServer
@@ -41,7 +42,6 @@ import org.apache.logging.log4j.Logger;
  * @see io.vertx.servicediscovery.ServiceDiscovery
  * @see io.vertx.servicediscovery.types.EventBusService
  * @see io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
- * @version 1.0
  * @since 2020-05-31
  */
 public class ApiServerVerticle extends AbstractVerticle {
@@ -410,6 +410,13 @@ public class ApiServerVerticle extends AbstractVerticle {
               }
             });
 
+    router.get(api.getRouteHealthLive()).handler(ctx ->
+        ctx.response()
+            .setStatusCode(200)
+            .putHeader("Content-Type", "text/plain")
+            .end("Alive")
+    );
+
     /* NLP Search */
     router
         .get(api.getRouteNlpSearch())
@@ -526,10 +533,10 @@ public class ApiServerVerticle extends AbstractVerticle {
               } else {
                 if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
                   String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                  String token = authHeader.substring("Bearer ".length()).trim();
-                  routingContext.put(HEADER_TOKEN, token);
-                }
+                  if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    String token = authHeader.substring("Bearer ".length()).trim();
+                    routingContext.put(HEADER_TOKEN, token);
+                  }
                   ratingApis.getRatingHandler(routingContext);
                 } else {
                   LOGGER.error("Unauthorized Operation");
@@ -799,7 +806,7 @@ public class ApiServerVerticle extends AbstractVerticle {
         .route(api.getStackRestApis() + "/*")
         .subRouter(
             new StacRestApi(
-                     router, api, config(), validationService, authService, auditingService)
+                router, api, config(), validationService, authService, auditingService)
                 .init());
 
     // Start server
