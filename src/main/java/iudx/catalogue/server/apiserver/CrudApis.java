@@ -12,7 +12,6 @@ import static iudx.catalogue.server.auditing.util.Constants.ROLE;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.authenticator.Constants.TOKEN;
 import static iudx.catalogue.server.database.Constants.ACCESS_POLICY;
-import static iudx.catalogue.server.database.Constants.OPEN;
 import static iudx.catalogue.server.database.Constants.PRIVATE;
 import static iudx.catalogue.server.util.Constants.*;
 import static iudx.catalogue.server.util.Constants.DETAIL;
@@ -337,7 +336,7 @@ public final class CrudApis {
                             authHandler.result().getString(USER_ID),
                             authHandler.result().getString(USER_ROLE),
                             authHandler.result().getString(ORGANIZATION_ID),
-                            authHandler.result().getString(ORGANIZATION_NAME)));
+                            authHandler.result().getString(ORGANIZATION_NAME), true));
                       }
                     }
                   });
@@ -360,7 +359,7 @@ public final class CrudApis {
                             authHandler.result().getString(USER_ID),
                             authHandler.result().getString(USER_ROLE),
                             authHandler.result().getString(ORGANIZATION_ID),
-                            authHandler.result().getString(ORGANIZATION_NAME)));
+                            authHandler.result().getString(ORGANIZATION_NAME), true));
                       }
                     } else if (dbhandler.failed()) {
                       LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
@@ -391,6 +390,7 @@ public final class CrudApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     String itemId = routingContext.queryParams().get(ID);
+    boolean myActivityEnabled = Boolean.parseBoolean(routingContext.queryParams().get(MY_ACTIVITY));
     String token = routingContext.get(HEADER_TOKEN);
 
     LOGGER.debug("Info: Getting item; id=" + itemId);
@@ -479,7 +479,8 @@ public final class CrudApis {
                     authHandler.result().getString(USER_ID),
                     authHandler.result().getString(USER_ROLE),
                     authHandler.result().getString(ORGANIZATION_ID),
-                    authHandler.result().getString(ORGANIZATION_NAME)
+                    authHandler.result().getString(ORGANIZATION_NAME),
+                    myActivityEnabled
                 ));
               }
             }
@@ -511,7 +512,8 @@ public final class CrudApis {
                   authHandler.result().getString(USER_ID),
                   authHandler.result().getString(USER_ROLE),
                   authHandler.result().getString(ORGANIZATION_ID),
-                  authHandler.result().getString(ORGANIZATION_NAME)
+                  authHandler.result().getString(ORGANIZATION_NAME),
+                  myActivityEnabled
               ));
             }
           });
@@ -666,7 +668,7 @@ public final class CrudApis {
                         authHandler.result().getString(USER_ID),
                         authHandler.result().getString(USER_ROLE),
                         authHandler.result().getString(ORGANIZATION_ID),
-                        authHandler.result().getString(ORGANIZATION_NAME)));
+                        authHandler.result().getString(ORGANIZATION_NAME), true));
                   }
                 } else {
                   response.setStatusCode(404)
@@ -877,7 +879,7 @@ public final class CrudApis {
         .put(ORG_NAME, metadata.orgName)
         .put(OPERATION, metadata.getOperation())
         .put(SHORT_DESCRIPTION, metadata.shortDescription)
-        .put(MYACTIVITY_ENABLED, true);
+        .put(MY_ACTIVITY_ENABLED, metadata.myActivityEnabled);
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
 
