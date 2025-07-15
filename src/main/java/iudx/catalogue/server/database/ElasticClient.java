@@ -764,6 +764,50 @@ public final class ElasticClient {
   }
 
   /**
+   * updateByQueryAsync - Wrapper around Elasticsearch _update_by_query API for bulk updates.
+   *
+   * @param index Elasticsearch index to perform the update
+   * @param updatePayload JSON object containing "query" and "script"
+   * @param resultHandler Async result handler for the response
+   * @return ElasticClient instance for fluent chaining
+   */
+  public ElasticClient updateByQueryAsync(String index, JsonObject updatePayload,
+                                          Handler<AsyncResult<JsonObject>> resultHandler) {
+
+    Request updateRequest = new Request(REQUEST_POST, index + "/_update_by_query");
+    updateRequest.setJsonEntity(updatePayload.encode());
+
+    Future<JsonObject> future = docAsync(REQUEST_POST, updateRequest);
+    future.onComplete(resultHandler);
+    return this;
+  }
+
+  /**
+   * deleteByQueryAsync - Wrapper around Elasticsearch _delete_by_query API for bulk deletions.
+   *
+   * <p>This method allows asynchronous deletion of documents in an index that match the given query.
+   * The provided query should follow Elasticsearch Query DSL syntax. This is useful for ownership
+   * cleanup operations where all items belonging to a specific user (e.g., ownerUserId) need to be deleted.
+   *
+   *
+   * @param index         Elasticsearch index to perform the delete operation on.
+   * @param updatePayload JSON object containing the "query" block to match documents.
+   * @param resultHandler Async result handler for the Elasticsearch response.
+   * @return ElasticClient instance for fluent chaining.
+   */
+  public ElasticClient deleteByQueryAsync(String index, JsonObject updatePayload,
+                                          Handler<AsyncResult<JsonObject>> resultHandler) {
+
+    Request updateRequest = new Request(REQUEST_POST, index + "/_delete_by_query");
+    updateRequest.setJsonEntity(updatePayload.encode());
+
+    Future<JsonObject> future = docAsync(REQUEST_POST, updateRequest);
+    future.onComplete(resultHandler);
+    return this;
+  }
+
+
+  /**
    * DbResponseMessageBuilder} Message builder for search APIs.
    */
   private class DbResponseMessageBuilder {

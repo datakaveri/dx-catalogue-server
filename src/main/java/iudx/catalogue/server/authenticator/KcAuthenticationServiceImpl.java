@@ -127,7 +127,7 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
               }
             })
         .compose(validAdmin -> {
-          if (!httpMethod.equals(REQUEST_GET)) {
+          if (!httpMethod.equals(REQUEST_GET) || endpoint.equals(api.getRouteOrgAsset())) {
             return validateAccess(result.jwtData, authenticationInfo, itemType)
                 .compose(accessInfo -> {
                   JsonObject jwtJson = result.jwtData.toJson();
@@ -186,7 +186,10 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
         || endpoint.equals(api.getRouteSearch())
         || endpoint.equals(api.getRouteSearchMyAssets())
         || endpoint.equals(api.getRouteListMulItems())
-        || endpoint.equals(api.getRouteCount())) {
+        || endpoint.equals(api.getRouteCount())
+        || endpoint.equals(api.getRouteOrgAsset())
+        || endpoint.equals(api.getRouteOwnershipTransfer())
+        || endpoint.equals(api.getRouteOwnershipDelete())) {
       promise.complete(true);
     } else {
       LOGGER.error("Unauthorized access to endpoint {}", endpoint);
@@ -230,7 +233,7 @@ public class KcAuthenticationServiceImpl implements AuthenticationService {
     boolean authorized = false;
 
     for (String role : roles) {
-      if (!Set.of("consumer", "provider", "delegate", "admin", "cos_admin").contains(role)) {
+      if (!Set.of("consumer", "provider", "delegate", "admin", "cos_admin", "org_admin").contains(role)) {
         LOGGER.debug("Skipping unsupported role: " + role);
         continue;
       }

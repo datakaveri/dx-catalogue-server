@@ -50,6 +50,9 @@ public class ApiServerVerticle extends AbstractVerticle {
   private HttpServer server;
   private CrudApis crudApis;
   private SearchApis searchApis;
+  private MyAssetsApis myAssetsApis;
+  private OwnershipApis ownershipApis;
+  private OrganisationApis organisationApis;
   private String keystore;
   private String keystorePassword;
   private ListApis listApis;
@@ -126,6 +129,9 @@ public class ApiServerVerticle extends AbstractVerticle {
     // API Callback managers
     crudApis = new CrudApis(api, isUac);
     searchApis = new SearchApis(api);
+    myAssetsApis = new MyAssetsApis(api);
+    ownershipApis = new OwnershipApis(api);
+    organisationApis = new OrganisationApis(api);
     listApis = new ListApis(api);
     relApis = new RelationshipApis();
     geoApis = new GeocodingApis();
@@ -143,6 +149,7 @@ public class ApiServerVerticle extends AbstractVerticle {
 
     crudApis.setDbService(dbService);
     listApis.setDbService(dbService);
+    ownershipApis.setDbService(dbService);
     relApis.setDbService(dbService);
     // TODO : set db service for Rating APIs
     crudApis.setHost(config().getString(HOST));
@@ -152,6 +159,7 @@ public class ApiServerVerticle extends AbstractVerticle {
     AuthenticationService authService =
         AuthenticationService.createProxy(vertx, AUTH_SERVICE_ADDRESS);
     crudApis.setAuthService(authService);
+    ownershipApis.setAuthService(authService);
     ratingApis.setAuthService(authService);
     mlayerApis.setAuthService(authService);
     listApis.setAuthService(authService);
@@ -168,6 +176,8 @@ public class ApiServerVerticle extends AbstractVerticle {
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
 
     searchApis.setService(dbService, geoService, nlpsearchService, validationService, authService);
+    myAssetsApis.setService(dbService, validationService, authService);
+    organisationApis.setService(dbService, authService);
 
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
     crudApis.setAuditingService(auditingService);
@@ -391,24 +401,128 @@ public class ApiServerVerticle extends AbstractVerticle {
               searchApis.postSearchHandler(routingContext);
             });
     router
-        .post(api.getRouteSearchMyAssets())
+        .get(api.getRouteSearchMyAssets())
         .produces(MIME_APPLICATION_JSON)
         .failureHandler(exceptionhandler)
         .handler(
             routingContext -> {
-              /* checking auhthentication info in requests */
+              /* checking authentication info in requests */
               if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
                 String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
                   String token = authHeader.substring("Bearer ".length()).trim();
                   routingContext.put(HEADER_TOKEN, token);
                 }
-                searchApis.postSearchHandler(routingContext);
+                myAssetsApis.getSearchHandler(routingContext);
               } else {
                 LOGGER.warn("Fail: Unathorized CRUD operation");
                 routingContext.response().setStatusCode(401).end();
               }
             });
+    router
+        .post(api.getRouteSearchMyAssets())
+        .produces(MIME_APPLICATION_JSON)
+        .failureHandler(exceptionhandler)
+        .handler(
+            routingContext -> {
+              /* checking authentication info in requests */
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
+                myAssetsApis.postSearchHandler(routingContext);
+              } else {
+                LOGGER.warn("Fail: Unauthorized CRUD operation");
+                routingContext.response().setStatusCode(401).end();
+              }
+            });
+    router
+        .post(api.getRouteOwnershipTransfer())
+        .produces(MIME_APPLICATION_JSON)
+        .consumes(MIME_APPLICATION_JSON)
+        .failureHandler(exceptionhandler)
+        .handler(
+            routingContext -> {
+              /* checking authentication info in requests */
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
+                ownershipApis.transferOwnershipHandler(routingContext);
+              } else {
+                LOGGER.warn("Fail: Unauthorized Ownership transfer operation");
+                routingContext.response().setStatusCode(401).end();
+              }
+            });
+
+    router
+        .delete(api.getRouteOwnershipDelete())
+        .produces(MIME_APPLICATION_JSON)
+        .failureHandler(exceptionhandler)
+        .handler(
+            routingContext -> {
+              /* checking authentication info in requests */
+              if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+                String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                  String token = authHeader.substring("Bearer ".length()).trim();
+                  routingContext.put(HEADER_TOKEN, token);
+                }
+                ownershipApis.deleteOwnershipHandler(routingContext);
+              } else {
+                LOGGER.warn("Fail: Unauthorized Delete operation");
+                routingContext.response().setStatusCode(401).end();
+              }
+            });
+
+
+    /* Partial Update Item - Body contains fields to be updated */
+    router
+        .patch(api.getRouteOrgAsset())
+        .consumes(MIME_APPLICATION_JSON)
+        .produces(MIME_APPLICATION_JSON)
+        .handler(routingContext -> {
+          /* Check for Authorization Header */
+          if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+            String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+              String token = authHeader.substring("Bearer ".length()).trim();
+              routingContext.put(HEADER_TOKEN, token);
+            }
+
+            organisationApis.partialUpdateItemHandler(routingContext);
+
+          } else {
+            LOGGER.warn("Unauthorized partial update attempt");
+            routingContext.response().setStatusCode(401).end();
+          }
+        });
+
+    /* To get all the Items from an organization */
+    router
+        .get(api.getRouteOrgAsset())
+        .produces(MIME_APPLICATION_JSON)
+        .handler(routingContext -> {
+          /* Check for Authorization Header */
+          if (routingContext.request().headers().contains(HEADER_AUTHORIZATION)) {
+            String authHeader = routingContext.request().getHeader(HEADER_AUTHORIZATION);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+              String token = authHeader.substring("Bearer ".length()).trim();
+              routingContext.put(HEADER_TOKEN, token);
+              organisationApis.getItemsByOrgHandler(routingContext);
+            } else {
+              LOGGER.warn("Invalid Authorization header");
+              routingContext.response().setStatusCode(401).end();
+            }
+          } else {
+            LOGGER.warn("Unauthorized GET attempt");
+            routingContext.response().setStatusCode(401).end();
+          }
+        });
 
     router.get(api.getRouteHealthLive()).handler(ctx ->
         ctx.response()

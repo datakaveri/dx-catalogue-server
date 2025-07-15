@@ -59,6 +59,8 @@ public class Constants {
   public static final String ROUTE_ITEMS = "/item";
   public static final String ROUTE_UPDATE_ITEMS = "/item";
   public static final String ROUTE_DELETE_ITEMS = "/item";
+
+  public static final String ROUTE_ORG_ASSET = "/organisation/asset";
   public static final String ROUTE_INSTANCE = "/instance";
   public static final String ROUTE_LIST_RESOURCE_GROUP_REL = "\\/(?<id>.*)\\/resourceGroup";
 
@@ -66,6 +68,8 @@ public class Constants {
   public static final String ROUTE_SEARCH = "/search";
   public static final String ROUTE_HEALTH_LIVE = "/health/live";
   public static final String ROUTE_SEARCH_MY_ASSETS = "/search/myassets";
+  public static final String OWNERSHIP_TRANSFER_PATH = "/item/ownership/transfer";
+  public static final String OWNERSHIP_DELETE_PATH = "/item/ownership/delete";
   public static final String ROUTE_NLP_SEARCH = "/nlpsearch";
   public static final String ROUTE_LIST_ITEMS = "/list/:itemType";
   public static final String ROUTE_LIST = "/list";

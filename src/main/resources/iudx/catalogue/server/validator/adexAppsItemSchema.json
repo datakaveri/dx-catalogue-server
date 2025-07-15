@@ -13,7 +13,8 @@
     "industry",
     "shortDescription",
     "description",
-    "organizationType"
+    "organizationType",
+    "accessPolicy"
   ],
   "properties": {
     "sections": {
@@ -145,6 +146,13 @@
       "title": "The short description schema",
       "description": "Short description about the item",
       "maxLength": 3200
+    },
+    "accessPolicy": {
+      "$id": "#/properties/accessPolicy",
+      "type": "string",
+      "title": "The access policy schema",
+      "default": "",
+      "pattern": "^(RESTRICTED|OPEN|PRIVATE)$"
     },
     "description": {
       "type": "string",

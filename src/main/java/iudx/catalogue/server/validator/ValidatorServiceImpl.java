@@ -347,6 +347,7 @@ public class ValidatorServiceImpl implements ValidatorService {
           if (method.equalsIgnoreCase(REQUEST_POST)) {
             // On POST: Always infer from mediaURL
             request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+            request.put(PUBLISH_STATUS, PENDING);
           } else if (method.equalsIgnoreCase(REQUEST_PUT)) {
             // On PUT: Preserve previous true if already set
             boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.result());
@@ -360,6 +361,9 @@ public class ValidatorServiceImpl implements ValidatorService {
             } else {
               request.put(DATA_UPLOAD_STATUS, false);
             }
+
+            String publishStatus = extractPublishStatusFromES(res.result());
+            request.put(PUBLISH_STATUS, publishStatus);
           }
 
           handler.handle(Future.succeededFuture(request));
@@ -407,6 +411,7 @@ public class ValidatorServiceImpl implements ValidatorService {
           if (method.equalsIgnoreCase(REQUEST_POST)) {
             // On POST: Always infer from mediaURL
             request.put(DATA_UPLOAD_STATUS, mediaUrlPresent);
+            request.put(PUBLISH_STATUS, PENDING);
           } else if (method.equalsIgnoreCase(REQUEST_PUT)) {
             // On PUT: Preserve previous true if already set
             boolean wasPreviouslyUploaded = extractDataUploadStatusFromES(res.result());
@@ -420,6 +425,9 @@ public class ValidatorServiceImpl implements ValidatorService {
             } else {
               request.put(DATA_UPLOAD_STATUS, false);
             }
+
+            String publishStatus = extractPublishStatusFromES(res.result());
+            request.put(PUBLISH_STATUS, publishStatus);
           }
 
           handler.handle(Future.succeededFuture(request));
@@ -449,6 +457,18 @@ public class ValidatorServiceImpl implements ValidatorService {
       LOGGER.error("Error extracting mediaURL from ES", e);
     }
     return false;
+  }
+
+  private String extractPublishStatusFromES(JsonObject esResult) {
+    try {
+      JsonObject res = esResult.getJsonArray(RESULTS).getJsonObject(0);
+      if (res != null && !res.isEmpty()) {
+        return res.getString(PUBLISH_STATUS, PENDING);
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error extracting mediaURL from ES", e);
+    }
+    return PENDING;
   }
 
   private void validateResourceGroup(

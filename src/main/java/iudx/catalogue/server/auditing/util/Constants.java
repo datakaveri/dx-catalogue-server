@@ -46,7 +46,8 @@ public class Constants {
 
   public static final String USER_ID = "userID";
 
-  public static final String MYACTIVITY_ENABLED = "myactivity_enabled";
+  public static final String MY_ACTIVITY_ENABLED = "myactivity_enabled";
+  public static final String MY_ACTIVITY = "myActivity";
 
   public static final String CONSUMER = "consumer";
 

@@ -2,8 +2,11 @@ package iudx.catalogue.server.database;
 
 import static iudx.catalogue.server.database.Constants.*;
 import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.validator.Constants.ACTIVE;
 import static iudx.catalogue.server.validator.Constants.DATA_UPLOAD_STATUS;
 import static iudx.catalogue.server.validator.Constants.ITEM_CREATED_AT;
+import static iudx.catalogue.server.validator.Constants.PENDING;
+import static iudx.catalogue.server.validator.Constants.PUBLISH_STATUS;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -136,6 +139,10 @@ public final class QueryDecoder {
             .withDetail(DETAIL_INVALID_GEO_PARAMETER)
             .getJsonResponse());
       }
+    }
+
+    if (searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+      match = true;
     }
 
     /* Construct the query for text based search */
@@ -384,10 +391,12 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
-    // Exclude DataBank and AiModel items with dataUploadStatus = false
-    mustNotQuery
-        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK))
-        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL));
+    if (!searchType.matches(MY_ASSETS_SEARCH_REGEX)) {
+      // Exclude DataBank and AiModel items with dataUploadStatus = false
+      mustNotQuery
+          .add(excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_DATA_BANK))
+          .add(excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_AI_MODEL));
+    }
 
     // Access control filter
     JsonObject accessPolicyClause = buildAccessPolicyFilter(request.getString(SUB), request);
@@ -464,19 +473,30 @@ public final class QueryDecoder {
     }
   }
 
-  private JsonObject excludeTypeWithUploadStatusFalse(String type) {
+  private JsonObject excludeTypeWithUploadAndPublishStatusFalse(String type) {
     JsonObject mustType = new JsonObject()
         .put(TERM, new JsonObject().put(TYPE_KEYWORD, type));
 
     JsonObject mustUploadFalse = new JsonObject()
         .put(TERM, new JsonObject().put(DATA_UPLOAD_STATUS, false));
 
+    JsonObject mustPublishStatusPending = new JsonObject()
+        .put(TERM, new JsonObject().put(PUBLISH_STATUS + KEYWORD_KEY, PENDING));
+
+    JsonArray shouldArray = new JsonArray()
+        .add(mustUploadFalse)
+        .add(mustPublishStatusPending);
+
+    JsonObject shouldClause = new JsonObject()
+        .put("bool", new JsonObject().put(SHOULD, shouldArray));
+
     return new JsonObject()
         .put("bool", new JsonObject()
             .put(MUST, new JsonArray()
                 .add(mustType)
-                .add(mustUploadFalse)));
+                .add(shouldClause)));
   }
+
 
   public JsonArray buildSortClause(JsonObject request) {
     if (!request.containsKey(SORT)) {
@@ -680,8 +700,8 @@ public final class QueryDecoder {
     JsonArray mustNotArray = accessPolicy.getJsonArray(MUST_NOT);
 
     mustNotArray
-        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK))
-        .add(excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL));
+        .add(excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_DATA_BANK))
+        .add(excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_AI_MODEL));
 
     JsonObject boolFilter = new JsonObject();
     if (!mustArray.isEmpty()) {
@@ -1003,10 +1023,10 @@ public final class QueryDecoder {
     // Add must_not clause if dataUploadStatus is false for databank and aimodel items
 
     String mustNotDatabankClause =
-        "\"must_not\": [" + excludeTypeWithUploadStatusFalse(ITEM_TYPE_DATA_BANK).encode();
+        "\"must_not\": [" + excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_DATA_BANK).encode();
     queryBuilder.append(mustNotDatabankClause);
     queryBuilder.append(',');
-    String mustNotAiModelClause = excludeTypeWithUploadStatusFalse(ITEM_TYPE_AI_MODEL).encode() + "]";
+    String mustNotAiModelClause = excludeTypeWithUploadAndPublishStatusFalse(ITEM_TYPE_AI_MODEL).encode() + "]";
     queryBuilder.append(mustNotAiModelClause);
 
     queryBuilder.append("} },");
@@ -1034,6 +1054,50 @@ public final class QueryDecoder {
     return queryBuilder.toString();
   }
 
+  public JsonObject buildUpdateByQuery(JsonObject request, String organizationId) {
+    String oldUserId = request.getString(OLD_USER_ID);
+    String newUserId = request.getString(NEW_USER_ID);
+
+    if (oldUserId == null || newUserId == null) {
+      return new JsonObject().put("error", "Missing oldUserId or newUserId");
+    }
+
+    // Build bool query: ownerUserId must match AND org ID must match
+    JsonObject query = new JsonObject()
+        .put("bool", new JsonObject()
+            .put(MUST, new JsonArray()
+                .add(new JsonObject().put(TERM,
+                    new JsonObject().put(PROVIDER_USER_ID + KEYWORD_KEY, oldUserId)))
+                .add(new JsonObject().put(TERM,
+                    new JsonObject().put(ORGANIZATION_ID + KEYWORD_KEY, organizationId)))
+            )
+        );
+
+    JsonObject script = new JsonObject()
+        .put("source", "ctx._source.ownerUserId = params.newOwner")
+        .put("lang", "painless")
+        .put("params", new JsonObject().put("newOwner", newUserId));
+
+    return new JsonObject()
+        .put(QUERY_KEY, query)
+        .put("script", script);
+  }
+
+  public JsonObject buildDeleteByQuery(JsonObject request, String orgId) {
+    String oldUserId = request.getString(OLD_USER_ID);
+
+    if (oldUserId == null) {
+      return new JsonObject().put(ERROR, "Missing oldUserId for delete operation");
+    }
+
+    JsonArray mustConditions = new JsonArray()
+        .add(new JsonObject().put(TERM, new JsonObject().put(PROVIDER_USER_ID + KEYWORD_KEY, oldUserId)))
+        .add(new JsonObject().put(TERM, new JsonObject().put(ORGANIZATION_ID + KEYWORD_KEY, orgId)));
+
+    return new JsonObject()
+        .put(QUERY_KEY, new JsonObject().put("bool", new JsonObject().put(MUST, mustConditions)));
+  }
+
   private static String getShouldClause(String sub, String openRestrictedFilter) {
     String privateFilter = TERM_QUERY_TEMPLATE
         .replace("$field", ACCESS_POLICY + KEYWORD_KEY)
@@ -1050,6 +1114,56 @@ public final class QueryDecoder {
     // Combine with open/restricted in should clause
     String shouldArray = String.format("[%s,%s]", openRestrictedFilter, privateMustClause);
     return SHOULD_QUERY.replace("$1", shouldArray);
+  }
+
+  /**
+   * Constructs an Elasticsearch query to fetch documents by organizationId,
+   * with support for pagination and sorting.
+   *
+   * @param request JsonObject containing organizationId, pagination, and sorting parameters.
+   * @return JsonObject containing the full Elasticsearch query or error.
+   */
+  public JsonObject searchOrgQuery(JsonObject request) {
+    JsonObject elasticQuery = new JsonObject();
+    JsonArray mustQuery = new JsonArray();
+    JsonArray mustNotQuery = new JsonArray();
+
+    String orgId = request.getString(ORGANIZATION_ID);
+    if (orgId == null || orgId.isBlank()) {
+      return new JsonObject().put(ERROR, new RespBuilder()
+          .withType(TYPE_INVALID_PROPERTY_VALUE)
+          .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+          .withDetail("Missing or empty organizationId")
+          .getJsonResponse());
+    }
+
+    // Add must clause for organizationId
+    String orgMatch = MATCH_QUERY.replace("$1", ORGANIZATION_ID + KEYWORD_KEY)
+        .replace("$2", orgId);
+    mustQuery.add(new JsonObject(orgMatch));
+
+    // Construct final bool query
+    JsonObject boolQuery = new JsonObject(MUST_QUERY.replace("$1", mustQuery.toString()));
+    if (!mustNotQuery.isEmpty()) {
+      boolQuery.getJsonObject("bool").put(MUST_NOT, mustNotQuery);
+    }
+    elasticQuery.put(QUERY_KEY, boolQuery);
+
+    // Add pagination if present
+    if (request.containsKey(LIMIT)) {
+      elasticQuery.put(SIZE_KEY, request.getInteger(LIMIT));
+    }
+    if (request.containsKey(OFFSET)) {
+      elasticQuery.put(FROM, request.getInteger(OFFSET));
+    }
+
+    // Add sorting if needed
+    JsonArray sortClause = buildSortClause(request);
+    if (sortClause != null && !sortClause.isEmpty()) {
+      elasticQuery.put(SORT, sortClause);
+    }
+
+    return elasticQuery;
   }
 
 }

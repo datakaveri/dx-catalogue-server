@@ -22,10 +22,11 @@ public class AuditMetadata {
   public final String shortDescription;
   public final String orgId;
   public final String orgName;
+  public final boolean myActivityEnabled;
 
   public AuditMetadata(String itemId, String shortDescription, String apiEndpoint,
                        String httpMethod, String itemType, String itemName, String userId,
-                       String userRole, String orgId, String orgName) {
+                       String userRole, String orgId, String orgName, boolean myActivityEnabled) {
     this.itemId = itemId;
     this.apiEndpoint = apiEndpoint;
     this.httpMethod = httpMethod;
@@ -36,6 +37,7 @@ public class AuditMetadata {
     this.shortDescription = shortDescription;
     this.orgId = orgId;
     this.orgName = orgName;
+    this.myActivityEnabled = myActivityEnabled;
   }
 
   public String getOperation() {

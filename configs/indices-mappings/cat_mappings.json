@@ -295,6 +295,15 @@
                     }
                 }
             },
+            "publishStatus": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
             "iudxResourceAPIs": {
                 "type": "text",
                 "fields": {

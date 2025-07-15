@@ -57,6 +57,26 @@ public interface DatabaseService {
   DatabaseService searchQuery(JsonObject request, Handler<AsyncResult<JsonObject>> handler);
 
   /**
+   * Executes an asynchronous bulk update using Elasticsearch's <code>_update_by_query</code> API.
+   * <p>
+   * Typically used for ownership transfer, this method builds the update query internally
+   * from the provided {@code oldValue} and {@code newValue}.
+   * </p>
+   *
+   * @param request which is a JsonObject
+   * @param organizationId
+   * @param handler which is a Request Handler
+   * @return this {@code DatabaseService} instance (for fluent chaining)
+   */
+  @Fluent
+  DatabaseService updateByQueryRequest(JsonObject request, String organizationId,
+                                       Handler<AsyncResult<JsonObject>> handler);
+
+  @Fluent
+  DatabaseService deleteByQueryRequest(JsonObject request, String organizationId,
+                                              Handler<AsyncResult<JsonObject>> handler);
+
+  /**
    * The searchQuery implements the nlp search operation with the database.
    *
    * @param request which is a JsonObject
@@ -341,4 +361,17 @@ public interface DatabaseService {
   @Fluent
   DatabaseService getMlayerPopularDatasets(
       String instance, JsonArray highestCountResource, Handler<AsyncResult<JsonObject>> handler);
+
+  /**
+   * Partially updates an item in the Elasticsearch index.
+   *
+   * @param request JsonObject containing fields to update. Must include the document ID as "id".
+   * @param handler AsyncResult handler returning update status or error.
+   * @return this instance for chaining
+   */
+  @Fluent
+  DatabaseService partialUpdate(JsonObject request, Handler<AsyncResult<JsonObject>> handler);
+
+  @Fluent
+  DatabaseService getDocsByOrgId(JsonObject request, Handler<AsyncResult<JsonObject>> handler);
 }

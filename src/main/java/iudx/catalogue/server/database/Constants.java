@@ -19,6 +19,7 @@ public class Constants {
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
+  public static final String MY_ASSETS_SEARCH_REGEX = "(.*)myAssetsAll(.*)";
 
   /** DB Query related. */
   public static final String MATCH_KEY = "match";
