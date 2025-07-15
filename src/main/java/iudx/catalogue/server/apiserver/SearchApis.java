@@ -243,7 +243,7 @@ public final class SearchApis {
       try {
         size = Integer.parseInt(request.getParam(SIZE_KEY));
       } catch (NumberFormatException e) {
-        LOGGER.warn("Invalid size param, defaulting to 100");
+        LOGGER.warn("Invalid size param, defaulting to {}", size);
       }
     }
 
@@ -251,7 +251,7 @@ public final class SearchApis {
       try {
         page = Integer.parseInt(request.getParam(PAGE_KEY));
       } catch (NumberFormatException e) {
-        LOGGER.warn("Invalid page param, defaulting to 1");
+        LOGGER.warn("Invalid page param, defaulting to {}", page);
       }
     }
 
@@ -359,8 +359,7 @@ public final class SearchApis {
             .end(validateHandler.cause().getLocalizedMessage());
       } else {
         String path = request.path();
-        requestBody.put(MY_ASSETS_REQ, path.equals(api.getRouteSearchMyAssets()));
-        if (path.equals(api.getRouteSearch()) || path.equals(api.getRouteSearchMyAssets())) {
+        if (path.equals(api.getRouteSearch())) {
           dbService.searchQuery(requestBody, handler -> {
             if (handler.succeeded()) {
               JsonObject resultJson = handler.result();

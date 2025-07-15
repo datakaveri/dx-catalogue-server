@@ -12,12 +12,15 @@ public class Api {
   private String dxApiBasePath;
   private StringBuilder routeItems;
   private StringBuilder routUpdateItems;
+  private StringBuilder routeOrgAsset;
   private StringBuilder routeDeleteItems;
   private StringBuilder routeInstance;
   private StringBuilder routeRelationship;
   private StringBuilder routeSearch;
   private StringBuilder routeHealthLive;
   private StringBuilder routeSearchMyAssets;
+  private StringBuilder routeOwnershipTransfer;
+  private StringBuilder routeOwnershipDelete;
   private StringBuilder routeNlpSearch;
   private StringBuilder routeListItems;
   private StringBuilder routeListMulItems;
@@ -64,12 +67,15 @@ public class Api {
   public void buildEndpoints() {
     routeItems = new StringBuilder(dxApiBasePath).append(ROUTE_ITEMS);
     routUpdateItems = new StringBuilder(dxApiBasePath).append(ROUTE_UPDATE_ITEMS);
+    routeOrgAsset = new StringBuilder(dxApiBasePath).append(ROUTE_ORG_ASSET);
     routeDeleteItems = new StringBuilder(dxApiBasePath).append(ROUTE_DELETE_ITEMS);
     routeInstance = new StringBuilder(dxApiBasePath).append(ROUTE_INSTANCE);
     routeRelationship = new StringBuilder(dxApiBasePath).append(ROUTE_RELATIONSHIP);
     routeSearch = new StringBuilder(dxApiBasePath).append(ROUTE_SEARCH);
     routeHealthLive = new StringBuilder(dxApiBasePath).append(ROUTE_HEALTH_LIVE);
     routeSearchMyAssets = new StringBuilder(dxApiBasePath).append(ROUTE_SEARCH_MY_ASSETS);
+    routeOwnershipTransfer = new StringBuilder(dxApiBasePath).append(OWNERSHIP_TRANSFER_PATH);
+    routeOwnershipDelete = new StringBuilder(dxApiBasePath).append(OWNERSHIP_DELETE_PATH);
     routeNlpSearch = new StringBuilder(dxApiBasePath).append(ROUTE_NLP_SEARCH);
     routeListItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST_ITEMS);
     routeListMulItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST);
@@ -100,6 +106,9 @@ public class Api {
   public String getRoutUpdateItems() {
     return routUpdateItems.toString();
   }
+  public String getRouteOrgAsset() {
+    return routeOrgAsset.toString();
+  }
 
   public String getRouteDeleteItems() {
     return routeDeleteItems.toString();
@@ -124,6 +133,14 @@ public class Api {
   public String getRouteSearchMyAssets() {
     return routeSearchMyAssets.toString();
   }
+
+  public String getRouteOwnershipTransfer() {
+    return routeOwnershipTransfer.toString();
+  }
+  public String getRouteOwnershipDelete() {
+    return routeOwnershipDelete.toString();
+  }
+
 
   public String getRouteNlpSearch() {
     return routeNlpSearch.toString();

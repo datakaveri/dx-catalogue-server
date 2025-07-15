@@ -61,6 +61,8 @@ public class Constants {
   public static final String ALL = "all";
   public static final String COS = "cos";
   public static final String OWNER = "owner";
+  public static final String OLD_USER_ID = "oldUserId";
+  public static final String NEW_USER_ID = "newUserId";
   public static final String PROVIDER_USER_ID = "ownerUserId";
   public static final String MY_ASSETS_REQ = "myAssetsRequest";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
@@ -151,6 +153,7 @@ public class Constants {
   public static final String RESPONSE_FILTER = "responseFilter_";
   public static final String SEARCH_TYPE_CRITERIA = "searchCriteria_";  // used in SEARCH_TYPE value
   public static final String SEARCH_CRITERIA_KEY = "searchCriteria";    // used in requestBody key
+  public static final String SEARCH_TYPE_MY_ASSETS_ALL = "myAssetsAll_";
 
 
   public static final String MESSAGE = "detail";
@@ -177,6 +180,7 @@ public class Constants {
   public static final String FILTER = "filter";
   public static final String MUST_NOT = "must_not";
   public static final String MUST = "must";
+  public static final String SHOULD = "should";
   public static final String TAGS = "tags";
   public static final String DEPARTMENT = "department";
   public static final String ORGANIZATION_TYPE = "organizationType";

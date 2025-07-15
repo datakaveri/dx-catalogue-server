@@ -52,6 +52,9 @@ public class ProviderAuthStrategy implements AuthorizationStratergy {
     accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_RESOURCE));
     accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_AI_MODEL));
     accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_DATA_BANK));
+
+    accessList.add(new AuthorizationRequest(POST, api.getRouteOwnershipTransfer(), ""));
+    accessList.add(new AuthorizationRequest(DELETE, api.getRouteOwnershipDelete(), ""));
   }
 
   @Override

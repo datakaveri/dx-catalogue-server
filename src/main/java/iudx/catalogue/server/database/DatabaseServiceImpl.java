@@ -13,8 +13,10 @@ import iudx.catalogue.server.nlpsearch.NLPSearchService;
 import java.util.*;
 import java.util.Timer;
 import java.util.stream.Collectors;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.client.Request;
 
 /**
  * The Database Service Implementation.
@@ -217,6 +219,217 @@ public class DatabaseServiceImpl implements DatabaseService {
         });
     return this;
   }
+  @Override
+  public DatabaseService updateByQueryRequest(JsonObject request, String organizationId,
+                                              Handler<AsyncResult<JsonObject>> handler) {
+
+    LOGGER.debug("Info: updateByQueryRequest");
+
+    RespBuilder respBuilder = new RespBuilder();
+    JsonObject updatePayload = queryDecoder.buildUpdateByQuery(request, organizationId);
+
+    if (updatePayload.containsKey(ERROR)) {
+      handler.handle(Future.failedFuture(
+          respBuilder
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail(updatePayload.getString(ERROR))
+              .getResponse()));
+      return this;
+    }
+
+    LOGGER.debug("UpdateByQuery Payload: {}", updatePayload.encode());
+
+    client.updateByQueryAsync(docIndex, updatePayload, updateRes -> {
+      if (updateRes.succeeded()) {
+        LOGGER.debug("Success: Update by query completed");
+        handler.handle(Future.succeededFuture(updateRes.result()));
+      } else {
+        LOGGER.error("Fail: Update by query failed", updateRes.cause());
+        handler.handle(Future.failedFuture(
+            respBuilder
+                .withType(TYPE_INTERNAL_SERVER_ERROR)
+                .withTitle(TITLE_INTERNAL_SERVER_ERROR)
+                .withDetail("Failed to perform update by query")
+                .getResponse()));
+      }
+    });
+
+    return this;
+  }
+
+  @Override
+  public DatabaseService deleteByQueryRequest(JsonObject request, String organizationId,
+                                              Handler<AsyncResult<JsonObject>> handler) {
+
+    LOGGER.debug("Info: deleteByQueryRequest");
+
+    RespBuilder respBuilder = new RespBuilder();
+    JsonObject deletePayload = queryDecoder.buildDeleteByQuery(request, organizationId);
+
+    if (deletePayload.containsKey(ERROR)) {
+      handler.handle(Future.failedFuture(
+          respBuilder.withType(TYPE_TOKEN_INVALID)
+              .withTitle("Invalid delete request")
+              .withDetail(deletePayload.getString("error"))
+              .getResponse()));
+      return this;
+    }
+
+    LOGGER.debug("DeleteByQuery Payload: {}", deletePayload.encode());
+
+    client.deleteByQueryAsync(docIndex, deletePayload, deleteRes -> {
+      if (deleteRes.succeeded()) {
+        LOGGER.debug("Success: Delete by query completed");
+        handler.handle(Future.succeededFuture(deleteRes.result()));
+      } else {
+        LOGGER.error("Fail: Delete by query failed", deleteRes.cause());
+        handler.handle(Future.failedFuture(
+            respBuilder
+                .withType(TYPE_INTERNAL_SERVER_ERROR)
+                .withTitle(TITLE_INTERNAL_SERVER_ERROR)
+                .withDetail("Failed to perform delete by query")
+                .getResponse()));
+      }
+    });
+
+    return this;
+  }
+
+  @Override
+  public DatabaseService partialUpdate(JsonObject request,
+                                       Handler<AsyncResult<JsonObject>> handler) {
+    LOGGER.debug("partialUpdate() method started");
+
+    RespBuilder respBuilder = new RespBuilder();
+    String id = request.getString(ID);
+    request.remove(ID);
+
+    if (request.isEmpty()) {
+      handler.handle(Future.failedFuture(
+          new JsonObject().put(ERROR, "No fields to update").encode()));
+      return this;
+    }
+
+    String checkQuery =
+        GET_DOC_QUERY.replace("$1", id).replace("$2", "");
+
+    new Timer()
+        .schedule(
+            new TimerTask() {
+              public void run() {
+                client.searchGetId(
+                    checkQuery,
+                    docIndex,
+                    checkRes -> {
+                      if (checkRes.failed()) {
+                        LOGGER.error("Fail: Check query fail;" + checkRes.cause());
+                        handler.handle(Future.failedFuture(internalErrorResp));
+                        return;
+                      }
+                      if (checkRes.succeeded()) {
+                        if (checkRes.result().getInteger(TOTAL_HITS) != 1) {
+                          LOGGER.error("Fail: Doc doesn't exist, can't update");
+                          handler.handle(
+                              Future.failedFuture(
+                                  respBuilder
+                                      .withType(TYPE_ITEM_NOT_FOUND)
+                                      .withTitle(TITLE_ITEM_NOT_FOUND)
+                                      .withResult(
+                                          id,
+                                          UPDATE,
+                                          FAILED,
+                                          "Fail: Doc doesn't exist, can't update")
+                                      .withDetail("Fail: Doc doesn't exist, can't update")
+                                      .getResponse()));
+                          return;
+                        }
+                        String docId = checkRes.result().getJsonArray(RESULTS).getString(0);
+                        JsonObject updateDoc = new JsonObject()
+                            .put("doc", request);
+                        client.docPatchAsync(
+                            docId,
+                            docIndex,
+                            updateDoc.toString(),
+                            patchHandler -> {
+                              if (patchHandler.succeeded()) {
+
+                                JsonObject result = patchHandler.result();
+                                LOGGER.debug("patch result " + result);
+                                JsonObject filtered = new JsonObject()
+                                    .put("doc_id", result.getString(DOC_ID))
+                                    .put("status", result.getString("result"));
+                                handler.handle(Future.succeededFuture(filtered));
+                              } else {
+                                LOGGER.error("failed:: " + patchHandler.cause().getMessage());
+                                handler.handle(Future.failedFuture(internalErrorResp));
+                              }
+                            });
+                      }
+                    });
+              }
+            },
+            STATIC_DELAY_TIME);
+    return this;
+  }
+
+  @Override
+  public DatabaseService getDocsByOrgId(JsonObject request,
+                                        Handler<AsyncResult<JsonObject>> handler) {
+    String orgId = request.getString(ORGANIZATION_ID);
+    LOGGER.debug("Fetching docs for organizationId: " + orgId);
+
+    JsonObject query = queryDecoder.searchOrgQuery(request);
+    if (query.containsKey(ERROR)) {
+      LOGGER.error("Fail: Query returned with an error");
+      handler.handle(Future.failedFuture(query.getJsonObject(ERROR).toString()));
+      return null;
+    }
+
+    LOGGER.debug("Info: Query constructed;" + query);
+    client.searchAsync(query.toString(), docIndex, res -> {
+      if (res.succeeded()) {
+        LOGGER.debug("Success: Successful DB request");
+        handler.handle(Future.succeededFuture(res.result()));
+      } else {
+        LOGGER.error("Failed to fetch docs for orgId", res.cause());
+        handler.handle(Future.failedFuture(internalErrorResp));
+      }
+    });
+
+    client.searchAsync(
+        query.toString(),
+        docIndex,
+        searchRes -> {
+          if (searchRes.succeeded()) {
+            LOGGER.debug("Success: Successful DB request");
+            int totalHits = searchRes.result().getInteger(TOTAL_HITS);
+            int size = request.getInteger(SIZE_KEY, DEFAULT_MAX_PAGE_SIZE);
+
+            int totalPages = (int) Math.ceil((double) totalHits / size);
+            int page = request.getInteger(PAGE_KEY, 1);
+            boolean hasNext = totalHits > 0 && page < totalPages;
+            boolean hasPrevious = page > 1 && page <= totalPages;
+
+            JsonObject paginationInfo = new JsonObject()
+                .put(PAGE_KEY, page)
+                .put(SIZE_KEY, size)
+                .put(TOTAL_COUNT, totalHits)
+                .put(TOTAL_PAGES, totalPages)
+                .put(HAS_NEXT, hasNext)
+                .put(HAS_PREVIOUS, hasPrevious);
+
+            searchRes.result().put(PAGINATION_INFO, paginationInfo);
+            handler.handle(Future.succeededFuture(searchRes.result()));
+          } else {
+            LOGGER.error("Failed to fetch docs for orgId", searchRes.cause());
+            handler.handle(Future.failedFuture(internalErrorResp));
+          }
+        });
+
+    return this;
+  }
+
 
   /**
    * Executes an NLP search query by passing in the request embeddings and invoking the appropriate
