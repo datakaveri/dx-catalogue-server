@@ -18,10 +18,9 @@ pipeline {
         script {
           def isPR = env.ghprbPullId != null
           def isPRComment = env.ghprbCommentBody != null
-          def userTriggered = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
-
+          def causes = currentBuild.getBuildCauses()
+          def userTriggered = causes.any { it instanceof hudson.model.Cause$UserIdCause }
           def changed = isImportantChange()
-
           if ((isPR || isPRComment || changed)) {
             echo "Trigger valid: Proceeding with pipeline. isPR=${isPR}, isPRComment=${isPRComment}, importantChanges=${changed}"
           } else {
