@@ -13,15 +13,21 @@ pipeline {
     }
   }
   stages {
-    stage('Check for PR or Important Changes') {
+    stage('Trigger Validation') {
       steps {
         script {
-          if (!isPRTrigger() && !isImportantChange()) {
-            echo 'No PR trigger or relevant changes detected. Skipping pipeline.'
-            currentBuild.result = 'SUCCESS'
-            return
+          def isPR = env.ghprbPullId != null
+          def isPRComment = env.ghprbCommentBody != null
+          def userTriggered = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
+
+          def changed = isImportantChange()
+
+          if ((isPR || isPRComment || changed)) {
+            echo "Trigger valid: Proceeding with pipeline. isPR=${isPR}, isPRComment=${isPRComment}, importantChanges=${changed}"
           } else {
-            echo 'PR event or important changes detected. Proceeding...'
+            echo "Skipping pipeline: No PR/comment or important changes."
+            currentBuild.result = 'SUCCESS'
+            exit 0
           }
         }
       }
