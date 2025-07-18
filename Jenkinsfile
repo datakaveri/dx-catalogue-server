@@ -16,17 +16,15 @@ pipeline {
     stage('Trigger Validation') {
       steps {
         script {
-          def isPR = env.ghprbPullId != null
           def isPRComment = env.ghprbCommentBody != null
-          def causes = currentBuild.getBuildCauses()
-          def userTriggered = causes.any { it instanceof hudson.model.Cause$UserIdCause }
           def changed = isImportantChange()
-          if ((isPR || isPRComment || changed)) {
-            echo "Trigger valid: Proceeding with pipeline. isPR=${isPR}, isPRComment=${isPRComment}, importantChanges=${changed}"
-          } else {
-            echo "Skipping pipeline: No PR/comment or important changes."
+          if (isPRComment || changed) {
+            echo "Trigger valid: Running pipeline due to PR comment or file changes."
+          } 
+          else {
+            echo "Skipping pipeline. Reason: No PR comment and no important file changes."
             currentBuild.result = 'SUCCESS'
-            exit 0
+            return
           }
         }
       }
