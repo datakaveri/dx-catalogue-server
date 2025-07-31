@@ -113,8 +113,8 @@ public class AttributeSearchIT {
     @DisplayName("testing Attribute Search - Simple Attribute Exceeded Property Query Param - 400 Invalid request")
     void GetSimpleAttributeExceedPropQueryParam() {
         given()
-                .param("property","[id,name,tags,location,deviceId]")
-                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1],[aqm],[pune],[1234]]")
+                .param("property","[id,name,tags,location,deviceId,label,description,instance,provider,ownerUserId,itemStatus]")
+                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1],[aqm],[pune],[1234],[abc],[abc],[pune],[a29b0d99-5578-43a0-a354-04a6d0d6c8df],[a29b0d99-5578-43a0-a354-04a6d0d6c8df],[ACTIVE]]")
                 .when()
                 .get("/search")
                 .then()
@@ -126,7 +126,7 @@ public class AttributeSearchIT {
     void GetSimpleAttributeExceedValPairQueryParam() {
         given()
                 .param("property","[id,name,tags,location]")
-                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1],[aqm],[pune],[1234]]")
+                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1],[aqm],[pune],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234],[1234]]")
                 .when()
                 .get("/search")
                 .then()
@@ -138,7 +138,7 @@ public class AttributeSearchIT {
     void GetSimpleAttributeExceedValQueryParam() {
         given()
                 .param("property","[id,name,tags,location]")
-                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1,sensor2,sensor3,sensor4,sensor5],[aqm],[pune]]")
+                .param("value","[[af19727d-0ab8-4002-b745-ec183cb0ce60],[sensor1,sensor2,sensor3,sensor4,sensor5,sensor1,sensor2,sensor3,sensor4,sensor5,sensor1,sensor2,sensor3,sensor4,sensor5,sensor1,sensor2,sensor3,sensor4,sensor5,sesor5],[aqm],[pune]]")
                 .when()
                 .get("/search")
                 .then()

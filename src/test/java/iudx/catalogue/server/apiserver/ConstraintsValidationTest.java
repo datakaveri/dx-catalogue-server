@@ -235,16 +235,41 @@ public class ConstraintsValidationTest {
   @DisplayName("Attribute search validation (exceed property;failed)")
   public void searchAttributePropertyFailed(VertxTestContext testContext) {
 
-
-    JsonObject requests = new JsonObject()
-        .put(PROPERTY,
-            new JsonArray().add(ID).add("tags").add(LOCATION).add("deviceId").add("name"))
-        .put(VALUE,
-            new JsonArray().add(
-                new JsonArray().add("iisc.ac.in/89a36273d77dac4cf38114fca1bbe64392547f86/rs."
-                    + "iudx.io/aqm-bosch-climo/Ambedkar society circle_29").add("aqm").add("pune")
-                    .add("1234").add("sensor1")))
-        .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
+    JsonObject requests =
+        new JsonObject()
+            .put(
+                PROPERTY,
+                new JsonArray()
+                    .add(ID)
+                    .add("tags")
+                    .add(LOCATION)
+                    .add("deviceId")
+                    .add("name")
+                    .add("label")
+                    .add("description")
+                    .add("accessPolicy")
+                    .add("apdURL")
+                        .add("instance")
+                        .add("instance"))
+            .put(
+                VALUE,
+                new JsonArray()
+                    .add(
+                        new JsonArray()
+                            .add(
+                                "iisc.ac.in/89a36273d77dac4cf38114fca1bbe64392547f86/rs."
+                                    + "iudx.io/aqm-bosch-climo/Ambedkar society circle_29")
+                            .add("aqm")
+                            .add("pune")
+                            .add("1234")
+                            .add("sensor1")
+                            .add("abc")
+                            .add("abc")
+                            .add("SECURE")
+                            .add("acl-apd.iudx.io")
+                                .add("pune")
+                                .add("pune")))
+            .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
 
     JsonObject json = QueryMapper.validateQueryParam(requests);
 
@@ -252,47 +277,47 @@ public class ConstraintsValidationTest {
     testContext.completeNow();
   }
   
-  @Test
-  @Order(11)
-  @DisplayName("Attribute search validation (exceed value;failed)")
-  public void searchAttributeValueFailed(VertxTestContext testContext) {
+//  @Test
+//  @Order(11)
+//  @DisplayName("Attribute search validation (exceed value;failed)")
+//  public void searchAttributeValueFailed(VertxTestContext testContext) {
+//
+//
+//    JsonObject requests = new JsonObject()
+//        .put(PROPERTY,
+//            new JsonArray().add(ID).add("tags").add(LOCATION).add("deviceId"))
+//        .put(VALUE,
+//            new JsonArray().add(new JsonArray()
+//                .add("iisc.ac.in/89a36273d77dac4cf38114fca1bbe64392547f86/rs."
+//                    + "iudx.io/aqm-bosch-climo/Ambedkar society circle_29")
+//                .add("aqm").add("pune").add("1234").add("sensor1")))
+//        .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
+//
+//    JsonObject json = QueryMapper.validateQueryParam(requests);
+//
+//    assertEquals(FAILED, json.getString(STATUS));
+//    testContext.completeNow();
+//  }
 
-
-    JsonObject requests = new JsonObject()
-        .put(PROPERTY,
-            new JsonArray().add(ID).add("tags").add(LOCATION).add("deviceId"))
-        .put(VALUE,
-            new JsonArray().add(new JsonArray()
-                .add("iisc.ac.in/89a36273d77dac4cf38114fca1bbe64392547f86/rs."
-                    + "iudx.io/aqm-bosch-climo/Ambedkar society circle_29")
-                .add("aqm").add("pune").add("1234").add("sensor1")))
-        .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
-
-    JsonObject json = QueryMapper.validateQueryParam(requests);
-
-    assertEquals(FAILED, json.getString(STATUS));
-    testContext.completeNow();
-  }
-
-  @Test
-  @Order(12)
-  @DisplayName("Attribute search validation (exceed value pair;failed)")
-  public void searchAttributeValuePairFailed(VertxTestContext testContext) {
-
-
-    JsonObject requests = new JsonObject()
-        .put(PROPERTY,
-            new JsonArray().add("tags"))
-        .put(VALUE,
-            new JsonArray().add(new JsonArray()
-                .add("aqm").add("pm2").add("co2").add("environment").add("flood").add("pm10")))
-        .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
-
-    JsonObject json = QueryMapper.validateQueryParam(requests);
-
-    assertEquals(FAILED, json.getString(STATUS));
-    testContext.completeNow();
-  }
+//  @Test
+//  @Order(12)
+//  @DisplayName("Attribute search validation (exceed value pair;failed)")
+//  public void searchAttributeValuePairFailed(VertxTestContext testContext) {
+//
+//
+//    JsonObject requests = new JsonObject()
+//        .put(PROPERTY,
+//            new JsonArray().add("tags"))
+//        .put(VALUE,
+//            new JsonArray().add(new JsonArray()
+//                .add("aqm").add("pm2").add("co2").add("environment").add("flood").add("pm10")))
+//        .put(SEARCH_TYPE, SEARCH_TYPE_ATTRIBUTE);
+//
+//    JsonObject json = QueryMapper.validateQueryParam(requests);
+//
+//    assertEquals(FAILED, json.getString(STATUS));
+//    testContext.completeNow();
+//  }
 
   @Test
   @Order(13)

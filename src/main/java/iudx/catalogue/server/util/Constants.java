@@ -176,8 +176,8 @@ public class Constants {
   public static final long COORDINATES_SIZE = 10;
   public static final int COORDINATES_PRECISION = 6;
   public static final int STRING_SIZE = 100;
-  public static final int PROPERTY_SIZE = 4;
-  public static final int VALUE_SIZE = 4;
+  public static final int PROPERTY_SIZE = 10;
+  public static final int VALUE_SIZE = 20;
   public static final int FILTER_VALUE_SIZE = 10;
   public static final int ID_SIZE = 512;
   public static final int INSTANCE_SIZE = 100;
