@@ -17,8 +17,8 @@ pipeline {
         anyOf {
           triggeredBy 'UserIdCause'
           expression {
-            def comment = env.ghprbCommentBody
-            return comment && comment != "null" && !comment.trim().isEmpty()
+            def comment = env.ghprbCommentBody?.trim()
+            return comment && comment.toLowerCase() != "null"
           }
           changeset "docker/**"
           changeset "docs/**"
