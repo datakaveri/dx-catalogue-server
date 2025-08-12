@@ -10,6 +10,7 @@ package iudx.catalogue.server.apiserver;
 
 import static iudx.catalogue.server.apiserver.util.Constants.*;
 import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
+import static iudx.catalogue.server.database.Constants.ACCESS_POLICY;
 import static iudx.catalogue.server.database.Constants.LABEL;
 import static iudx.catalogue.server.util.Constants.*;
 
@@ -276,6 +277,8 @@ public final class ListApis {
           case ID:
           case LABEL:
           case NAME:
+          case ACCESS_POLICY:
+          case RESOURCE_SERVER_NAME:
             type.add(itemType);
             break;
           case OWNER:
