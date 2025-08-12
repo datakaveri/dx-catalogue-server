@@ -39,6 +39,7 @@ public class Constants {
   public static final String OPEN = "OPEN";
 
   public static final String RESTRICTED = "RESTRICTED";
+  public static final String SECURE = "SECURE";
   public static final String PRIVATE = "PRIVATE";
 
   /** ElasticClient search types. */

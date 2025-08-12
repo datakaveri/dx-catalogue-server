@@ -279,6 +279,7 @@ public final class ListApis {
           case NAME:
           case ACCESS_POLICY:
           case RESOURCE_SERVER_NAME:
+          case RESOURCE_SERVER_REG_URL:
             type.add(itemType);
             break;
           case OWNER:
