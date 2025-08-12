@@ -961,7 +961,7 @@ public final class QueryDecoder {
     queryBuilder.append("\"query\": { \"bool\": {");
     // Access policy filter
     JsonArray allowedPolicies = new JsonArray();
-    allowedPolicies.add(OPEN).add(RESTRICTED);
+    allowedPolicies.add(OPEN).add(RESTRICTED).add(SECURE);
 
     // Start "filter" array
     queryBuilder.append("\"filter\": [");
