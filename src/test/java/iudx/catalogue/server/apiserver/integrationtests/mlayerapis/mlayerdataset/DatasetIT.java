@@ -58,7 +58,7 @@ public class DatasetIT {
     public void createMlayerDatasetWithTagsInstanceProviderFieldTest(){
         JsonObject requestBody = new JsonObject()
                 .put("tags", new JsonArray().add("flood").add("transport"))
-                .put("instance", "pune")
+                .put("instance", "pune-city")
                 .put("providers", new JsonArray().add("bbeacb12-5e54-339d-92e0-d8e063b551a8"))
                 .put("domains", new JsonArray().add("itms"));
 

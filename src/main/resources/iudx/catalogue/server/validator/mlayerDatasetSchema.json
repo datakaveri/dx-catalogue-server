@@ -38,7 +38,7 @@
         "pune",
         "rsac_up"
       ],
-      "pattern": "^[a-zA-Z0-9_ ]*$"
+      "pattern": "^[a-zA-Z0-9_\\- ]*$"
     },
     "tags": {
       "$id": "#/properties/tags",
